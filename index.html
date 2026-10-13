@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Clean-Room Air-Pump Rig</title>
+<meta name="description" content="1.0 × 0.5 m acrylic test rig: AHU + heat-recovery air pump in parallel supplying a clean room. Live 3D simulation with HMI, sensors, PCB wiring, control loops, energy reduction, CO₂ and ACH.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='8' width='28' height='16' rx='2' fill='none' stroke='%231273cc' stroke-width='2.4'/%3E%3Cpath d='M16 8v16' stroke='%231273cc' stroke-width='2'/%3E%3Ccircle cx='9' cy='16' r='3' fill='%230f9c86'/%3E%3Cpath d='M20 13h6M20 16h6M20 19h6' stroke='%23dd6a14' stroke-width='1.8'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Same visual language as the earlier simulators: full-bleed WebGL stage, legend top-left,
+   control rail at right. The air-state strip is replaced by a docked HMI. */
+:root{
+  --bg:#e9edf2; --panel:rgba(255,255,255,.88); --panel-solid:#f6f8fa;
+  --ink:#121c26; --ink-dim:#5d6e7e; --line:#c6d1dc; --line-soft:#dde4ec;
+  --fresh:#1273cc; --return:#dd6a14; --mix:#0f9c86; --refrig:#7c5cf0;
+  --scene:#ccd5df; --floor:#b7c3cf; --metal:#9aaab9; --metal-dark:#6c7c8c; --glass:#aebecd;
+  --acrylic:#a9d6ea; --pcb:#11643c; --copper:#c8903e; --sig-in:#0891b2; --sig-out:#c27c00;
+  --t-cold:#2a78d6; --t-mid:#9aa6b2; --t-hot:#e34948;
+  --good:#1a8a4a; --warn:#b26b00; --bad:#c6302f;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --shadow:0 1px 2px rgba(16,32,48,.08),0 8px 24px rgba(16,32,48,.10);
+  --f-disp:"Barlow Condensed",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#080c11; --panel:rgba(18,25,33,.86); --panel-solid:#121a23;
+  --ink:#e7eef5; --ink-dim:#8ca0b3; --line:#27333f; --line-soft:#1b242e;
+  --fresh:#49aeff; --return:#ff9143; --mix:#2fd6b4; --refrig:#a68bff;
+  --scene:#0a1017; --floor:#0f1821; --metal:#55687a; --metal-dark:#39485a; --glass:#4a5e72;
+  --acrylic:#5aa9c9; --pcb:#0f5a35; --copper:#d9a050; --sig-in:#22d3ee; --sig-out:#fbbf24;
+  --t-cold:#3987e5; --t-mid:#6b7783; --t-hot:#e66767;
+  --good:#3ccf7a; --warn:#f0a630; --bad:#ff6b6b;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px rgba(0,0,0,.45);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#080c11; --panel:rgba(18,25,33,.86); --panel-solid:#121a23;
+  --ink:#e7eef5; --ink-dim:#8ca0b3; --line:#27333f; --line-soft:#1b242e;
+  --fresh:#49aeff; --return:#ff9143; --mix:#2fd6b4; --refrig:#a68bff;
+  --scene:#0a1017; --floor:#0f1821; --metal:#55687a; --metal-dark:#39485a; --glass:#4a5e72;
+  --acrylic:#5aa9c9; --pcb:#0f5a35; --copper:#d9a050; --sig-in:#22d3ee; --sig-out:#fbbf24;
+  --t-cold:#3987e5; --t-mid:#6b7783; --t-hot:#e66767;
+  --good:#3ccf7a; --warn:#f0a630; --bad:#ff6b6b;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;overflow:hidden}
+*{box-sizing:border-box}
+button,input,select{font:inherit;color:inherit}
+[hidden]{display:none!important}
+
+#app{height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0}
+#stage{position:relative;min-height:0;overflow:hidden}
+#scene{display:block;width:100%;height:100%;touch-action:none}
+
+.legend{position:absolute;top:12px;left:12px;max-width:min(58vw,330px);
+  background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);
+  border-radius:4px;padding:10px 12px;box-shadow:var(--shadow);pointer-events:none}
+.legend h1{margin:0 0 2px;font-family:var(--f-disp);font-weight:700;font-size:19px;
+  letter-spacing:.02em;text-transform:uppercase;text-wrap:balance;line-height:1.05}
+.legend .sub{margin:0 0 9px;font-size:11px;color:var(--ink-dim);letter-spacing:.01em}
+.keys{display:grid;gap:5px}
+.key{display:flex;align-items:center;gap:7px;font-size:11.5px}
+.sw{width:16px;height:5px;border-radius:3px;flex:none}
+.key b{font-weight:600}
+.tscale{display:grid;gap:3px;margin-top:2px}
+.tbar{height:7px;border-radius:4px;background:linear-gradient(90deg,var(--t-cold),var(--t-mid),var(--t-hot))}
+.tticks{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:10px;color:var(--ink-dim)}
+
+.rail{position:absolute;top:12px;right:12px;width:252px;max-height:calc(100% - 24px);
+  overflow-y:auto;background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);
+  padding:12px;display:grid;gap:13px;align-content:start}
+.grp{display:grid;gap:6px;min-width:0}
+.grp>label,.lbl{font-family:var(--f-disp);font-size:12px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-dim)}
+.seg{display:flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.seg button{flex:1 1 0;min-width:0;background:transparent;border:0;border-right:1px solid var(--line);
+  padding:6px 3px;font-size:11.5px;cursor:pointer;color:var(--ink-dim);transition:background .15s,color .15s}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel-solid);font-weight:600}
+.seg button:hover:not([aria-pressed="true"]){background:var(--line-soft)}
+.checks{display:grid;gap:4px}
+.chk{display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;padding:2px 0}
+.chk input{accent-color:var(--fresh);width:15px;height:15px;margin:0}
+input[type=range]{width:100%;accent-color:var(--fresh);margin:0}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.row .val{font-family:var(--f-mono);font-size:11px;color:var(--ink-dim);font-variant-numeric:tabular-nums}
+.btns{display:flex;gap:6px}
+.btn{flex:1;background:transparent;border:1px solid var(--line);border-radius:3px;
+  padding:7px 6px;font-size:12px;cursor:pointer;transition:background .15s}
+.btn:hover{background:var(--line-soft)}
+.btn.primary{background:var(--ink);color:var(--panel-solid);border-color:var(--ink);font-weight:600}
+:focus-visible{outline:2px solid var(--fresh);outline-offset:2px}
+.sub2{font-family:var(--f-disp);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-dim);margin-top:4px;border-top:1px solid var(--line-soft);padding-top:6px}
+
+.railToggle{position:absolute;top:12px;right:12px;display:none;z-index:3;
+  background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:8px 11px;
+  font-family:var(--f-disp);font-size:13px;font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;cursor:pointer;box-shadow:var(--shadow)}
+
+.nums{display:grid;gap:5px}
+.num{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px}
+.num label{color:var(--ink-dim);min-width:0;flex:1 1 auto}
+.num input{width:74px;flex:none;text-align:right;background:transparent;
+  border:1px solid var(--line);border-radius:3px;padding:4px 6px;
+  font-family:var(--f-mono);font-size:11.5px;font-variant-numeric:tabular-nums}
+.num input:focus{border-color:var(--fresh)}
+.reset{width:100%;background:transparent;border:1px solid var(--line);border-radius:3px;
+  padding:6px;font-size:11.5px;cursor:pointer}
+.reset:hover{background:var(--line-soft)}
+.hint{position:absolute;left:12px;bottom:12px;font-size:10.5px;color:var(--ink-dim);
+  background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:5px 8px;
+  pointer-events:none;box-shadow:var(--shadow)}
+
+/* ------------------------------------------------------------------ HMI dock */
+.hmi{border-top:1px solid var(--line);background:var(--panel-solid);display:grid;
+  grid-template-rows:auto auto minmax(0,1fr);min-height:0;
+  padding:0 0 env(safe-area-inset-bottom,0px)}
+.hmi.collapsed{grid-template-rows:auto auto}
+.hmi.collapsed .hbody,.hmi.collapsed .htabs{display:none}
+.hhead{display:flex;align-items:center;gap:10px;padding:7px 14px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+.hhead h2{margin:0;font-family:var(--f-disp);font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;
+  padding:2px 9px;font-size:11px;font-weight:600;font-family:var(--f-mono)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ink-dim)}
+.pill.run .dot{background:var(--good);box-shadow:0 0 0 3px color-mix(in srgb,var(--good) 25%,transparent)}
+.pill.stop .dot{background:var(--bad)}
+.pill.al{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 50%,var(--line))}
+.pill.al .dot{background:var(--bad)}
+.hspacer{flex:1}
+.hbtn{background:transparent;border:1px solid var(--line);border-radius:3px;padding:5px 10px;font-size:12px;cursor:pointer}
+.hbtn:hover{background:var(--line-soft)}
+.hbtn.on{background:var(--ink);color:var(--panel-solid);border-color:var(--ink);font-weight:600}
+.clock{font-family:var(--f-mono);font-size:11px;color:var(--ink-dim)}
+
+.kbar{display:flex;gap:6px;overflow-x:auto;padding:7px 14px;border-bottom:1px solid var(--line-soft)}
+.kp{flex:1 0 104px;border:1px solid var(--line);border-radius:3px;padding:5px 9px;background:var(--panel);border-left-width:3px}
+.kp .n{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);font-family:var(--f-disp);font-weight:600;white-space:nowrap}
+.kp .v{font-family:var(--f-mono);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.25;white-space:nowrap}
+.kp .d{font-size:10px;color:var(--ink-dim);font-family:var(--f-mono);white-space:nowrap}
+.kp.f{border-left-color:var(--fresh)} .kp.r{border-left-color:var(--return)} .kp.m{border-left-color:var(--mix)}
+.kp.g{border-left-color:var(--good)} .kp.p{border-left-color:var(--refrig)}
+
+.htabs{display:flex;gap:2px;padding:6px 14px 0;border-bottom:1px solid var(--line-soft);overflow-x:auto}
+.htabs button{background:transparent;border:1px solid transparent;border-bottom:0;border-radius:3px 3px 0 0;
+  padding:6px 11px;font-size:12px;cursor:pointer;color:var(--ink-dim);white-space:nowrap}
+.htabs button[aria-selected="true"]{background:var(--panel);border-color:var(--line);color:var(--ink);font-weight:600;margin-bottom:-1px}
+.hbody{min-height:0;overflow:auto;padding:8px 14px;height:clamp(150px,27vh,256px)}
+#pane-ov.on{height:100%}
+.pane{display:none} .pane.on{display:block}
+
+/* overview mimic */
+.mimic{display:block;height:min(236px,calc(100% - 4px));min-height:180px;width:auto;max-width:none}
+.mimic text{font-family:var(--f-mono);font-size:11px;fill:var(--ink)}
+.mimic .lb{font-family:var(--f-disp);font-size:12px;font-weight:600;letter-spacing:.06em;fill:var(--ink-dim);text-transform:uppercase}
+.mimic .box{fill:var(--panel);stroke:var(--line);stroke-width:1.2}
+.mimic .unit{fill:none;stroke:var(--ink-dim);stroke-width:1.2;stroke-dasharray:4 3}
+.mimic .ln{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.mimic .lf{stroke:var(--fresh)} .mimic .lr{stroke:var(--return)} .mimic .lm{stroke:var(--mix)}
+.mimic .tag{fill:var(--panel-solid);stroke:var(--line);stroke-width:1}
+.mimic .val{font-weight:600}
+.mimic .flow{fill:none;stroke-dasharray:2 10;animation:dash 1.2s linear infinite;stroke:var(--panel-solid);stroke-width:2;opacity:.85}
+@keyframes dash{to{stroke-dashoffset:-24}}
+@media (prefers-reduced-motion:reduce){.mimic .flow{animation:none}}
+
+table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
+.sens th{text-align:left;font-family:var(--f-disp);font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-dim);font-size:11px;border-bottom:1px solid var(--line);padding:4px 8px;position:sticky;top:-10px;background:var(--panel-solid)}
+.sens td{border-bottom:1px solid var(--line-soft);padding:4px 8px;vertical-align:top}
+.sens td.v{font-family:var(--f-mono);font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.sens td.tg{font-family:var(--f-mono);white-space:nowrap}
+.sens .io{font-size:10px;font-family:var(--f-mono);border-radius:3px;padding:1px 5px;border:1px solid var(--line)}
+.sens .io.in{color:var(--sig-in);border-color:currentColor} .sens .io.out{color:var(--sig-out);border-color:currentColor}
+
+.loops{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.loop{border:1px solid var(--line);border-radius:4px;padding:8px 10px;background:var(--panel);display:grid;gap:5px}
+.loop h4{margin:0;font-size:12px;font-weight:600}
+.loop .meta{font-size:10.5px;color:var(--ink-dim);font-family:var(--f-mono)}
+.loop .pv{display:flex;gap:10px;font-family:var(--f-mono);font-size:12px;flex-wrap:wrap}
+.loop .pv b{font-weight:600}
+.loop .bar{height:6px;border-radius:3px;background:var(--line-soft);overflow:hidden}
+.loop .bar i{display:block;height:100%;background:var(--sig-out);border-radius:3px}
+.loop .am{display:flex;gap:6px;align-items:center}
+.loop .am .seg{flex:0 0 auto}
+.loop .am .seg button{padding:3px 9px}
+.loop .am input[type=range]{flex:1}
+
+.energy{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.card{border:1px solid var(--line);border-radius:4px;padding:8px 10px;background:var(--panel)}
+.card h4{margin:0 0 6px;font-family:var(--f-disp);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim)}
+.kv{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:2px 0}
+.kv span{color:var(--ink-dim)} .kv b{font-family:var(--f-mono);font-weight:600;font-variant-numeric:tabular-nums}
+.cmp{display:grid;gap:5px;margin-top:4px}
+.cmp .r{display:grid;grid-template-columns:72px 1fr 58px;gap:6px;align-items:center;font-size:11px}
+.cmp .t{height:10px;border-radius:0 4px 4px 0;background:var(--line-soft);overflow:hidden}
+.cmp .t i{display:block;height:100%;border-radius:0 4px 4px 0}
+.cmp .r b{font-family:var(--f-mono);text-align:right}
+.big{font-family:var(--f-mono);font-size:24px;font-weight:600;line-height:1.1}
+.note{font-size:10.5px;color:var(--ink-dim);margin-top:4px;line-height:1.4}
+
+.trends{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+.chart{border:1px solid var(--line);border-radius:4px;padding:6px 8px;background:var(--panel);position:relative}
+.chart h4{margin:0 0 2px;font-size:11.5px;font-weight:600}
+.chart .lg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:10.5px;color:var(--ink-dim);margin-bottom:2px}
+.chart .lg i{display:inline-block;width:12px;height:2px;border-radius:1px;vertical-align:middle;margin-right:4px}
+.chart svg{width:100%;height:120px;display:block;overflow:visible}
+.chart svg text{font-family:var(--f-mono);font-size:9.5px;fill:var(--ink-dim)}
+.chart .tip{position:absolute;pointer-events:none;background:var(--panel-solid);border:1px solid var(--line);border-radius:4px;
+  padding:5px 7px;font-size:11px;box-shadow:var(--shadow);white-space:nowrap;z-index:2}
+.chart .tip b{font-family:var(--f-mono)}
+
+.alist{display:grid;gap:4px;font-size:12px}
+.arow{display:grid;grid-template-columns:20px 58px 46px 1fr auto;gap:8px;align-items:center;border-bottom:1px solid var(--line-soft);padding:3px 0}
+.arow .ic{font-weight:700;text-align:center}
+.arow.serious .ic{color:var(--bad)} .arow.warning .ic{color:var(--warn)} .arow.ok .ic{color:var(--good)}
+.arow .t{font-family:var(--f-mono);color:var(--ink-dim);font-size:11px}
+
+@media (max-width:760px){
+  .rail{top:auto;bottom:0;left:0;right:0;width:auto;max-height:62%;border-radius:4px 4px 0 0;
+    border-left:0;border-right:0;border-bottom:0;z-index:5}
+  .railToggle{display:block}
+  .legend{max-width:calc(100% - 118px);padding:8px 10px}
+  .legend h1{font-size:16px} .legend .sub{margin-bottom:7px}
+  .hint{display:none}
+  .kp{flex-basis:92px}
+  .hbody{height:clamp(140px,32vh,240px)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="scene" aria-label="3D model of the clean-room test rig"></canvas>
+
+    <div class="legend">
+      <h1>Clean-room test rig</h1>
+      <p class="sub">Acrylic box 1.0 × 0.5 × 0.5 m · plant room: AHU + heat-recovery air pump in parallel · clean room: ceiling diffusers, low-level returns</p>
+      <div class="keys" id="keysStream">
+        <div class="key"><span class="sw" style="background:var(--fresh)"></span><b>Outdoor / fresh air</b></div>
+        <div class="key"><span class="sw" style="background:var(--return)"></span><b>Return / exhaust air</b></div>
+        <div class="key"><span class="sw" style="background:var(--mix)"></span><b>Mixed / supply air</b></div>
+        <div class="key"><span class="sw" style="background:var(--refrig)"></span><b>Refrigerant</b></div>
+        <div class="key"><span class="sw" style="background:var(--sig-in)"></span><b>PCB: sensor signal</b></div>
+        <div class="key"><span class="sw" style="background:var(--sig-out)"></span><b>PCB: drive signal</b></div>
+      </div>
+      <div class="tscale" id="keysTemp" hidden>
+        <div class="key"><b>Air temperature</b></div>
+        <div class="tbar"></div>
+        <div class="tticks"><span>−5 °C</span><span>21 °C</span><span>45 °C</span></div>
+      </div>
+    </div>
+
+    <button class="railToggle" id="railToggle" aria-expanded="false" aria-controls="rail">Controls</button>
+
+    <aside class="rail" id="rail" aria-label="Controls">
+      <div class="grp">
+        <span class="lbl">Operating mode</span>
+        <div class="seg" id="segSeason">
+          <button data-v="winter" aria-pressed="true">Winter heating</button>
+          <button data-v="summer" aria-pressed="false">Summer cooling</button>
+        </div>
+      </div>
+      <div class="grp">
+        <span class="lbl">Heat recovery</span>
+        <div class="seg" id="segRec">
+          <button data-v="on" aria-pressed="true">Recovery on</button>
+          <button data-v="base" aria-pressed="false">Baseline test</button>
+        </div>
+      </div>
+      <div class="grp">
+        <span class="lbl">Air colour</span>
+        <div class="seg" id="segColor">
+          <button data-v="stream" aria-pressed="true">By stream</button>
+          <button data-v="temp" aria-pressed="false">By temperature</button>
+        </div>
+      </div>
+      <div class="grp">
+        <span class="lbl">AHU heat recovery device</span>
+        <div class="seg" id="segHrv">
+          <button data-v="plate" aria-pressed="true">Plate core</button>
+          <button data-v="wheel" aria-pressed="false">Thermal wheel</button>
+        </div>
+      </div>
+      <div class="grp">
+        <span class="lbl">AHU casing</span>
+        <div class="seg" id="segCase">
+          <button data-v="solid" aria-pressed="false">Solid</button>
+          <button data-v="ghost" aria-pressed="true">Ghost</button>
+          <button data-v="off" aria-pressed="false">Off</button>
+        </div>
+      </div>
+      <div class="grp">
+        <span class="lbl">Acrylic box</span>
+        <div class="seg" id="segBox">
+          <button data-v="clear" aria-pressed="true">Clear</button>
+          <button data-v="frost" aria-pressed="false">Frosted</button>
+          <button data-v="off" aria-pressed="false">Hidden</button>
+        </div>
+      </div>
+      <div class="grp">
+        <span class="lbl">Labels</span>
+        <div class="seg" id="segLabels">
+          <button data-v="key" aria-pressed="true">Rig</button>
+          <button data-v="plant" aria-pressed="false">+ Plant</button>
+          <button data-v="all" aria-pressed="false">All</button>
+          <button data-v="off" aria-pressed="false">None</button>
+        </div>
+      </div>
+      <div class="grp">
+        <div class="row"><span class="lbl">Exploded view</span><span class="val" id="valExp">0 %</span></div>
+        <input type="range" id="rngExp" min="0" max="100" value="0" step="1" aria-label="Exploded view">
+      </div>
+      <div class="grp">
+        <div class="row"><span class="lbl">Air velocity (visual)</span><span class="val" id="valSpd">1.0×</span></div>
+        <input type="range" id="rngSpd" min="0" max="250" value="100" step="5" aria-label="Air velocity">
+      </div>
+      <div class="grp">
+        <div class="row"><span class="lbl">Simulation speed</span><span class="val" id="valSim">10×</span></div>
+        <input type="range" id="rngSim" min="1" max="120" value="10" step="1" aria-label="Simulation speed">
+      </div>
+
+      <div class="grp">
+        <span class="lbl">Design values</span>
+        <div class="nums">
+          <div class="sub2">Air &amp; clean room</div>
+          <div class="num"><label for="inFlow">Supply airflow m³/h</label><input id="inFlow" type="number" step="0.5"></div>
+          <div class="num"><label for="inOa">Minimum fresh air %</label><input id="inOa" type="number" step="5"></div>
+          <div class="num"><label for="inSplit">Fresh air via air pump %</label><input id="inSplit" type="number" step="5"></div>
+          <div class="num"><label for="inE1">Recovery unit core %</label><input id="inE1" type="number" step="1"></div>
+          <div class="num"><label for="inE2">AHU core %</label><input id="inE2" type="number" step="1"></div>
+          <div class="num"><label for="inRh">Room RH set point %</label><input id="inRh" type="number" step="1"></div>
+          <div class="num"><label for="inDp">Room pressure Pa</label><input id="inDp" type="number" step="1"></div>
+          <div class="num"><label for="inGain">Room heat gain W</label><input id="inGain" type="number" step="0.5"></div>
+          <div class="sub2">This season</div>
+          <div class="num"><label for="inOat">Outdoor °C</label><input id="inOat" type="number" step="0.5"></div>
+          <div class="num"><label for="inOrh">Outdoor RH %</label><input id="inOrh" type="number" step="1"></div>
+          <div class="num"><label for="inMix">Mixed-air set point °C</label><input id="inMix" type="number" step="0.5"></div>
+          <div class="num"><label for="inCoil" id="lblCoil">After pre-heat set point °C</label><input id="inCoil" type="number" step="0.5"></div>
+          <div class="num"><label for="inSup">Final supply set point °C</label><input id="inSup" type="number" step="0.5"></div>
+          <div class="sub2">Box &amp; energy</div>
+          <div class="num"><label for="inAmb">Lab around box °C</label><input id="inAmb" type="number" step="0.5"></div>
+          <div class="num"><label for="inUa">Envelope UA W/K</label><input id="inUa" type="number" step="0.1"></div>
+          <div class="num"><label for="inVolt">DC bus V</label><input id="inVolt" type="number" step="12"></div>
+          <div class="num"><label for="inEf">Grid kg CO₂/kWh</label><input id="inEf" type="number" step="0.01"></div>
+          <div class="num"><label for="inCop">Baseline chiller COP</label><input id="inCop" type="number" step="0.1"></div>
+          <div class="num"><label for="inHours">Operating h/year</label><input id="inHours" type="number" step="100"></div>
+        </div>
+        <button class="reset" id="btnReset">Reset to design values</button>
+      </div>
+
+      <div class="grp">
+        <span class="lbl">Show</span>
+        <div class="checks">
+          <label class="chk"><input type="checkbox" id="cbAir" checked> Coloured air particles</label>
+          <label class="chk"><input type="checkbox" id="cbRibbon" checked> Coloured air columns</label>
+          <label class="chk"><input type="checkbox" id="cbArrows" checked> Flow arrows</label>
+          <label class="chk"><input type="checkbox" id="cbTags" checked> Live sensor tags</label>
+          <label class="chk"><input type="checkbox" id="cbPcb" checked> PCB wiring</label>
+          <label class="chk"><input type="checkbox" id="cbSignals" checked> PCB signal pulses</label>
+          <label class="chk"><input type="checkbox" id="cbModule" checked> Parallel recovery unit</label>
+          <label class="chk"><input type="checkbox" id="cbAux" checked> Auxiliaries &amp; instruments</label>
+          <label class="chk"><input type="checkbox" id="cbDoors" checked> Access doors</label>
+          <label class="chk"><input type="checkbox" id="cbRefrig" checked> Refrigerant circuit</label>
+          <label class="chk"><input type="checkbox" id="cbDucts" checked> Ductwork</label>
+          <label class="chk"><input type="checkbox" id="cbSpin" checked> Fans &amp; wheel turning</label>
+        </div>
+      </div>
+
+      <div class="grp">
+        <span class="lbl">View</span>
+        <div class="seg" id="segView">
+          <button data-v="iso" aria-pressed="true">Iso</button>
+          <button data-v="front" aria-pressed="false">Front</button>
+          <button data-v="top" aria-pressed="false">Top</button>
+        </div>
+        <div class="seg" id="segZoom">
+          <button data-v="plant" aria-pressed="false">Plant room</button>
+          <button data-v="clean" aria-pressed="false">Clean room</button>
+          <button data-v="hmi" aria-pressed="false">HMI</button>
+        </div>
+        <div class="btns">
+          <button class="btn primary" id="btnPlay" aria-pressed="true">Pause</button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="hint">Drag to orbit · scroll to zoom · shift-drag to pan · click the 3D screen for the HMI</div>
+  </div>
+
+  <section class="hmi" id="hmi" aria-label="HMI">
+    <div class="hhead">
+      <h2>HMI-101 · Rig controller</h2>
+      <span class="pill run" id="pRun"><span class="dot"></span><span id="pRunT">RUN</span></span>
+      <span class="pill" id="pMode">WINTER · RECOVERY ON</span>
+      <span class="pill" id="pAl" hidden><span class="dot"></span><span id="pAlT">0 alarms</span></span>
+      <span class="hspacer"></span>
+      <span class="clock" id="clock">t = 00:00:00</span>
+      <button class="hbtn" id="btnRun" type="button">Stop system</button>
+      <button class="hbtn" id="btnHmi" type="button" aria-expanded="true" aria-controls="hmiTabs">Collapse</button>
+    </div>
+    <div class="kbar" id="kbar"></div>
+    <div class="htabs" id="hmiTabs" role="tablist" aria-label="HMI screens">
+      <button role="tab" aria-selected="true" data-p="ov">Overview</button>
+      <button role="tab" aria-selected="false" data-p="sn">Sensors</button>
+      <button role="tab" aria-selected="false" data-p="lp">Control loops</button>
+      <button role="tab" aria-selected="false" data-p="en">Energy &amp; CO₂</button>
+      <button role="tab" aria-selected="false" data-p="tr">Trends</button>
+      <button role="tab" aria-selected="false" data-p="al">Alarms</button>
+    </div>
+    <div class="hbody">
+      <div class="pane on" id="pane-ov"></div>
+      <div class="pane" id="pane-sn"></div>
+      <div class="pane" id="pane-lp"></div>
+      <div class="pane" id="pane-en"></div>
+      <div class="pane" id="pane-tr"></div>
+      <div class="pane" id="pane-al"></div>
+    </div>
+  </section>
+</div>
+
+<script src="assets/vendor/three.min.js"></script>
+<script src="assets/js/rig-model.js"></script>
+<script src="assets/js/rig.js"></script>
+<script src="assets/vendor/qrcode.js"></script>
+<script src="assets/js/share.js"></script>
+</body>
+</html>

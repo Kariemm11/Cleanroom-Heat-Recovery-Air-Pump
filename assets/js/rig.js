@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-13c';
+var BUILD='2026-10-13d';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -772,6 +772,21 @@ wall('Clean-room false ceiling',BX-TH*1.5,TH,2*BZ-2*TH, (BX-TH/2+TH/2)/2,CEIL+TH
     g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.9,1.2,20),MR.black),p[0],-2.6,p[1]));
   });
   rig.add(g);
+})();
+
+/* floor grid + soft contact shadow: the same look as the earlier simulators (display only, not exported) */
+var floorGrid;
+(function floor(){
+  var cv=document.createElement('canvas'); cv.width=cv.height=256;
+  var ctx=cv.getContext('2d'), gr=ctx.createRadialGradient(128,128,10,128,128,126);
+  gr.addColorStop(0,'rgba(0,0,0,0.42)'); gr.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=gr; ctx.fillRect(0,0,256,256);
+  var sh=new THREE.Mesh(new THREE.PlaneGeometry(160,80),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false}));
+  sh.rotation.x=-Math.PI/2; sh.position.set(0,-3.18,0); sh.userData.noExport=true; scene.add(sh);
+  floorGrid=new THREE.GridHelper(480,48,T.floor.clone(),T.floor.clone());
+  floorGrid.material.vertexColors=false; floorGrid.material.color=T.floor.clone();
+  floorGrid.material.transparent=true; floorGrid.material.opacity=0.35;
+  floorGrid.position.y=-3.25; floorGrid.userData.noExport=true; scene.add(floorGrid);
 })();
 
 /* clean-room door on the front face */
@@ -2714,6 +2729,7 @@ window.addEventListener('resize',resize);
 function retheme(){
   readTokens(); tuneLights();
   scene.background=T.scene.clone();
+  floorGrid.material.color.copy(T.floor);
   M.panel.color=T.metal.clone(); M.frame.color=T.metalDark.clone();
   M.inner.color=T.metal.clone(); M.base.color=T.metalDark.clone();
   M.duct.color=T.metal.clone(); M.refrig.color=T.refrig.clone();

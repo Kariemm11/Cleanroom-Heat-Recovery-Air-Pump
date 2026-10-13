@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-13d';
+var BUILD='2026-10-13e';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -2366,6 +2366,12 @@ function setRailHidden(h){
   b.querySelector('span').textContent=h?'Operating mode · controls':'Hide controls';
 }
 $('railTab').addEventListener('click',function(){ setRailHidden(!$('stage').classList.contains('railHidden')); });
+function setLegendHidden(h){
+  $('stage').classList.toggle('legendHidden',h); var b=$('legTab');
+  b.setAttribute('aria-expanded',String(!h)); b.title=h?'Show the legend':'Hide the legend';
+  b.querySelector('span').textContent=h?'Clean-room test rig':'Hide';
+}
+$('legTab').addEventListener('click',function(){ setLegendHidden(!$('stage').classList.contains('legendHidden')); });
 $('btnRun').addEventListener('click',function(){ m.on=!m.on; syncModePill(); });
 function syncModePill(){
   $('pRun').className='pill '+(m.on?'run':'stop'); $('pRunT').textContent=m.on?'RUN':'STOPPED';

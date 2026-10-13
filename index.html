@@ -62,7 +62,16 @@ button,input,select{font:inherit;color:inherit}
 
 .legend{position:absolute;top:12px;left:12px;max-width:min(58vw,330px);
   background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);
-  border-radius:4px;padding:10px 12px;box-shadow:var(--shadow);pointer-events:none}
+  border-radius:4px;padding:10px 12px;box-shadow:var(--shadow);pointer-events:none;transition:transform .28s ease}
+/* pull-tab on the legend's right edge: slides the legend out to the left, the tab stays at the screen edge */
+.legTab{position:absolute;top:10px;left:100%;margin-left:-1px;pointer-events:auto;writing-mode:vertical-rl;display:flex;align-items:center;gap:7px;
+  background:var(--panel-solid);border:1px solid var(--line);border-left:0;border-radius:0 6px 6px 0;padding:11px 5px;
+  font-family:var(--f-disp);font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-dim);
+  cursor:pointer;box-shadow:3px 2px 10px rgba(16,32,48,.10)}
+.legTab:hover{color:var(--ink)}
+.legTab svg{width:12px;height:12px;flex:none;transition:transform .28s ease}
+#stage.legendHidden .legend{transform:translateX(calc(-100% - 10px))}
+#stage.legendHidden .legTab svg{transform:rotate(180deg)}
 .legend h1{margin:0 0 2px;font-family:var(--f-disp);font-weight:700;font-size:19px;
   letter-spacing:.02em;text-transform:uppercase;text-wrap:balance;line-height:1.05}
 .legend .sub{margin:0 0 9px;font-size:11px;color:var(--ink-dim);letter-spacing:.01em}
@@ -291,11 +300,12 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 </style>
 </head>
 <body>
-<div id="app" data-build="2026-10-13d">
+<div id="app" data-build="2026-10-13e">
   <div id="stage">
     <canvas id="scene" aria-label="3D model of the clean-room test rig"></canvas>
 
-    <div class="legend">
+    <div class="legend" id="legend">
+      <button class="legTab" id="legTab" type="button" aria-expanded="true" aria-controls="legend" title="Hide the legend"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Hide</span></button>
       <h1>Clean-room test rig</h1>
       <p class="sub">Acrylic box 1.0 × 0.5 × 0.5 m · plant room: AHU + heat-recovery air pump in parallel · clean room: ceiling diffusers, low-level returns</p>
       <div class="keys" id="keysStream">
@@ -514,9 +524,9 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 </div>
 
 <script src="assets/vendor/three.min.js"></script>
-<script src="assets/js/rig-model.js?b=2026-10-13d"></script>
-<script src="assets/js/rig.js?b=2026-10-13d"></script>
+<script src="assets/js/rig-model.js?b=2026-10-13e"></script>
+<script src="assets/js/rig.js?b=2026-10-13e"></script>
 <script src="assets/vendor/qrcode.js"></script>
-<script src="assets/js/share.js?b=2026-10-13d"></script>
+<script src="assets/js/share.js?b=2026-10-13e"></script>
 </body>
 </html>

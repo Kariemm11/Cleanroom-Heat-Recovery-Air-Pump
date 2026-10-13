@@ -43,7 +43,7 @@ var VIEWS = {
   iso:   {t:[-2,16,0],   theta:0.62, phi:1.10, r:158},
   front: {t:[0,22,0],    theta:0.0,  phi:1.52, r:140},
   top:   {t:[0,10,0],    theta:0.0,  phi:0.12, r:150},
-  plant: {t:[-27,5,-1],  theta:0.34, phi:0.78, r:60},
+  plant: {t:[-27,5,-1],  theta:0.34, phi:0.78, r:50},
   clean: {t:[24,20,0],   theta:0.42, phi:1.18, r:92},
   hmi:   {t:[-38,41.5,27], theta:0.0, phi:1.45, r:28}
 };
@@ -683,7 +683,7 @@ var MR={
 };
 
 /* ------------------------------------------------- acrylic enclosure */
-var box3d=new THREE.Group(); tag(box3d,'Acrylic enclosure'); rig.add(box3d);
+var box3d=new THREE.Group(); box3d.userData.asm='Acrylic enclosure'; rig.add(box3d);
 var wallParts=[];
 function wall(name,w,h,d,x,y,z,dir){
   var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),MR.acrylic); at(m,x,y,z); tag(m,name);
@@ -704,7 +704,7 @@ wall('Clean-room false ceiling',BX-TH*1.5,TH,2*BZ-2*TH, (BX-TH/2+TH/2)/2,CEIL+TH
 
 /* aluminium base frame + levelling feet */
 (function base(){
-  var g=new THREE.Group(); tag(g,'Aluminium base frame');
+  var g=new THREE.Group(); tag(g,'Aluminium base frame'); g.userData.asm='Acrylic enclosure';
   [[0,-BZ+1],[0,BZ-1]].forEach(function(p){ g.add(at(box(2*BX,2,2,MR.alu),p[0],-1,p[1])); });
   [[-BX+1,0],[0,0],[BX-1,0]].forEach(function(p){ g.add(at(box(2,2,2*BZ-4,MR.alu),p[0],-1,p[1])); });
   [[-BX+2,-BZ+2],[-BX+2,BZ-2],[BX-2,-BZ+2],[BX-2,BZ-2]].forEach(function(p){
@@ -715,7 +715,7 @@ wall('Clean-room false ceiling',BX-TH*1.5,TH,2*BZ-2*TH, (BX-TH/2+TH/2)/2,CEIL+TH
 
 /* clean-room door on the front face */
 (function door(){
-  var g=new THREE.Group(); tag(g,'Clean-room access door');
+  var g=new THREE.Group(); tag(g,'Clean-room access door'); g.userData.asm='Acrylic enclosure';
   var z=BZ+0.05, x0=7, x1=43, y0=3, y1=37;
   var dm=new THREE.LineBasicMaterial({color:T.metalDark.clone(),transparent:true,opacity:0.9});
   g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([W(x0,y0,z),W(x1,y0,z),W(x1,y1,z),W(x0,y1,z),W(x0,y0,z)]),dm));
@@ -729,7 +729,7 @@ wall('Clean-room false ceiling',BX-TH*1.5,TH,2*BZ-2*TH, (BX-TH/2+TH/2)/2,CEIL+TH
 })();
 
 /* ------------------------------------------------------------- ducts */
-var rigDucts=new THREE.Group(); tag(rigDucts,'Rig ductwork'); rig.add(rigDucts);
+var rigDucts=new THREE.Group(); rigDucts.userData.asm='Ductwork'; rig.add(rigDucts);
 function roundedPath(pts,bend){
   var cp=new THREE.CurvePath(), v=pts.map(function(p){return W(p[0],p[1],p[2]);});
   var cur=v[0].clone();
@@ -749,7 +749,7 @@ function duct(name,pts,r,mat,group,bend){
   var cv=roundedPath(pts,bend||r*1.6);
   var len=cv.getLength();
   var m=new THREE.Mesh(new THREE.TubeGeometry(cv,Math.max(24,Math.round(len*2)),r,18,false),mat||MR.pvc);
-  m.userData.cad={type:'sweep',pts:cv.getSpacedPoints(Math.max(16,Math.round(len))).map(function(p){return [p.x,p.y,p.z];}),r:r,wall:0.15};
+  m.userData.cad={type:'duct',pts:pts.map(function(p){return [p[0],p[1],p[2]];}),r:r,wall:0.15,bend:bend||r*1.6};
   m.renderOrder=2; tag(m,name); (group||rigDucts).add(m);
   return m;
 }
@@ -801,7 +801,7 @@ flangeRing('Partition sleeve: return 2',0,P_AHU_RET.y,-13,1.0,'x');
 /* --------------------------------------------- fresh-air compressor */
 var compRotor=new THREE.Group();
 (function compressor(){
-  var g=new THREE.Group(); tag(g,'FAN-101 fresh-air compressor');
+  var g=new THREE.Group(); tag(g,'FAN-101 fresh-air compressor'); g.userData.asm='Fresh-air compressor';
   var vol=new THREE.Mesh(new THREE.CylinderGeometry(4.2,4.2,3.6,40),MR.blue); vol.rotation.z=Math.PI/2;
   at(vol,COMP.x,COMP.y,COMP.z); g.add(vol);
   // scroll outlet, tangential and downward
@@ -842,7 +842,7 @@ var compRotor=new THREE.Group();
 })();
 
 /* ------------------------------------------------------- clean room */
-var clean=new THREE.Group(); tag(clean,'Clean room fit-out'); rig.add(clean);
+var clean=new THREE.Group(); clean.userData.asm='Clean room'; rig.add(clean);
 var DIFF=[[14,0],[36,0]], GRILLE=[[P_AHU_RET.y,P_AHU_RET.z],[P_AHU_RET.y,-13]];
 DIFF.forEach(function(d,i){
   var g=new THREE.Group(); tag(g,'Ceiling diffuser '+(i+1));
@@ -885,7 +885,7 @@ GRILLE.forEach(function(gr,i){
 })();
 
 /* ------------------------------------------------------ PCB + HMI */
-var ctrl=new THREE.Group(); tag(ctrl,'Controls'); rig.add(ctrl);
+var ctrl=new THREE.Group(); ctrl.userData.asm='Controls and HMI'; rig.add(ctrl);
 var PCB={x0:-30,x1:-12,y0:27,y1:39,z:-BZ+TH+1.6};       // on the back wall, components face into the box
 var pcbTex=(function(){
   var cv=document.createElement('canvas'); cv.width=1080; cv.height=720;
@@ -987,7 +987,7 @@ var hmiTex, hmiCanvas, hmiScreenMesh;
 
 /* the recovery unit floats in the earlier model; on the rig it stands on four posts */
 (function hrPosts(){
-  var g=new THREE.Group(); tag(g,'Recovery unit support posts');
+  var g=new THREE.Group(); tag(g,'Recovery unit support posts'); g.userData.asm='Heat-recovery air-pump unit';
   var bot=C2W(0,MY-MH/2,0).y;
   [[MX0+0.3,MZ-MD/2+0.3],[MX0+0.3,MZ+MD/2-0.3],[MX1-0.3,MZ-MD/2+0.3],[MX1-0.3,MZ+MD/2-0.3]].forEach(function(p){
     var w=C2W(p[0],0,p[1]);
@@ -1263,7 +1263,7 @@ var DEV=[
   ['PDT-101','in', TH/2+0.25,-17.5,28.5,'x'],
   ['PSU','in', -37.2,-17.3,TH+3.2]
 ];
-var traceGroup=new THREE.Group(); tag(traceGroup,'PCB wiring harness'); rig.add(traceGroup);
+var traceGroup=new THREE.Group(); traceGroup.userData.asm='PCB wiring harness'; rig.add(traceGroup);
 var trTexU, trTexV;
 (function(){
   function mk(vert){
@@ -1287,7 +1287,7 @@ function strip(name,pts,face){
     var dims={x:Wd,y:Wd,z:Wd}; dims[ax]=L+Wd; dims[thin]=Th;
     var runU = (thin==='y') ? ax==='x' : (thin==='z' ? ax==='x' : ax==='z');
     var m=new THREE.Mesh(new THREE.BoxGeometry(dims.x,dims.y,dims.z), runU?stripMatU:stripMatV);
-    m.position.copy(a).add(b).multiplyScalar(0.5); g.add(m);
+    m.position.copy(a).add(b).multiplyScalar(0.5); m.userData.strip={ax:ax,thin:thin,L:L+Wd,Th:Th}; g.add(m);
   }
   traceGroup.add(g);
 }
@@ -1352,24 +1352,24 @@ function makeLabelSprite(text,sub,scale){
   ctx.font='600 '+fs+'px "IBM Plex Sans", sans-serif'; ctx.fillText(text,pad,pad-2);
   if(sub){ ctx.fillStyle=T.inkDim; ctx.font='400 '+ss+'px "IBM Plex Mono", monospace'; ctx.fillText(sub,pad,pad+fs+2); }
   var tex=new THREE.CanvasTexture(cv); tex.anisotropy=4;
-  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
+  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false,sizeAttenuation:false}));
   sp.renderOrder=10; sp.scale.set(Wd*scale,Hh*scale,1);
   return sp;
 }
 var RIGLABELS=[
   {text:'Fresh-air compressor',sub:'FAN-101 · supplies the AHU + air pump',a:W(COMP.x,COMP.y+4.2,COMP.z),o:W(-3,9,3)},
   {text:'Fresh-air header',sub:'one branch to each unit',a:W(HX,HY+1.2,-4),o:W(-9,6,10)},
-  {text:'AHU',sub:'same unit as the earlier model',a:C2W(1,Y1,0),o:W(6,13,9)},
+  {text:'AHU',sub:'same unit as the earlier model',a:C2W(1,Y1,0),o:W(9,6,13)},
   {text:'Heat-recovery air-pump unit',sub:'runs in parallel with the AHU',a:C2W(MXC,MY+MH/2,MZ),o:W(-6,13,-8)},
   {text:'Supply riser',sub:'FT-102 airflow → clean room',a:W(RX,32,RZ),o:W(5,5,9)},
   {text:'Ceiling supply diffusers',sub:'4-way square · ×2',a:W(36,CEIL-0.4,0),o:W(5,-6,13)},
   {text:'Low-level return grilles',sub:'back to the AHU extract deck',a:W(0.6,GRILLE[0][0]+2,GRILLE[0][1]),o:W(9,-1,12)},
-  {text:'Clean room',sub:'ACH = supply airflow ÷ room volume',a:W(26,30,-16),o:W(6,7,-4)},
+  {text:'Clean room',sub:'ACH = supply airflow ÷ room volume',a:W(26,30,-16),o:W(-4,14,-6)},
   {text:'HMI-101 touch screen',sub:'7-inch · every set point',a:W(-38,46.8,BZ+2),o:W(-6,6,6)},
   {text:'Main controller PCB',sub:'ESP32-S3 · 3 × ACS712 current',a:W(-21,PCB.y1,PCB.z+0.3),o:W(3,7,3)},
-  {text:'PCB wiring harness',sub:'flat FR4 strips, no loose wires',a:W(-12,TH+0.3,-14),o:W(6,-6,-4)},
-  {text:'Exhaust outlet',sub:'after the air-pump evaporator',a:W(-50.2,P_HR_EXH.y,P_HR_EXH.z),o:W(-8,-5,-4)},
-  {text:'Acrylic enclosure',sub:'1000 × 500 × 500 mm · 5 mm PMMA',a:W(BX,BY,BZ),o:W(4,6,5)},
+  {text:'PCB wiring harness',sub:'flat FR4 strips, no loose wires',a:W(-8,TH+0.3,-14),o:W(18,-4,-6)},
+  {text:'Exhaust outlet',sub:'after the air-pump evaporator',a:W(-50.2,P_HR_EXH.y,P_HR_EXH.z),o:W(-12,-8,4)},
+  {text:'Acrylic enclosure',sub:'1000 × 500 × 500 mm · 5 mm PMMA',a:W(BX,BY,BZ),o:W(8,2,8)},
   {text:'24 V DC supply',sub:'feeds the PCB',a:W(-40,TH+3.2,-20),o:W(-5,-5,-4),tier:'aux'},
   {text:'Room T + RH',sub:'MT-106 · SHT31',a:W(44,24,-BZ+TH+1.2),o:W(4,6,4),tier:'aux'},
   {text:'Room pressure',sub:'PDT-101 · SDP810',a:W(TH/2+1.2,31.5,-19),o:W(5,5,-2),tier:'aux'}
@@ -1393,13 +1393,13 @@ function buildLabels(){
   }
   RIGLABELS.forEach(function(d){
     if(d.tier==='aux' && labelMode!=='all') return;
-    put(d.a,d.a.clone().add(d.o),d.text,d.sub,0.04);
+    put(d.a,d.a.clone().add(d.o),d.text,d.sub,0.00052);
   });
   if(labelMode==='plant'||labelMode==='all'){
     labels.forEach(function(d){
       if(d.tier==='aux' && labelMode!=='all') return;
       var a=C2W(d.anchor.x,d.anchor.y,d.anchor.z);
-      put(a,a.clone().add(d.off.clone().multiplyScalar(REACH*K)),d.text,d.sub,0.019);
+      put(a,a.clone().add(d.off.clone().multiplyScalar(REACH*K)),d.text,d.sub,0.00040);
     });
   }
 }
@@ -1422,8 +1422,9 @@ var TAGDEF=[
 var TAGS=TAGDEF.map(function(d){
   var cv=document.createElement('canvas'); cv.width=300; cv.height=88;
   var tex=new THREE.CanvasTexture(cv); tex.anisotropy=4;
-  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false}));
-  var big=d[0]==='ACH'; sp.scale.set(big?13:8.2,big?3.8:2.4,1); sp.position.copy(d[1]); sp.renderOrder=11;
+  // constant on-screen size, so tags stay readable from the whole-box view to close-ups
+  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false,sizeAttenuation:false}));
+  var big=d[0]==='ACH'; sp.scale.set(big?0.15:0.105,big?0.044:0.031,1); sp.position.copy(d[1]); sp.renderOrder=11;
   tagGroup.add(sp);
   return {id:d[0],kind:d[2],cv:cv,tex:tex,sp:sp,last:''};
 });
@@ -1884,7 +1885,8 @@ function drawScreen(){
     c.fillStyle=t[3]; c.fillRect(x,y,5,98);
     c.fillStyle='#8ca0b3'; c.font='600 17px "IBM Plex Mono", monospace'; c.fillText(t[0],x+16,y+20);
     c.fillStyle='#e7eef5'; c.font='600 40px "IBM Plex Mono", monospace'; c.fillText(t[1],x+16,y+62);
-    c.fillStyle='#8ca0b3'; c.font='20px "IBM Plex Mono", monospace'; c.fillText(t[2],x+16+c.measureText(t[1]).width*1.0+8,y+66);
+    var wv=c.measureText(t[1]).width;
+    c.fillStyle='#8ca0b3'; c.font='20px "IBM Plex Mono", monospace'; c.fillText(t[2],x+16+wv+8,y+66);
   });
   // temperature chain
   var chain=[['OA',s.TT101],['MIX',s.TT102],['PRE',s.TT103],['COIL',s.TT104],['SUP',s.TT105],['ROOM',s.TT106]];
@@ -1970,9 +1972,10 @@ seg('segHrv',function(v){ m.hrv=v; applyHrv(); });
 seg('segCase',function(v){ state.casing=v; applyCasing(); applyExplode(); });
 seg('segBox',function(v){ applyBox(v); });
 seg('segLabels',function(v){ labelMode=v; refreshLabels(); });
-function goView(v){
+function goView(v,instant){
   var d=VIEWS[v]; if(!d) return;
   camGoal.theta=d.theta; camGoal.phi=d.phi; camGoal.r=d.r; targetGoal.fromArray(d.t);
+  if(instant){ cam.theta=d.theta; cam.phi=d.phi; cam.r=d.r; target.copy(targetGoal); }
 }
 seg('segView',function(v){ clearSeg('segZoom'); goView(v); });
 seg('segZoom',function(v){ clearSeg('segView'); goView(v); });
@@ -2131,8 +2134,8 @@ window.__rigExportCAD=function(){
   var out=[], pos=new THREE.Vector3(), quat=new THREE.Quaternion(), scl=new THREE.Vector3(), mtx=new THREE.Matrix4();
   function visible(o){ for(var p=o;p;p=p.parent){ if(!p.visible) return false; } return true; }
   function partOf(o){ for(var p=o;p;p=p.parent){ if(p.userData && p.userData.part) return p.userData.part; } return 'Misc'; }
-  function asmOf(o){ var a='Rig'; for(var p=o;p;p=p.parent){ if(p.userData && p.userData.asm){ a=p.userData.asm; if(a==='AHU'||a==='Heat-recovery air-pump unit') return a; } } return a; }
-  function matOf(mm){ var mt=Array.isArray(mm)?mm[4]||mm[0]:mm; var c=(mt.color||new THREE.Color(1,1,1));
+  function asmOf(o){ for(var p=o;p;p=p.parent){ if(p.userData && p.userData.asm) return p.userData.asm; } return 'Rig'; }
+  function matOf(mm){ var mt=Array.isArray(mm)?mm[4]||mm[0]:mm; var c=(mt.map&&!mt.isMeshBasicMaterial)?T.pcb:(mt.color||new THREE.Color(1,1,1));
     return {c:[+c.r.toFixed(3),+c.g.toFixed(3),+c.b.toFixed(3)],o:mt.transparent?+mt.opacity.toFixed(2):1}; }
   function push(o,geo,matrix){
     matrix.decompose(pos,quat,scl);
@@ -2149,12 +2152,25 @@ window.__rigExportCAD=function(){
   }
   scene.traverse(function(o){
     if(!o.isMesh || !visible(o)) return;
-    if(o===hmiScreenMesh || labelGroup===o.parent || ribbons===o.parent || arrows===o.parent) return;
+    if(labelGroup===o.parent || ribbons===o.parent || arrows===o.parent) return;
     if(o.isInstancedMesh){
       for(var i=0;i<o.count;i++){ o.getMatrixAt(i,mtx); push(o,o.geometry,new THREE.Matrix4().multiplyMatrices(o.matrixWorld,mtx)); }
       return;
     }
     push(o,o.geometry,o.matrixWorld);
+    var st=o.userData.strip;
+    if(st){                                    // the copper tracks the strip texture shows
+      o.getWorldPosition(pos);
+      [-0.16,0,0.16].forEach(function(off){
+        var d={x:0.07,y:0.07,z:0.07}, c=[pos.x,pos.y,pos.z];
+        d[st.ax]=st.L-0.1; d[st.thin]=0.035;
+        var across=['x','y','z'].filter(function(k){ return k!==st.ax && k!==st.thin; })[0];
+        var ix={x:0,y:1,z:2};
+        c[ix[across]]+=off; c[ix[st.thin]]+=st.Th/2+0.0175;
+        out.push({part:partOf(o)+' copper',asm:asmOf(o),geo:{t:'BoxGeometry',p:{width:d.x,height:d.y,depth:d.z}},
+          pos:c,quat:[0,0,0,1],scl:[1,1,1],mat:{c:[T.copper.r,T.copper.g,T.copper.b],o:1}});
+      });
+    }
   });
   return out;
 };
@@ -2178,6 +2194,9 @@ function frame(){
   cam.r    +=(camGoal.r-cam.r)*0.12;
   target.lerp(targetGoal,0.12);
   placeCamera();
+  var far=cam.r>36;                                       // close-ups (e.g. the HMI view) read better without callouts
+  labelGroup.visible = labelMode!=='off' && far;
+  tagGroup.visible = $('cbTags').checked && far && cam.r<125;   // whole-box view: values are on the HMI
   if(state.playing){
     var sdt=dt*state.simSpeed, n=Math.min(400,Math.max(1,Math.ceil(sdt/0.05)));
     for(var i=0;i<n;i++) RigModel.step(m,sdt/n);

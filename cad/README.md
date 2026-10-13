@@ -2,13 +2,13 @@
 
 | File | Contents |
 |---|---|
-| `cleanroom-rig-assembly.step` | The whole rig: AP214 STEP, millimetres, 8 sub-assemblies, 204 named and coloured parts, 1 307 solids |
+| `cleanroom-rig-assembly.step` | The whole rig: AP214 STEP, millimetres, 8 sub-assemblies, 246 named and coloured parts, 1 462 solids |
 | `step/*.step` | One file per sub-assembly, for working on a unit on its own |
 | `BOM.csv` | Every part: sub-assembly, body count, bounding size (mm), material / finish |
 | `drawings/enclosure-GA.pdf` / `.svg` | Acrylic enclosure fabrication drawing, A3 at 1:6: panel views, cut-out positions and cut list |
 | `rig-geometry.json` | The source geometry exported from the simulator; the STEP is rebuilt from it |
 
-Overall size: **1028 × 532 × 527 mm**. That is the 1000 × 500 × 500 mm acrylic box, plus the aluminium base frame and feet, the fresh-air intake hood and the HMI on the front face.
+Overall size: **1028 × 532 × 539 mm**. That is the 1000 × 500 × 500 mm acrylic box, plus the aluminium base frame and feet, the fresh-air intake hood, the HMI and the pass box on the front face.
 
 ## Opening it in SolidWorks
 

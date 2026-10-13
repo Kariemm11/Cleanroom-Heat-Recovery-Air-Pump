@@ -15,7 +15,8 @@ PANELS = [
     ("Base plate", 1, (1000, 500), "x-z", []),
     ("Roof", 1, (1000, 500), "x-z", []),
     ("Front wall", 1, (1000, 490), "x-y", [
-        ("rect", 250, 200, 340, 320, "door opening (door panel 360 × 340)"),
+        ("rect", 330, 200, 200, 320, "door opening (door panel 220 × 340)"),
+        ("rect", 110, 175, 102, 102, "pass box opening 102 × 102"),
         ("hole", -440, 385, 4.5, 0, "HMI standoff M4"), ("hole", -320, 385, 4.5, 0, ""),
         ("hole", -440, 445, 4.5, 0, ""), ("hole", -320, 445, 4.5, 0, ""),
         ("rect", -380, 456, 14, 4, "HMI ribbon slot"),
@@ -43,7 +44,7 @@ PANELS = [
         ("rect", 140, 0, 36, 36, "diffuser neck 36 × 36"), ("rect", 360, 0, 36, 36, ""),
         ("hole", 240, -150, 6, 0, "luminaire cable Ø6"),
     ]),
-    ("Clean-room door", 1, (360, 340), "x-y", []),
+    ("Clean-room door", 1, (220, 340), "x-y", []),
 ]
 
 S = 1 / 6  # 1:6 on paper (mm per mm)

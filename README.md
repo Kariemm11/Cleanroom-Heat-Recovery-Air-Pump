@@ -10,7 +10,7 @@ This repository has two parts:
 | | What | Where |
 |---|---|---|
 | **3D simulation** | An interactive, live-running digital twin with HMI, control loops, energy, CO₂ and ACH | [`index.html`](index.html) |
-| **3D CAD design** | A STEP assembly that SolidWorks opens directly, with 204 named and coloured parts in 8 sub-assemblies | [`cad/`](cad/) |
+| **3D CAD design** | A STEP assembly that SolidWorks opens directly, with 246 named and coloured parts in 8 sub-assemblies | [`cad/`](cad/) |
 
 ![The rig in the simulator](docs/img/rig-overview.jpg)
 
@@ -28,7 +28,7 @@ This repository has two parts:
 | **Fresh air** | **Fresh-air compressor** (centrifugal, PWM speed) behind a wall louvre. It discharges into a header with one branch to the air-pump unit's fresh lane and one to the AHU's outdoor-air intake. |
 | **Supply** | AHU supply → boot → **riser** (FT-102 airflow) → through the partition → ceiling-void duct → **two 4-way square ceiling diffusers** under a false ceiling at 400 mm. |
 | **Return / exhaust** | **Two low-level return grilles** in the partition → AHU extract deck → recirculated through the mixing box, or exhausted through both cores and the evaporator → outdoor louvre. |
-| **Clean room** (x > 0) | 492.5 × 490 × 395 mm net (V = 0.0953 m³), stainless bench, LED luminaire, room T + RH, room ΔP, hinged access door. |
+| **Clean room** (x > 0) | 492.5 × 490 × 395 mm net (V = 0.0953 m³). Human scale inside is about 1:7. It holds a **vial filling machine** under ceiling diffuser 2 (infeed turntable, conveyor, 4-needle filling with product tank and peristaltic pump, stoppering, outfeed table, open RABS with glove ports, light tower). There is a **pass box** through the front wall beside the door, with interlocked inner and outer doors and a UV cycle, and a **gowned operator** working at the RABS gloves. Also a staging bench, LED luminaire, room T + RH, room ΔP and a hinged access door. The filler and the pass box are stand-alone equipment, not wired to the rig PCB. |
 | **Controls** | Main controller PCB (ESP32-S3, 3 × ACS712 current sensors, MOSFET drivers, I²C mux) on the back wall. Every device is reached by a **flat FR4 PCB strip** with copper tracks. **HMI-101**, a 7-inch touch screen, sits on the front face. A 24 V DC supply powers the rig. |
 
 ![Plant room: the AHU and the parallel heat-recovery air-pump unit](docs/img/rig-plant-room.jpg)
@@ -102,7 +102,7 @@ Typical results at the default settings, after 30 simulated minutes: about **44 
 
 ![STEP model, re-imported and rendered](docs/img/cad-step-render.jpg)
 
-- [`cad/cleanroom-rig-assembly.step`](cad/cleanroom-rig-assembly.step) is the whole rig as an AP214 STEP file in **mm**. It has **8 sub-assemblies, 204 named, coloured parts and 1 307 solids**, and the overall size is 1028 × 532 × 527 mm.
+- [`cad/cleanroom-rig-assembly.step`](cad/cleanroom-rig-assembly.step) is the whole rig as an AP214 STEP file in **mm**. It has **8 sub-assemblies, 246 named, coloured parts and 1 462 solids**, and the overall size is 1028 × 532 × 539 mm.
 - [`cad/step/`](cad/step/) holds one STEP file per sub-assembly: enclosure, AHU, heat-recovery air-pump unit, fresh-air compressor, ductwork, clean room, controls and HMI, PCB wiring harness.
 - [`cad/BOM.csv`](cad/BOM.csv) lists every part with its size and material.
 - [`cad/drawings/enclosure-GA.pdf`](cad/drawings/enclosure-GA.pdf) is the acrylic **fabrication drawing**: panel views, every cut-out with its position, and the cut list.

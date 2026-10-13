@@ -716,7 +716,7 @@ wall('Clean-room false ceiling',BX-TH*1.5,TH,2*BZ-2*TH, (BX-TH/2+TH/2)/2,CEIL+TH
 /* clean-room door on the front face */
 (function door(){
   var g=new THREE.Group(); tag(g,'Clean-room access door'); g.userData.asm='Acrylic enclosure';
-  var z=BZ+0.05, x0=7, x1=43, y0=3, y1=37;
+  var z=BZ+0.05, x0=22, x1=44, y0=3, y1=37;          // the pass box takes the wall to its left
   var dm=new THREE.LineBasicMaterial({color:T.metalDark.clone(),transparent:true,opacity:0.9});
   g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([W(x0,y0,z),W(x1,y0,z),W(x1,y1,z),W(x0,y1,z),W(x0,y0,z)]),dm));
   [y0+5,y1-5].forEach(function(y){
@@ -865,21 +865,6 @@ GRILLE.forEach(function(gr,i){
   for(var k=0;k<6;k++){ var b=box(0.9,0.12,6.4,MR.steel); b.rotation.z=-0.6; at(b,TH/2+0.45,y-2.0+k*0.8,z); g.add(b); }
   clean.add(g);
 });
-(function bench(){
-  var g=new THREE.Group(); tag(g,'Stainless bench + product tray');
-  var x=31, z=-11, h=14;
-  g.add(at(box(18,0.6,10,MR.steel),x,h,z));
-  g.add(at(box(16,0.4,8,MR.steel),x,4,z));
-  [[-8.3,-4.3],[-8.3,4.3],[8.3,-4.3],[8.3,4.3]].forEach(function(p){
-    g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.45,h-0.5,12),MR.steel),x+p[0],(h-0.5)/2+0.5,z+p[1]));
-  });
-  g.add(at(box(8,0.5,5,MR.white),x-2,h+0.55,z));
-  for(var i=0;i<4;i++) for(var j=0;j<2;j++){
-    g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.55,0.55,2.0,14),
-      std(new THREE.Color('#bfe6ff'),{m:0.1,r:0.1,t:true,o:0.6})),x-4.6+i*1.7,h+1.8,z-1.1+j*2.2));
-  }
-  clean.add(g);
-})();
 (function ledPanel(){
   var m=at(box(22,0.3,6,MR.led),24,CEIL-0.25,-15); tag(m,'LED clean-room luminaire'); clean.add(m);
 })();
@@ -985,6 +970,261 @@ var hmiTex, hmiCanvas, hmiScreenMesh;
   body('TT-108 exhaust T (DS18B20)',0.8,0.8,0.8,C2W(-18.3,0,0).x,C2W(0,MY+MH/2,0).y+0.4,C2W(0,0,MZL).z);
 })();
 
+/* ================================================= clean-room equipment
+   Human scale in the clean room is about 1:7 (the 14 cm bench is a 1 m bench),
+   so the operator is 25 cm tall and the machine sizes follow from that. */
+var CR={};                                         // animated parts, driven by updateCleanRoom()
+
+/* staging bench at the back-left, where material from the pass box is set down */
+(function bench(){
+  var g=new THREE.Group(); tag(g,'Staging bench + vial tray');
+  var x=12, z=-15.5, h=13;
+  g.add(at(box(14,0.6,8,MR.steel),x,h,z));
+  g.add(at(box(12.4,0.4,6.4,MR.steel),x,4,z));
+  [[-6.4,-3.4],[-6.4,3.4],[6.4,-3.4],[6.4,3.4]].forEach(function(p){
+    g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.45,h-0.5,12),MR.steel),x+p[0],(h-0.5)/2+0.5,z+p[1]));
+  });
+  g.add(at(box(7,0.5,4.4,MR.white),x-1.5,h+0.55,z));
+  var vg=std(new THREE.Color('#bfe6ff'),{m:0.1,r:0.1,t:true,o:0.6});
+  for(var i=0;i<4;i++) for(var j=0;j<2;j++)
+    g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,1.6,14),vg),x-4.1+i*1.5,h+1.6,z-1.0+j*2.0));
+  clean.add(g);
+})();
+
+/* ------------------------------------------------ pass box (stand-alone, not wired to the rig PCB) */
+var PBX={x0:6,x1:16,y0:12.5,y1:22.5,zi:18,zo:28};   // body; the front wall sits at z 24.5…25
+(function passBox(){
+  var g=new THREE.Group(); tag(g,'Pass box'); g.userData.asm='Clean room';
+  var cx=(PBX.x0+PBX.x1)/2, cy=(PBX.y0+PBX.y1)/2, cz=(PBX.zi+PBX.zo)/2;
+  var W_=PBX.x1-PBX.x0, H_=PBX.y1-PBX.y0, D_=PBX.zo-PBX.zi, t=0.3;
+  // stainless shell, open at both ends for the doors
+  g.add(at(box(W_,t,D_,MR.steel),cx,PBX.y1-t/2,cz));
+  g.add(at(box(W_,t,D_,MR.steel),cx,PBX.y0+t/2,cz));
+  g.add(at(box(t,H_,D_,MR.steel),PBX.x0+t/2,cy,cz));
+  g.add(at(box(t,H_,D_,MR.steel),PBX.x1-t/2,cy,cz));
+  // wall flange on both faces of the acrylic
+  [BZ-TH-0.15,BZ+0.15].forEach(function(z){
+    g.add(at(box(W_+2,0.6,0.3,MR.steel),cx,PBX.y1+0.7,z)); g.add(at(box(W_+2,0.6,0.3,MR.steel),cx,PBX.y0-0.7,z));
+    g.add(at(box(0.6,H_+2,0.3,MR.steel),PBX.x0-0.7,cy,z)); g.add(at(box(0.6,H_+2,0.3,MR.steel),PBX.x1+0.7,cy,z));
+  });
+  // perforated shelf and a transfer container on it
+  g.add(at(box(W_-0.8,0.25,D_-1.2,MR.white),cx,PBX.y0+2.6,cz));
+  CR.pbItem=at(box(3.2,2.0,2.6,std(new THREE.Color('#d9e6f2'),{m:0.1,r:0.5})),cx,PBX.y0+3.8,cz+1.5); g.add(CR.pbItem);
+  // UV lamp under the roof
+  CR.uvMat=new THREE.MeshStandardMaterial({color:new THREE.Color('#b9a6ff'),emissive:new THREE.Color('#7c4dff'),emissiveIntensity:0.05});
+  var uv=new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.25,D_-2,12),CR.uvMat); uv.rotation.x=Math.PI/2;
+  at(uv,cx,PBX.y1-0.9,cz); g.add(uv);
+  // two doors on vertical hinges, each with a window and handle
+  function door(z,dirZ,name){
+    var piv=new THREE.Group(); piv.position.set(PBX.x0+0.2,cy,z);
+    var d=new THREE.Group(); tag(d,name);
+    d.add(at(box(W_-0.4,H_-0.4,0.3,MR.steel),(W_-0.4)/2,0,0));
+    d.add(at(box(W_-4.4,H_-4.6,0.36,std(new THREE.Color('#cfe8f5'),{m:0.1,r:0.05,t:true,o:0.45})),(W_-0.4)/2,0.4,0));
+    d.add(at(box(0.5,2.6,0.5,MR.alu),W_-1.6,0,dirZ*0.45));
+    piv.add(d); g.add(piv); return piv;
+  }
+  CR.pbOuter=door(PBX.zo+0.15,1,'Pass box outer door');
+  CR.pbInner=door(PBX.zi-0.15,-1,'Pass box inner door');
+  // interlock lamps on both faces
+  CR.pbLamps=[];
+  [[PBX.zo+0.35,'outer'],[PBX.zi-0.35,'inner']].forEach(function(q){
+    var gl=new THREE.MeshBasicMaterial({color:0x22c55e}), rl=new THREE.MeshBasicMaterial({color:0xef4444});
+    var a=at(new THREE.Mesh(new THREE.BoxGeometry(0.7,0.5,0.2),gl),cx-0.6,PBX.y1+1.5,q[0]);
+    var b=at(new THREE.Mesh(new THREE.BoxGeometry(0.7,0.5,0.2),rl),cx+0.6,PBX.y1+1.5,q[0]);
+    g.add(a); g.add(b); CR.pbLamps.push({side:q[1],green:a,red:b});
+  });
+  // support legs inside the clean room
+  [PBX.x0+0.5,PBX.x1-0.5].forEach(function(x){
+    g.add(at(box(0.5,PBX.y0-TH,0.5,MR.steel),x,TH+(PBX.y0-TH)/2,PBX.zi+0.6));
+  });
+  clean.add(g);
+})();
+
+/* ------------------------------------------------ vial filling machine (stand-alone, not wired to the rig PCB) */
+var VF={x0:24,x1:48,z0:-11.5,z1:-0.5,deck:10.9,cz:-6};
+(function filler(){
+  var g=new THREE.Group(); tag(g,'Vial filling machine'); g.userData.asm='Clean room';
+  var cx=(VF.x0+VF.x1)/2, L=VF.x1-VF.x0, D=VF.z1-VF.z0;
+  var poly=std(new THREE.Color('#dbeef7'),{m:0.05,r:0.05,t:true,o:0.16,side:THREE.DoubleSide,dw:false});
+  // cabinet on levelling feet
+  [[VF.x0+1.5,VF.z0+2],[VF.x0+1.5,VF.z1-2],[VF.x1-1.5,VF.z0+2],[VF.x1-1.5,VF.z1-2]].forEach(function(p){
+    g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.6,1.0,12),MR.black),p[0],TH+0.5,p[1]));
+  });
+  g.add(at(box(L,8.9,D,MR.steel),cx,TH+1+4.45,VF.cz));
+  [-6,0,6].forEach(function(dx){ g.add(at(box(5.2,6.4,0.15,std(new THREE.Color('#aeb8c2'),{m:0.8,r:0.3})),cx+dx,TH+5.6,VF.z1+0.08)); });
+  g.add(at(box(L,0.4,D,MR.steel),cx,VF.deck-0.2,VF.cz));                                // deck
+  // open RABS: polycarbonate walls on a stainless frame, glove ports in front
+  var rh=8.2, ry=VF.deck+rh/2;
+  [[cx,ry,VF.z1-0.15,L,rh,0.3],[cx,ry,VF.z0+0.15,L,rh,0.3]].forEach(function(p){ var m=at(box(p[3],p[4],p[5],poly),p[0],p[1],p[2]); m.renderOrder=2; g.add(m); });
+  [[VF.x0+0.15,ry,VF.cz],[VF.x1-0.15,ry,VF.cz]].forEach(function(p){ var m=at(box(0.3,rh,D-0.6,poly),p[0],p[1],p[2]); m.renderOrder=2; g.add(m); });
+  [[VF.x0,VF.z0],[VF.x0,VF.z1],[VF.x1,VF.z0],[VF.x1,VF.z1]].forEach(function(p){ g.add(at(box(0.4,rh,0.4,MR.steel),p[0],ry,p[1])); });
+  [VF.z0,VF.z1].forEach(function(z){ g.add(at(box(L,0.4,0.4,MR.steel),cx,VF.deck+rh,z)); });
+  [VF.x0,VF.x1].forEach(function(x){ g.add(at(box(0.4,0.4,D,MR.steel),x,VF.deck+rh,VF.cz)); });
+  CR.ports=[31.5,34.5,38.5,41.5];
+  CR.ports.forEach(function(x){
+    g.add(at(new THREE.Mesh(new THREE.TorusGeometry(1.0,0.25,10,28),MR.steel),x,VF.deck+4.4,VF.z1));
+    var gl=new THREE.Mesh(new THREE.CylinderGeometry(0.55,0.75,2.6,14),std(new THREE.Color('#2a2f36'),{m:0.1,r:0.8}));
+    gl.rotation.x=Math.PI/2; at(gl,x,VF.deck+4.1,VF.z1-1.4); g.add(gl);
+  });
+  // infeed turntable and outfeed accumulation table
+  function table(x,r,name){
+    var t=new THREE.Group(); t.position.set(x,VF.deck+0.2,VF.cz); tag(t,name);
+    t.add(at(new THREE.Mesh(new THREE.CylinderGeometry(r,r,0.35,40),MR.steel),0,0,0));
+    var rim=new THREE.Mesh(new THREE.TorusGeometry(r,0.12,8,40),MR.steel); rim.rotation.x=Math.PI/2; at(rim,0,0.5,0); t.add(rim);
+    g.add(t); return t;
+  }
+  CR.infeed=table(VF.x0+3.3,2.7,'Infeed turntable'); CR.outfeed=table(VF.x1-2.6,2.2,'Outfeed accumulation table');
+  // conveyor between them
+  CR.cv={x0:VF.x0+6.0,x1:VF.x1-4.8,y:VF.deck+0.15};
+  g.add(at(box(CR.cv.x1-CR.cv.x0,0.3,1.6,MR.black),(CR.cv.x0+CR.cv.x1)/2,CR.cv.y,VF.cz));
+  [-1,1].forEach(function(s){ g.add(at(box(CR.cv.x1-CR.cv.x0,0.5,0.15,MR.steel),(CR.cv.x0+CR.cv.x1)/2,CR.cv.y+0.6,VF.cz+s*0.95)); });
+  // filling station: gantry, needle carriage, product tank, peristaltic pump
+  CR.fillX=34.5; CR.stopX=40.5;
+  [VF.cz-2.6,VF.cz+2.6].forEach(function(z){ g.add(at(box(0.6,6.4,0.6,MR.steel),CR.fillX,VF.deck+3.2,z)); });
+  g.add(at(box(0.8,0.8,5.8,MR.steel),CR.fillX,VF.deck+6.4,VF.cz));
+  CR.needles=new THREE.Group(); tag(CR.needles,'Filling needle carriage');
+  CR.needles.add(at(box(1.0,1.0,2.4,MR.alu),0,0,0));
+  for(var n=0;n<4;n++){ CR.needles.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,2.0,8),MR.steel),0,-1.5,-0.9+n*0.6)); }
+  CR.needles.position.set(CR.fillX,VF.deck+4.7,VF.cz); g.add(CR.needles);
+  var tank=new THREE.Group(); tag(tank,'Product holding tank');
+  tank.add(at(new THREE.Mesh(new THREE.CylinderGeometry(1.4,1.4,3.6,24),MR.steel),0,0,0));
+  tank.add(at(new THREE.Mesh(new THREE.SphereGeometry(1.4,24,12),MR.steel),0,1.8,0));
+  tank.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,1.2,10),MR.steel),0,-2.2,0));
+  tank.position.set(30.0,VF.deck+2.6,VF.z0+2.1); g.add(tank);
+  var pump=new THREE.Group(); tag(pump,'Peristaltic dosing pump');
+  pump.add(at(box(2.2,2.0,1.6,MR.white),0,0,0));
+  var rot=new THREE.Mesh(new THREE.CylinderGeometry(0.75,0.75,0.3,18),MR.alu); rot.rotation.x=Math.PI/2; at(rot,0,0.1,0.95); pump.add(rot);
+  pump.position.set(32.9,VF.deck+1.0,VF.z0+2.1); g.add(pump); CR.pumpRotor=rot;
+  var hose=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+    W(30.0,VF.deck+0.6,VF.z0+3.2),W(31.4,VF.deck+0.6,VF.z0+3.3),W(32.9,VF.deck+2.1,VF.z0+2.9),
+    W(34.2,VF.deck+6.0,VF.cz-1.6),W(CR.fillX,VF.deck+5.4,VF.cz-0.8)]),40,0.12,8,false),
+    std(new THREE.Color('#e9eef3'),{m:0.0,r:0.4,t:true,o:0.85}));
+  tag(hose,'Product hose'); g.add(hose);
+  // stoppering station: vibratory bowl, chute and press head
+  var bowl=new THREE.Group(); tag(bowl,'Stopper vibratory bowl');
+  bowl.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.7,0.9,2.4,16),MR.alu),0,-1.6,0));
+  bowl.add(at(new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.2,1.4,32),MR.steel),0,0.35,0));
+  CR.bowlX=43.5; bowl.position.set(CR.bowlX,VF.deck+3.1,-9.6); g.add(bowl); CR.bowl=bowl;
+  var chute=new THREE.Mesh(new THREE.BoxGeometry(0.6,1,0.25),MR.steel); tag(chute,'Stopper chute');
+  limb(chute,W(42.3,VF.deck+3.6,-8.6),W(40.9,VF.deck+1.9,-6.7)); g.add(chute);
+  [VF.cz-2.4,VF.cz+2.4].forEach(function(z){ g.add(at(box(0.5,5.2,0.5,MR.steel),CR.stopX,VF.deck+2.6,z)); });
+  g.add(at(box(0.7,0.7,5.4,MR.steel),CR.stopX,VF.deck+5.2,VF.cz));
+  CR.press=at(box(1.2,1.0,1.4,MR.alu),CR.stopX,VF.deck+3.6,VF.cz); tag(CR.press,'Stopper press head'); g.add(CR.press);
+  // light tower and the machine's own panel
+  CR.beacon=[];
+  ['#22c55e','#f59e0b','#ef4444'].forEach(function(c,i){
+    var m=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,0.8,14),new THREE.MeshStandardMaterial({color:new THREE.Color(c),emissive:new THREE.Color(c),emissiveIntensity:0.1}));
+    at(m,VF.x1-0.9,VF.deck+rh+1.0+i*0.85,VF.z0+0.9); g.add(m); CR.beacon.push(m);
+  });
+  g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,1.2,8),MR.steel),VF.x1-0.9,VF.deck+rh+0.4,VF.z0+0.9));
+  var pan=at(box(3.6,2.4,0.3,MR.black),VF.x1-3.2,8.3,VF.z1+0.25); pan.rotation.x=-0.18; tag(pan,'Filler operator panel'); g.add(pan);
+  // vials: glass body, product, stopper
+  var glass=std(new THREE.Color('#cfeaff'),{m:0.1,r:0.05,t:true,o:0.5}), prod=std(new THREE.Color('#f0b44c'),{m:0,r:0.3,t:true,o:0.85}),
+      stop=std(new THREE.Color('#6f7b86'),{m:0.1,r:0.7});
+  function vial(){
+    var v=new THREE.Group(); tag(v,'Vial');
+    v.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,1.4,14),glass),0,0.7,0));
+    var l=at(new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,0.7,12),prod),0,0.4,0); v.add(l);
+    var s=at(new THREE.Mesh(new THREE.CylinderGeometry(0.46,0.46,0.35,12),stop),0,1.55,0); v.add(s);
+    v.userData.liq=l; v.userData.stop=s; return v;
+  }
+  CR.vials=[]; CR.pitch=1.3;
+  var nv=Math.floor((CR.cv.x1-CR.cv.x0)/CR.pitch);
+  for(var i=0;i<nv;i++){ var v=vial(); v.userData.u=i*CR.pitch; g.add(v); CR.vials.push(v); }
+  [[CR.infeed,1.85,8,false],[CR.outfeed,1.45,7,true]].forEach(function(q){
+    for(var k=0;k<q[2];k++){
+      var a=k/q[2]*Math.PI*2, v=vial(); v.position.set(Math.cos(a)*q[1],0.2,Math.sin(a)*q[1]);
+      v.userData.liq.visible=q[3]; v.userData.stop.visible=q[3]; q[0].add(v);
+    }
+  });
+  clean.add(g);
+})();
+
+/* ------------------------------------------------ gowned operator */
+var OP={x:33,z:6.4};
+(function operator(){
+  var g=new THREE.Group(); tag(g,'Operator (Grade B gown)'); g.userData.asm='Clean room';
+  var suit=std(new THREE.Color('#f1f4f7'),{m:0.0,r:0.85}), boot=std(new THREE.Color('#d5dde5'),{m:0,r:0.8}),
+      mask=std(new THREE.Color('#9fd3f2'),{m:0,r:0.7}), gog=std(new THREE.Color('#1d2a35'),{m:0.3,r:0.2}),
+      glove=std(new THREE.Color('#5b4fd6'),{m:0,r:0.6}), skin=std(new THREE.Color('#c99a7a'),{m:0,r:0.7});
+  function ell(rx,ry,rz,x,y,z,mat){ var m=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),mat); m.scale.set(rx,ry,rz); m.position.set(x,y,z); g.add(m); return m; }
+  function cyl(rx,h,rz,x,y,z,mat,rt){ var m=new THREE.Mesh(new THREE.CylinderGeometry(rt||1,1,1,20),mat); m.scale.set(rx,h,rz); m.position.set(x,y,z); g.add(m); return m; }
+  [-1.2,1.2].forEach(function(dx){
+    g.add(at(box(1.7,1.3,3.0,boot),dx,TH+0.65,-0.3));                    // overshoe boots
+    cyl(1.05,10.6,1.05,dx,TH+1.3+5.3,0,suit);                             // legs
+  });
+  ell(2.6,1.6,1.7,0,12.4,0,suit);                                         // hips
+  cyl(2.7,8.4,1.65,0,16.6,0,suit,0.98);                                   // torso
+  ell(3.0,1.5,1.8,0,20.6,0,suit);                                         // shoulders
+  g.add(at(box(0.18,7.2,0.1,std(new THREE.Color('#9aa7b4'),{m:0.3,r:0.5})),0,16.6,-1.66));  // zip
+  g.add(at(box(1.2,0.8,0.12,std(new THREE.Color('#1273cc'),{m:0.1,r:0.5})),1.1,19.0,-1.68)); // badge
+  cyl(0.65,1.2,0.65,0,21.8,0,skin);                                        // neck
+  ell(1.75,2.05,1.85,0,23.6,0,suit);                                      // hood over the head
+  cyl(2.2,1.8,1.6,0,21.7,0,suit,0.7);                                     // hood cape
+  g.add(at(box(2.5,0.85,0.5,gog),0,24.0,-1.7));                           // goggles
+  g.add(at(box(2.0,1.05,0.45,mask),0,22.9,-1.65));                        // face mask
+  // arms reaching into the RABS glove ports (two limb segments each)
+  CR.arms=[];
+  [[-1,CR.ports[0]],[1,CR.ports[1]]].forEach(function(q){
+    var up=new THREE.Mesh(new THREE.CylinderGeometry(0.75,0.8,1,14),suit), lo=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.72,1,14),suit),
+        hand=new THREE.Mesh(new THREE.SphereGeometry(0.62,14,10),glove), sh=new THREE.Mesh(new THREE.SphereGeometry(0.85,14,10),suit);
+    g.add(up); g.add(lo); g.add(hand); g.add(sh);
+    CR.arms.push({s:q[0],port:q[1],up:up,lo:lo,hand:hand,sh:sh});
+  });
+  g.position.set(OP.x,0,OP.z);
+  clean.add(g); CR.op=g;
+})();
+function limb(m,a,b){
+  var d=b.clone().sub(a), L=d.length();
+  m.position.copy(a).addScaledVector(d,0.5); m.scale.set(1,L,1);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());
+}
+function poseArms(t){
+  CR.arms.forEach(function(a,i){
+    var sh=new THREE.Vector3(a.s*2.85,20.5,-0.2);
+    var hand=new THREE.Vector3(a.port-OP.x+0.25*Math.sin(t*1.7+i*2.1),VF.deck+4.4+0.25*Math.sin(t*2.3+i),VF.z1-OP.z-0.6);
+    var el=sh.clone().lerp(hand,0.5).add(new THREE.Vector3(a.s*0.9,-2.0,0));
+    a.sh.position.copy(sh); limb(a.up,sh,el); limb(a.lo,el,hand); a.hand.position.copy(hand);
+  });
+}
+
+/* ------------------------------------------------ animation */
+CR.t=0;
+function smooth(x){ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); }
+function updateCleanRoom(dt,run){
+  CR.t+=dt; var t=CR.t;
+  var v=run?1.3:0;                                   // conveyor speed, cm/s (one vial per pitch)
+  var span=CR.cv.x1-CR.cv.x0;
+  CR.vials.forEach(function(m){
+    m.userData.u=(m.userData.u+v*dt)%span;
+    var x=CR.cv.x0+m.userData.u; m.position.set(x,CR.cv.y+0.15,VF.cz);
+    m.userData.liq.visible=x>CR.fillX+0.3; m.userData.stop.visible=x>CR.stopX+0.3;
+  });
+  CR.infeed.rotation.y+=dt*0.5*(run?1:0); CR.outfeed.rotation.y-=dt*0.45*(run?1:0);
+  // needles dip when a vial sits under them; the press head follows the stopper station
+  var ph=((CR.vials[0].userData.u-(CR.fillX-CR.cv.x0))%CR.pitch+CR.pitch)%CR.pitch/CR.pitch;
+  var dip=run?Math.sin(Math.PI*smooth(1-Math.abs(ph-0.5)*2.2)):0;
+  CR.needles.position.y=VF.deck+4.7-1.5*dip;
+  var ps=((CR.vials[0].userData.u-(CR.stopX-CR.cv.x0))%CR.pitch+CR.pitch)%CR.pitch/CR.pitch;
+  CR.press.position.y=VF.deck+3.6-0.9*(run?Math.sin(Math.PI*smooth(1-Math.abs(ps-0.5)*2.2)):0);
+  CR.pumpRotor.rotation.z-=dt*4*(run?1:0);
+  CR.bowl.position.x=CR.bowlX+(run?0.04*Math.sin(t*60):0);
+  CR.beacon[0].material.emissiveIntensity=run?1.2:0.1; CR.beacon[2].material.emissiveIntensity=run?0.1:1.2;
+  // pass box transfer cycle, 40 s: idle → outer door → UV → inner door → idle (doors interlocked)
+  var c=t%40, oA=0, iA=0, uv=0, item=c>=12.5&&c<26.5;   // item put in through the outer door, taken out through the inner
+  if(c>=10&&c<18) oA=smooth((c-10)/2)*(1-smooth((c-15)/2));
+  else if(c>=18&&c<24) uv=1;
+  else if(c>=24&&c<32) iA=smooth((c-24)/2)*(1-smooth((c-29)/2));
+  CR.pbOuter.rotation.y=-oA*1.45; CR.pbInner.rotation.y=iA*1.45;
+  CR.pbItem.visible=item; CR.uvMat.emissiveIntensity=0.05+uv*1.6;
+  CR.pbLamps.forEach(function(l){
+    var mayOpen=uv?false:(l.side==='outer'?iA<0.01:oA<0.01);
+    l.green.visible=mayOpen; l.red.visible=!mayOpen;
+  });
+  poseArms(t);
+}
+updateCleanRoom(0,true);
+
 /* the recovery unit floats in the earlier model; on the rig it stands on four posts */
 (function hrPosts(){
   var g=new THREE.Group(); tag(g,'Recovery unit support posts'); g.userData.asm='Heat-recovery air-pump unit';
@@ -1046,11 +1286,18 @@ DIFF.forEach(function(d){
     if(dr[0]>0) dist=BX-TH-xd; else if(dr[0]<0) dist=xd-TH/2; else dist=BZ-TH;
     var reach=Math.max(3,dist-3.5);
     var x2=xd+dr[0]*reach, z2=zd+dr[1]*reach;
+    if(x2>PBX.x0-3 && x2<PBX.x1+3 && z2>PBX.zi-4) x2=PBX.x1+4;     // go round the pass box
     var gz=z2>-5?GRILLE[0][1]:GRILLE[1][1], gy=GRILLE[0][0];
     PATHS.room.push([[xd,CEIL-0.6,zd,1.4,'m','sup'],[xd+dr[0]*5.5,CEIL-1.6,zd+dr[1]*5.5,2.2,'m','sup'],
       [x2,CEIL-5,z2,3.0,'m','room'],[x2,24,z2,3.6,'m','room'],[x2,9,z2,3.4,'r','room'],
       [Math.min(7,Math.max(x2,4)),5.0,(z2+gz)/2,2.6,'r','room'],[3.2,gy,gz,1.8,'r','ret'],[0.6,gy,gz,1.4,'r','ret']]);
   });
+});
+/* first air: straight down from diffuser 2 through the open RABS over the filling line */
+[32,40].forEach(function(x){
+  PATHS.room.push([[36,CEIL-0.6,-1,1.4,'m','sup'],[x,30,-4,2.6,'m','sup'],[x,VF.deck+8.4,VF.cz,3.0,'m','sup'],
+    [x,VF.deck+2.2,VF.cz,2.6,'m','sup'],[x-2,VF.deck-1,VF.z1+3.5,2.2,'m','room'],[16,4.2,4,2.6,'r','room'],
+    [3.2,GRILLE[0][0],GRILLE[0][1],1.8,'r','ret'],[0.6,GRILLE[0][0],GRILLE[0][1],1.4,'r','ret']]);
 });
 PATHS.retA=[[0.6,GRILLE[0][0],GRILLE[0][1],1.0,'r','ret'],[-3,P_AHU_RET.y,P_AHU_RET.z,1.0,'r','ret'],[P_AHU_RET.x-0.2,P_AHU_RET.y,P_AHU_RET.z,1.0,'r','ret']];
 PATHS.retB=[[0.6,GRILLE[1][0],GRILLE[1][1],0.7,'r','ret'],[-1.6,GRILLE[1][0],-13,0.7,'r','ret'],[-1.6,P_AHU_RET.y,1.0,0.7,'r','ret'],
@@ -1370,6 +1617,9 @@ var RIGLABELS=[
   {text:'PCB wiring harness',sub:'flat FR4 strips, no loose wires',a:W(-8,TH+0.3,-14),o:W(18,-4,-6)},
   {text:'Exhaust outlet',sub:'after the air-pump evaporator',a:W(-50.2,P_HR_EXH.y,P_HR_EXH.z),o:W(-12,-8,4)},
   {text:'Acrylic enclosure',sub:'1000 × 500 × 500 mm · 5 mm PMMA',a:W(BX,BY,BZ),o:W(8,2,8)},
+  {text:'Vial filling machine',sub:'fill + stopper line under an open RABS',a:W(36,VF.deck+8.4,VF.z0),o:W(6,9,-6)},
+  {text:'Pass box',sub:'material transfer · interlocked doors + UV',a:W((PBX.x0+PBX.x1)/2,PBX.y1+0.3,BZ),o:W(-8,7,6)},
+  {text:'Operator',sub:'Grade B gown, hands in the RABS gloves',a:W(OP.x,25.6,OP.z),o:W(7,6,8)},
   {text:'24 V DC supply',sub:'feeds the PCB',a:W(-40,TH+3.2,-20),o:W(-5,-5,-4),tier:'aux'},
   {text:'Room T + RH',sub:'MT-106 · SHT31',a:W(44,24,-BZ+TH+1.2),o:W(4,6,4),tier:'aux'},
   {text:'Room pressure',sub:'PDT-101 · SDP810',a:W(TH/2+1.2,31.5,-19),o:W(5,5,-2),tier:'aux'}
@@ -1417,7 +1667,7 @@ var TAGDEF=[
   ['CMP-101',C2W(-6.6,Y0-3.3,Z1+1.2),'out'], ['FAN-103',C2W(-8.9,Y1+3.1,0),'out'],
   ['TT-108',C2W(-18.3,MY+MH/2+2.6,MZL),'in'],
   ['FT-102',W(RX+0.5,24,RZ+3.4),'in'], ['TT-106',W(42,28,-21),'in'], ['PDT-101',W(4,35,-19),'in'],
-  ['ACH',W(25,25,4),'calc'], ['CT',W(-21,PCB.y0-2.4,PCB.z+1.2),'in']
+  ['ACH',W(20,30,4),'calc'], ['CT',W(-21,PCB.y0-2.4,PCB.z+1.2),'in']
 ];
 var TAGS=TAGDEF.map(function(d){
   var cv=document.createElement('canvas'); cv.width=300; cv.height=88;
@@ -2214,6 +2464,7 @@ function frame(){
       compRotor.rotation.x+=dt*14*m.act.fa*state.speed;
     }
     if(sigDots.obj.visible) updateSignals(dt);
+    updateCleanRoom(dt*state.speed,m.on);
     actuatorVisuals();
   }
   uiT+=dt; scrT+=dt; colT+=dt;
@@ -2231,6 +2482,6 @@ if(window.innerHeight<700 || window.innerWidth<760) setHmiOpen(false);
 resize();
 var fl0=flows(); for(var s0=0;s0<STREAMS.length;s0++) updateStream(STREAMS[s0],0,0,fl0);
 updateRefrig(0,0,1); updateSignals(0); actuatorVisuals(); updateHMI(true); updateTags(); drawScreen();
-window.__rig={model:m,goView:goView,state:state};
+window.__rig={model:m,goView:goView,state:state,setView:function(d){ VIEWS.custom=d; goView('custom',true); }};
 frame();
 })();

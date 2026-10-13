@@ -82,6 +82,13 @@ def primitive(rec):
     g, p = rec["geo"], rec["geo"]["p"]
     sx, sy, sz = rec["scl"]
     t = g["t"]
+    round_ = t in ("CylinderGeometry", "ConeGeometry", "TorusGeometry", "SphereGeometry")
+    if round_ and (abs(sx - sz) > 1e-6 or (t in ("SphereGeometry", "TorusGeometry") and abs(sx - sy) > 1e-6)):
+        # stretched round shapes (e.g. the operator's ellipsoid body parts): build at unit scale,
+        # then apply the exact non-uniform scale as a general transform
+        unit = dict(rec, scl=[1.0, 1.0, 1.0])
+        base = primitive(unit)
+        return base.transformGeometry(cq.Matrix([[sx, 0, 0, 0], [0, sy, 0, 0], [0, 0, sz, 0]]))
     if t == "BoxGeometry":
         w, h, d = p["width"] * sx * MM, p["height"] * sy * MM, p["depth"] * sz * MM
         return cq.Solid.makeBox(w, h, d, cq.Vector(-w / 2, -h / 2, -d / 2))
@@ -102,7 +109,7 @@ def primitive(rec):
     if t == "TorusGeometry":
         return cq.Solid.makeTorus(p["radius"] * sx * MM, p["tube"] * sx * MM, cq.Vector(0, 0, 0), cq.Vector(0, 0, 1))
     if t == "SphereGeometry":
-        return cq.Solid.makeSphere(p["radius"] * sx * MM)
+        return cq.Solid.makeSphere(p["radius"] * sx * MM, cq.Vector(0, 0, 0), cq.Vector(0, 1, 0), -90, 90, 360)
     return None
 
 
@@ -249,27 +256,33 @@ def main(src, outdir="cad"):
 
 
 def material(part, col):
+    """material / finish for the BOM, matched on whole words of the part name"""
     p = part.lower()
-    if "acrylic" in p or "false ceiling" in p:
-        return "PMMA (cast acrylic), 5 mm, clear"
-    if "pcb strip" in p:
-        return "FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-    if "controller pcb" in p:
-        return "FR4 2-layer PCB 1.6 mm + components"
-    if "duct" in p or "riser" in p or "header" in p or "boot" in p or "branch" in p or "discharge" in p:
-        return "Clear PVC / PETG duct, 2 mm wall"
-    if "base frame" in p:
-        return "Aluminium 20x20 extrusion, black anodised"
-    if "casing" in p or "panel" in p:
-        return "Clear PETG panel (3D model: galvanised steel)"
-    if "coil" in p:
-        return "Copper tube + aluminium fins"
-    if "filter" in p or "hepa" in p:
-        return "Filter media in aluminium frame"
-    if "bench" in p or "diffuser" in p or "grille" in p:
-        return "Stainless steel 304 / white powder-coat"
-    if "pipework" in p:
-        return "Copper refrigerant tube (R32)"
+    words = set(re.findall(r"[a-z0-9]+", p))
+    if {"filler", "panel"} <= words:
+        return "Filler HMI panel"
+    rules = [
+        (("operator",), "Operator figure (e.g. PLA print), cleanroom gown colours"),
+        (("peristaltic",), "Peristaltic dosing pump, stainless housing"),
+        (("vial",), "Glass vial with product and rubber stopper"),
+        (("needle",), "Stainless steel 316L needles on aluminium carriage"),
+        (("hose",), "Platinum-cured silicone tubing"),
+        (("filling", "turntable", "accumulation", "tank", "stopper", "chute", "press"), "Stainless steel 316L / polycarbonate RABS"),
+        (("pass",), "Stainless steel 304 with glass vision panels"),
+        (("acrylic", "ceiling"), "PMMA (cast acrylic), 5 mm, clear"),
+        (("strip",), "FR4 flex/rigid strip, 1 mm, ENIG copper tracks"),
+        (("pcb",), "FR4 2-layer PCB 1.6 mm + components"),
+        (("duct", "riser", "header", "boot", "branch", "discharge", "sleeve", "drop"), "Clear PVC / PETG duct, 2 mm wall"),
+        (("frame",) if "base" in words else (), "Aluminium 20x20 extrusion, black anodised"),
+        (("casing",), "Clear PETG panel (3D model: galvanised steel)"),
+        (("coil",), "Copper tube + aluminium fins"),
+        (("filter", "hepa"), "Filter media in aluminium frame"),
+        (("bench", "diffuser", "grille"), "Stainless steel 304 / white powder-coat"),
+        (("pipework",), "Copper refrigerant tube (R32)"),
+    ]
+    for keys, mat in rules:
+        if words & set(keys):
+            return mat
     return "See model colour"
 
 

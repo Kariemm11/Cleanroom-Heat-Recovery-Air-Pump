@@ -9,7 +9,7 @@ Acrylic enclosure,Acrylic partition wall,1,5.0,490.0,490.0,"PMMA (cast acrylic),
 Acrylic enclosure,Clean-room false ceiling,1,492.5,5.0,490.0,"PMMA (cast acrylic), 5 mm, clear"
 Acrylic enclosure,Aluminium base frame,5,1000.0,20.0,500.0,"Aluminium 20x20 extrusion, black anodised"
 Acrylic enclosure,Aluminium base frame -2,4,998.0,12.0,498.0,"Aluminium 20x20 extrusion, black anodised"
-Acrylic enclosure,Clean-room access door,5,339.5,280.0,15.5,See model colour
+Acrylic enclosure,Clean-room access door,5,199.5,280.0,15.5,See model colour
 AHU,AHU frame,34,221.5,52.1,38.9,See model colour
 AHU,AHU casing panel,4,220.0,51.3,38.1,Clear PETG panel (3D model: galvanised steel)
 AHU,AHU deck divider,2,218.4,1.0,34.1,See model colour
@@ -17,8 +17,8 @@ AHU,Base machine compartment and R32 compressor,12,220.0,25.9,37.4,See model col
 AHU,Base machine compartment and R32 compressor -2,1,9.9,2.9,2.9,See model colour
 AHU,Outdoor-air pre-filter,2,4.1,22.5,32.5,Filter media in aluminium frame
 AHU,Outdoor-air pre-filter -2,13,3.0,23.9,30.8,Filter media in aluminium frame
-AHU,Panel filter,2,4.1,22.5,32.5,Clear PETG panel (3D model: galvanised steel)
-AHU,Panel filter -2,13,3.0,23.9,30.8,Clear PETG panel (3D model: galvanised steel)
+AHU,Panel filter,2,4.1,22.5,32.5,Filter media in aluminium frame
+AHU,Panel filter -2,13,3.0,23.9,30.8,Filter media in aluminium frame
 AHU,Bag filter,2,11.6,22.0,31.9,Filter media in aluminium frame
 AHU,Bag filter -2,9,9.0,22.8,30.8,Filter media in aluminium frame
 AHU,HEPA final filter,7,6.6,23.1,33.0,Filter media in aluminium frame
@@ -79,8 +79,8 @@ AHU,Sensor Frost thermostat,2,1.9,11.4,1.9,See model colour
 AHU,Sensor TT-103 after pre-heat,2,1.9,11.4,1.9,See model colour
 AHU,Sensor TT-104 off cooling coil,2,1.9,11.4,1.9,Copper tube + aluminium fins
 AHU,Filter dP gauge,5,194.0,28.4,0.9,Filter media in aluminium frame
-AHU,AHU control panel,2,18.7,25.3,3.2,Clear PETG panel (3D model: galvanised steel)
-AHU,AHU control panel -2,1,1.1,4.4,1.1,Clear PETG panel (3D model: galvanised steel)
+AHU,AHU control panel,2,18.7,25.3,3.2,See model colour
+AHU,AHU control panel -2,1,1.1,4.4,1.1,See model colour
 AHU,Misc,16,196.3,25.7,2.9,See model colour
 AHU,R32 refrigerant pipework,4,261.4,43.0,124.6,Copper refrigerant tube (R32)
 AHU,R32 refrigerant pipework -2,1,3.7,3.7,3.7,Copper refrigerant tube (R32)
@@ -121,23 +121,65 @@ Ductwork,Extract transfer duct AHU to recovery unit,9,71.8,36.0,96.7,"Clear PVC 
 Ductwork,Exhaust duct recovery unit to louvre,1,47.3,13.2,13.2,"Clear PVC / PETG duct, 2 mm wall"
 Ductwork,Supply boot,1,30.0,23.2,87.0,"Clear PVC / PETG duct, 2 mm wall"
 Ductwork,Supply riser,9,433.0,403.9,113.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Diffuser drop 1,1,25.0,31.0,25.0,Stainless steel 304 / white powder-coat
-Ductwork,Partition sleeve supply,1,4.4,37.4,37.4,See model colour
+Ductwork,Diffuser drop 1,1,25.0,31.0,25.0,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Partition sleeve supply,1,4.4,37.4,37.4,"Clear PVC / PETG duct, 2 mm wall"
 Ductwork,Return duct,1,57.5,23.1,33.0,"Clear PVC / PETG duct, 2 mm wall"
 Ductwork,Return branch (grille 2),3,23.0,20.0,153.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Partition sleeve return 2,1,4.4,29.4,29.4,See model colour
-Clean room,Ceiling diffuser 1,2,90.0,18.0,90.0,Stainless steel 304 / white powder-coat
-Clean room,Ceiling diffuser 1 -2,13,75.5,13.8,75.5,Stainless steel 304 / white powder-coat
-Clean room,Ceiling diffuser 2,2,90.0,18.0,90.0,Stainless steel 304 / white powder-coat
-Clean room,Ceiling diffuser 2 -2,13,75.5,13.8,75.5,Stainless steel 304 / white powder-coat
+Ductwork,Partition sleeve return 2,1,4.4,29.4,29.4,"Clear PVC / PETG duct, 2 mm wall"
+Clean room,Ceiling diffuser 1,2,90.0,18.0,90.0,"PMMA (cast acrylic), 5 mm, clear"
+Clean room,Ceiling diffuser 1 -2,13,75.5,13.8,75.5,"PMMA (cast acrylic), 5 mm, clear"
+Clean room,Ceiling diffuser 2,2,90.0,18.0,90.0,"PMMA (cast acrylic), 5 mm, clear"
+Clean room,Ceiling diffuser 2 -2,13,75.5,13.8,75.5,"PMMA (cast acrylic), 5 mm, clear"
 Clean room,Low-level return grille 1,4,4.0,56.0,70.0,Stainless steel 304 / white powder-coat
 Clean room,Low-level return grille 1 -2,6,8.1,46.1,64.0,Stainless steel 304 / white powder-coat
 Clean room,Low-level return grille 2,4,4.0,56.0,70.0,Stainless steel 304 / white powder-coat
 Clean room,Low-level return grille 2 -2,6,8.1,46.1,64.0,Stainless steel 304 / white powder-coat
-Clean room,Stainless bench plus product tray,6,180.0,138.0,100.0,"Clear PVC / PETG duct, 2 mm wall"
-Clean room,Stainless bench plus product tray -2,1,80.0,5.0,50.0,"Clear PVC / PETG duct, 2 mm wall"
-Clean room,Stainless bench plus product tray -3,8,62.0,20.0,33.0,"Clear PVC / PETG duct, 2 mm wall"
 Clean room,LED clean-room luminaire,1,220.0,3.0,60.0,See model colour
+Clean room,Staging bench plus vial tray,6,140.0,128.0,80.0,Glass vial with product and rubber stopper
+Clean room,Staging bench plus vial tray -2,1,70.0,5.0,44.0,Glass vial with product and rubber stopper
+Clean room,Staging bench plus vial tray -3,8,55.0,16.0,30.0,Glass vial with product and rubber stopper
+Clean room,Pass box,14,120.0,230.0,100.0,Stainless steel 304 with glass vision panels
+Clean room,Pass box -2,1,92.0,2.5,88.0,Stainless steel 304 with glass vision panels
+Clean room,Pass box -3,1,5.0,5.0,80.0,Stainless steel 304 with glass vision panels
+Clean room,Pass box -4,2,7.0,5.0,109.0,Stainless steel 304 with glass vision panels
+Clean room,Pass box outer door,1,96.0,96.0,3.0,Stainless steel 304 with glass vision panels
+Clean room,Pass box outer door -2,1,56.0,54.0,3.6,Stainless steel 304 with glass vision panels
+Clean room,Pass box outer door -3,1,5.0,26.0,5.0,Stainless steel 304 with glass vision panels
+Clean room,Pass box inner door,1,96.0,96.0,3.0,Stainless steel 304 with glass vision panels
+Clean room,Pass box inner door -2,1,56.0,54.0,3.6,Stainless steel 304 with glass vision panels
+Clean room,Pass box inner door -3,1,5.0,26.0,5.0,Stainless steel 304 with glass vision panels
+Clean room,Vial filling machine,5,222.0,107.0,82.0,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -2,23,244.0,186.0,114.5,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -3,3,172.0,64.0,1.5,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -4,4,240.0,82.0,110.0,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -5,4,115.0,15.0,26.0,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -6,1,8.4,8.0,8.4,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -7,1,8.4,8.0,8.4,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -8,1,8.4,8.0,8.4,Glass vial with product and rubber stopper
+Clean room,Infeed turntable,2,56.4,8.0,56.4,Stainless steel 316L / polycarbonate RABS
+Clean room,Vial,25,221.9,15.0,44.8,Glass vial with product and rubber stopper
+Clean room,Vial -2,13,118.6,8.0,34.7,Glass vial with product and rubber stopper
+Clean room,Vial -3,9,69.0,4.5,37.1,Glass vial with product and rubber stopper
+Clean room,Outfeed accumulation table,2,46.4,8.0,46.4,Stainless steel 316L / polycarbonate RABS
+Clean room,Filling needle carriage,1,10.0,10.0,24.0,Stainless steel 316L needles on aluminium carriage
+Clean room,Filling needle carriage -2,4,1.4,20.0,19.4,Stainless steel 316L needles on aluminium carriage
+Clean room,Product holding tank,3,28.0,60.0,28.0,Stainless steel 316L / polycarbonate RABS
+Clean room,Peristaltic dosing pump,1,22.0,20.0,16.0,"Peristaltic dosing pump, stainless housing"
+Clean room,Peristaltic dosing pump -2,1,5.5,15.0,15.3,"Peristaltic dosing pump, stainless housing"
+Clean room,Product hose,1,46.3,57.2,20.0,Platinum-cured silicone tubing
+Clean room,Stopper vibratory bowl,1,18.0,24.0,18.0,Stainless steel 316L / polycarbonate RABS
+Clean room,Stopper vibratory bowl -2,1,36.0,14.0,36.0,Stainless steel 316L / polycarbonate RABS
+Clean room,Stopper chute,1,18.5,21.5,23.6,Stainless steel 316L / polycarbonate RABS
+Clean room,Stopper press head,1,12.0,10.0,14.0,Stainless steel 316L / polycarbonate RABS
+Clean room,Filler operator panel,1,36.0,24.1,7.2,Filler HMI panel
+Clean room,Operator (Grade B gown),2,41.0,13.0,30.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -2,13,76.3,238.5,96.1,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -3,1,1.8,72.0,1.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -4,1,12.0,8.0,1.2,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -5,1,13.0,12.0,13.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -6,1,25.0,8.5,5.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -7,1,20.0,10.5,4.5,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -8,2,42.1,13.0,12.4,"Operator figure (e.g. PLA print), cleanroom gown colours"
 Controls and HMI,Main controller PCB,1,180.0,120.0,1.6,FR4 2-layer PCB 1.6 mm + components
 Controls and HMI,Main controller PCB -2,9,173.0,113.0,23.3,FR4 2-layer PCB 1.6 mm + components
 Controls and HMI,Main controller PCB -3,9,151.0,38.0,3.6,FR4 2-layer PCB 1.6 mm + components

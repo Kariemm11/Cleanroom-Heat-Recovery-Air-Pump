@@ -67,6 +67,8 @@
       ef: 0.50,       // grid emission factor, kg CO₂/kWh
       cop: 2.8,       // baseline chiller COP (summer, no recovery)
       hours: 8760,    // operating hours per year
+      gen: 12000,     // particles ≥0.5 µm shed in the clean room per minute (operator + filling line), rig scale
+      coa: 2.0e7,     // outdoor particles ≥0.5 µm per m³
       volt: 24,       // DC bus voltage
       winter: { oat: -2, orh: 80, mix: 18, coil: 21, sup: 22 },
       summer: { oat: 35, orh: 40, mix: 18, coil: 12, sup: 16 }
@@ -89,6 +91,7 @@
     opts = opts || {};
     var P = opts.params || defaults();
     var amb = P.amb, w0 = wFromRH(amb, 50);
+    var c0 = P.gen * 60 / Math.max(P.flow, 0.5);   // room particle count at steady state, /m³
     var m = {
       P: P, ROOM: ROOM, HW: HW,
       season: opts.season || "winter",
@@ -98,13 +101,14 @@
       // actuators (0..1) as driven by the loops, after slew limits
       act: { fa: 0, sf: 0, ef: 0, dmp: 0, cmp: 0, rh: 0, hum: 0 },
       // plant states
-      x: { Qsup: 0, Qfa: 0, Qex: 0, Qph: 0, Qcc: 0, Qrh: 0, mh: 0, Troom: amb, wroom: w0, R1: amb },
+      x: { Qsup: 0, Qfa: 0, Qex: 0, Qph: 0, Qcc: 0, Qrh: 0, mh: 0, Troom: amb, wroom: w0, R1: amb, Cp: c0 },
+      extGen: 0,                 // extra particles/min from outside the model (e.g. the pass box inner door is open)
       // air states (true values)
       a: {},
       // sensors (measured, lagged + noise)
       s: { TT101: amb, MT101: 50, FT101: 0, TT102: amb, TT103: amb, TT104: amb, TT105: amb, MT105: 50,
            FT102: 0, PDT101: 0, PDT102: 0, TT106: amb, MT106: 50, TT107: amb, TT108: amb,
-           CT101: 0, CT102: 0, CT103: 0, VT101: P.volt },
+           CT101: 0, CT102: 0, CT103: 0, VT101: P.volt, PT101: c0, PT101A: 0.01 * c0 + 250, PT101R5: 0.02 * c0, PT101A5: 6e-5 * c0 },
       loops: {
         L1: PI("Supply airflow → supply fan", 0.8, 1.5, 0, 1),
         L2: PI("Fresh-air flow → fresh-air compressor", 1.0, 1.5, 0, 1),
@@ -272,6 +276,21 @@
     x.wroom += dt * (msup * (wsup - wroom) + P.moist / 1000 / 3600) / HW.mroom;
     x.wroom = Math.max(x.wroom, 0.0005);
 
+    /* ---- airborne particles ≥0.5 µm (well-mixed room + first-air zone at the fill point) ---- */
+    // fresh air: outdoor count through the outdoor-air pre-filter; mixed air through the panel + bag
+    // filters, then H13 HEPA (99.95 % at MPPS, ≈99.995 % at 0.5 µm). Ingress happens only when the room is
+    // not over-pressured.
+    var Cfa = P.coa * 0.9, Cmix = f * Cfa + (1 - f) * x.Cp;
+    var Csup = Cmix * (1 - 0.64) * (1 - 0.99995);
+    var Qing = Math.max(0, -Qleak) + 0.08 * Math.exp(-Math.max(dp, 0) / 3);     // m³/h of lab air leaking in
+    var Clab = 1.0e7, G = (P.gen + m.extGen) * 60;                              // particles per hour
+    var V = ROOM.V, Qout = Math.max(Qsup + Qing, 1e-3);
+    x.Cp += dt / 3600 * (Qsup * Csup + Qing * Clab + G - Qout * x.Cp) / V;
+    x.Cp = Math.max(x.Cp, 0);
+    var capture = 0.99 * clamp(Qsup / Math.max(0.6 * P.flow, 0.1), 0, 1);      // first-air sweep over the needles
+    var CA = Csup + (1 - capture) * x.Cp + 250;                                // + a little from vial handling
+    var r5 = 0.02;                                                             // ≥5 µm share of particles shed by people
+
     /* ---- electrical power ---- */
     var fan = function (u, pmax, idle) { return u > 0.001 ? idle + pmax * Math.pow(u, 3) : 0; };
     var Pfa = fan(A.fa, HW.faP, 0.5), Pef = 2 * fan(A.ef, HW.efP, 0.2);
@@ -310,6 +329,13 @@
     s.CT101 = Math.max(0, Pcmp / P.volt + n(0.008));
     s.CT102 = Math.max(0, Pfans / P.volt + n(0.008));
     s.CT103 = Math.max(0, Pheat / P.volt + n(0.008));
+    // laser particle counter (2.83 L/min) on a 2-port manifold: counting noise ≈ √N of the sample
+    var pn = function (c) { return c * (1 + n(1) * Math.min(0.5, 1 / Math.sqrt(Math.max(c * 0.00283, 1)))); };
+    s.PT101 = Math.max(0, lag(s.PT101, pn(x.Cp), dt, 15));
+    s.PT101A = Math.max(0, lag(s.PT101A, pn(CA), dt, 15));
+    s.PT101R5 = Math.max(0, lag(s.PT101R5, pn(x.Cp * r5), dt, 15));
+    // big particles settle out and are swept away by the first air more readily than 0.5 µm ones
+    s.PT101A5 = Math.max(0, lag(s.PT101A5, pn((1 - capture) * x.Cp * r5 * 0.3), dt, 15));
 
     /* ---- bookkeeping ---- */
     Object.assign(a, {
@@ -317,7 +343,7 @@
       room: x.Troom, ret: x.Troom, r1: R1, r2: R2, exh: Texh, tsurf: Tsurf,
       wmix: wmix, wsup: wsup, wroom: x.wroom, f: f, Qsup: Qsup, Qfa: Qfa, Qrec: Qrec, Qex: x.Qex,
       Qhr: sp * Qfa, Qdir: (1 - sp) * Qfa, Qleak: Qleak, dp: dp, Q1: Q1, Q2: Q2, Qlat: Qlat,
-      dewRoom: dewPoint(x.wroom)
+      dewRoom: dewPoint(x.wroom), Cp: x.Cp, Csup: Csup, CA: CA, Qing: Qing, capture: capture
     });
     m.pw = { fa: Pfa, sf: Psf, ef: Pef, fans: Pfans, cmp: Pcmp, ptc: Qptc, hum: Phum, heat: Pheat,
              ctl: Pctl, total: Pact, base: Pbase, W: W, cop: cop, Qhp: Qhp, Qdsh: Math.min(Qdsh, x.Qrh),
@@ -348,7 +374,10 @@
       ["A05", "Evaporator at frost limit — air pump capped", on && m.recovery && m.season === "winter" && m.pw.frost, 30, "warning"],
       ["A07", "Supply temperature off set point", on && Math.abs(s.TT105 - S.sup) > 2, 90, "warning"],
       ["A08", "ACH below 20 /h (ISO 8 minimum)", on && s.FT102 / ROOM.V < 20, 30, "warning"],
-      ["A09", "HEPA ΔP high — check filter", on && s.PDT102 > 450, 10, "warning"]
+      ["A09", "HEPA ΔP high — check filter", on && s.PDT102 > 450, 10, "warning"],
+      ["A10", "Room particles above alert limit (70 % of Grade B in operation)", s.PT101 > 0.7 * 352000 && s.PT101 <= 352000, 60, "warning"],
+      ["A11", "Room particles above action limit (Grade B in operation, 352 000/m³)", s.PT101 > 352000, 30, "serious"],
+      ["A12", "Fill point above Grade A limit (3 520/m³ ≥0.5 µm)", s.PT101A > 3520, 30, "serious"]
     ];
     var active = [];
     list.forEach(function (d) {
@@ -367,7 +396,10 @@
   function pushTrend(m) {
     var s = m.s;
     m.trend.push({ t: m.t, TT101: s.TT101, TT102: s.TT102, TT103: s.TT103, TT105: s.TT105, TT106: s.TT106,
-      MT105: s.MT105, MT106: s.MT106, P: m.pw.total, Pb: m.pw.base, ACH: m.kpi.ach, DP: s.PDT101 });
+      MT105: s.MT105, MT106: s.MT106, P: m.pw.total, Pb: m.pw.base, ACH: m.kpi.ach, DP: s.PDT101,
+      PR: s.PT101, PA: s.PT101A, QS: s.FT102, QF: s.FT101, QE: m.a.Qex,
+      USF: m.act.sf * 100, UFA: m.act.fa * 100, UDM: m.act.dmp * 100, UCM: m.act.cmp * 100, URH: m.act.rh * 100,
+      CO: m.kpi.co2h, COB: m.kpi.co2hBase });
     if (m.trend.length > 450) m.trend.shift();
   }
 

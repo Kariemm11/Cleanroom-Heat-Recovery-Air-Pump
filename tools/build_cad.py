@@ -262,6 +262,9 @@ def material(part, col):
     if {"filler", "panel"} <= words:
         return "Filler HMI panel"
     rules = [
+        (("isokinetic",), "Stainless steel 316L isokinetic sampling probe"),
+        (("sample",), "Conductive PU sample tubing, 4 mm OD"),
+        (("particle",), "Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"),
         (("operator",), "Operator figure (e.g. PLA print), cleanroom gown colours"),
         (("peristaltic",), "Peristaltic dosing pump, stainless housing"),
         (("vial",), "Glass vial with product and rubber stopper"),

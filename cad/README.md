@@ -2,7 +2,7 @@
 
 | File | Contents |
 |---|---|
-| `cleanroom-rig-assembly.step` | The whole rig: AP214 STEP, millimetres, 8 sub-assemblies, 246 named and coloured parts, 1 462 solids |
+| `cleanroom-rig-assembly.step` | The whole rig: AP214 STEP, millimetres, 8 sub-assemblies, 255 named and coloured parts, 1 493 solids |
 | `step/*.step` | One file per sub-assembly, for working on a unit on its own |
 | `BOM.csv` | Every part: sub-assembly, body count, bounding size (mm), material / finish |
 | `drawings/enclosure-GA.pdf` / `.svg` | Acrylic enclosure fabrication drawing, A3 at 1:6: panel views, cut-out positions and cut list |

@@ -19,7 +19,7 @@ function readTokens(){
   T.metalDark=col('--metal-dark'); T.glass=col('--glass'); T.ink=tok('--ink');
   T.panel=tok('--panel-solid'); T.inkDim=tok('--ink-dim');
   T.acrylic=col('--acrylic'); T.pcb=col('--pcb'); T.copper=col('--copper');
-  T.sigIn=col('--sig-in'); T.sigOut=col('--sig-out');
+  T.sigIn=col('--sig-in'); T.sigOut=col('--sig-out'); T.contam=col('--contam');
   T.tCold=col('--t-cold'); T.tMid=col('--t-mid'); T.tHot=col('--t-hot');
   T.good=tok('--good'); T.warn=tok('--warn'); T.bad=tok('--bad');
   T.dark = document.documentElement.getAttribute('data-theme')==='dark' ||
@@ -1047,7 +1047,7 @@ var VF={x0:24,x1:48,z0:-11.5,z1:-0.5,deck:10.9,cz:-6};
   var cx=(VF.x0+VF.x1)/2, L=VF.x1-VF.x0, D=VF.z1-VF.z0;
   var poly=std(new THREE.Color('#dbeef7'),{m:0.05,r:0.05,t:true,o:0.16,side:THREE.DoubleSide,dw:false});
   // cabinet on levelling feet
-  [[VF.x0+1.5,VF.z0+2],[VF.x0+1.5,VF.z1-2],[VF.x1-1.5,VF.z0+2],[VF.x1-1.5,VF.z1-2]].forEach(function(p){
+  [[VF.x0+1.5,VF.z0+1.8],[VF.x0+1.5,VF.z1-2],[VF.x1-1.5,VF.z0+1.8],[VF.x1-1.5,VF.z1-2]].forEach(function(p){
     g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.6,1.0,12),MR.black),p[0],TH+0.5,p[1]));
   });
   g.add(at(box(L,8.9,D,MR.steel),cx,TH+1+4.45,VF.cz));
@@ -1189,7 +1189,7 @@ function poseArms(t){
 }
 
 /* ------------------------------------------------ animation */
-CR.t=0;
+CR.t=0; CR.pb={state:'ready · both doors locked',innerOpen:false,transfers:0,lastC:0};
 function smooth(x){ x=Math.max(0,Math.min(1,x)); return x*x*(3-2*x); }
 function updateCleanRoom(dt,run){
   CR.t+=dt; var t=CR.t;
@@ -1216,6 +1216,9 @@ function updateCleanRoom(dt,run){
   else if(c>=18&&c<24) uv=1;
   else if(c>=24&&c<32) iA=smooth((c-24)/2)*(1-smooth((c-29)/2));
   CR.pbOuter.rotation.y=-oA*1.45; CR.pbInner.rotation.y=iA*1.45;
+  if(c<CR.pb.lastC) CR.pb.transfers++;
+  CR.pb.lastC=c; CR.pb.innerOpen=iA>0.05;
+  CR.pb.state=oA>0.01?'outer door open · inner locked':(iA>0.01?'inner door open · outer locked':(uv?'UV cycle · both doors locked':'ready · both doors locked'));
   CR.pbItem.visible=item; CR.uvMat.emissiveIntensity=0.05+uv*1.6;
   CR.pbLamps.forEach(function(l){
     var mayOpen=uv?false:(l.side==='outer'?iA<0.01:oA<0.01);
@@ -1224,6 +1227,55 @@ function updateCleanRoom(dt,run){
   poseArms(t);
 }
 updateCleanRoom(0,true);
+
+/* ------------------------------------------------ PT-101 air particle sensor */
+/* laser particle counter on the back wall with a 2-port sampling manifold: one port samples
+   room air, the other runs a sample tube to an isokinetic probe beside the filling needles */
+var PT={x:30,y:16,z:-BZ+TH+0.8};
+(function particleSensor(){
+  var g=new THREE.Group(); tag(g,'PT-101 air particle sensor'); g.userData.asm='Controls and HMI';
+  g.add(at(box(3.2,4.2,1.6,MR.white),PT.x,PT.y,PT.z));
+  g.add(at(box(2.2,1.2,0.12,MR.black),PT.x,PT.y+0.8,PT.z+0.82));
+  CR.ptLed=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.25,0.12),new THREE.MeshBasicMaterial({color:0x22c55e}));
+  at(CR.ptLed,PT.x+1.1,PT.y-1.4,PT.z+0.82); g.add(CR.ptLed);
+  g.add(at(box(2.4,0.7,1.0,MR.alu),PT.x,PT.y+2.45,PT.z));                                    // manifold
+  [-0.7,0.7].forEach(function(dx){ g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.8,10),MR.steel),PT.x+dx,PT.y+3.2,PT.z)); });
+  var fun=new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.2,0.7,16,1,true),MR.steel); at(fun,PT.x-0.7,PT.y+4.6,PT.z); g.add(fun);   // room-air port
+  g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,0.9,8),MR.steel),PT.x-0.7,PT.y+3.9,PT.z));
+  // isokinetic probe at the fill point, facing the first air, and its sample tube over the RABS
+  var pr=new THREE.Group(); tag(pr,'PT-101 isokinetic probe');
+  pr.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.14,0.9,16,1,true),MR.steel),0,0.45,0));
+  pr.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,1.4,8),MR.steel),0,-0.7,0));
+  pr.position.set(35.6,VF.deck+2.6,-7.8); g.add(pr);
+  var tube=new THREE.Mesh(new THREE.TubeGeometry(roundedPath([[35.6,VF.deck+1.2,-7.8],[35.6,VF.deck+0.9,-10.5],
+    [35.6,VF.deck+8.7,-10.7],[35.6,VF.deck+8.9,-12.3],[31.2,PT.y+3.6,-20.5],[PT.x+0.7,PT.y+3.6,PT.z]],0.9),80,0.13,8,false),
+    std(new THREE.Color('#e6eef4'),{m:0,r:0.4,t:true,o:0.8}));
+  tag(tube,'PT-101 sample tube'); g.add(tube);
+  ctrl.add(g);
+})();
+
+/* ------------------------------------------------ containment zones (display only, not exported) */
+var zoneGroup=new THREE.Group(); zoneGroup.visible=false; zoneGroup.userData.noExport=true; scene.add(zoneGroup);
+var ZONES=[
+  {name:'Grade A · ISO 5 · first air under the RABS',c:'#16a34a',o:0.22,f:0.45,b:[VF.x0+0.3,VF.deck,VF.z0+0.3,VF.x1-0.3,VF.deck+8.2,VF.z1-0.3]},
+  {name:'Grade B · ISO 7 in operation · +15 Pa',c:'#2563eb',o:0.07,f:0.22,b:[TH/2+0.1,TH,-BZ+TH,BX-TH,CEIL,BZ-TH]},
+  {name:'Pass box · airlock · interlocked + UV',c:'#d97706',o:0.26,f:0.5,b:[PBX.x0,PBX.y0,PBX.zi,PBX.x1,PBX.y1,PBX.zo]},
+  {name:'Plant room · unclassified · 0 Pa reference',c:'#64748b',o:0.04,f:0.18,b:[-BX+TH,TH,-BZ+TH,-TH/2-0.1,BY-TH,BZ-TH]}
+];
+function buildZones(){
+  while(zoneGroup.children.length){ var c=zoneGroup.children.pop(); if(c.geometry) c.geometry.dispose(); if(c.material){ if(c.material.map) c.material.map.dispose(); c.material.dispose(); } }
+  ZONES.forEach(function(z,i){
+    var b=z.b, w=b[3]-b[0], h=b[4]-b[1], d=b[5]-b[2];
+    var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshBasicMaterial({color:new THREE.Color(z.c),transparent:true,opacity:z.o,depthWrite:false,side:THREE.DoubleSide}));
+    m.position.set(b[0]+w/2,b[1]+h/2,b[2]+d/2); m.renderOrder=4; zoneGroup.add(m);
+    var e=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:new THREE.Color(z.c),transparent:true,opacity:0.9}));
+    e.position.copy(m.position); zoneGroup.add(e);
+    var fl=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({color:new THREE.Color(z.c),transparent:true,opacity:z.f,depthWrite:false,side:THREE.DoubleSide}));
+    fl.rotation.x=-Math.PI/2; fl.position.set(b[0]+w/2,b[1]+0.06,b[2]+d/2); fl.renderOrder=3; zoneGroup.add(fl);   // zone footprint, read like a zoning plan
+    var sp=makeLabelSprite(z.name.split(' · ')[0],z.name.split(' · ').slice(1).join(' · '),0.00048);
+    sp.position.set(b[0]+w/2,b[4]+(i===1?-4:2.2),b[2]+d/2+(i===1?18:0)); zoneGroup.add(sp);
+  });
+}
 
 /* the recovery unit floats in the earlier model; on the rig it stands on four posts */
 (function hrPosts(){
@@ -1299,6 +1351,14 @@ DIFF.forEach(function(d){
     [x,VF.deck+2.2,VF.cz,2.6,'m','sup'],[x-2,VF.deck-1,VF.z1+3.5,2.2,'m','room'],[16,4.2,4,2.6,'r','room'],
     [3.2,GRILLE[0][0],GRILLE[0][1],1.8,'r','ret'],[0.6,GRILLE[0][0],GRILLE[0][1],1.4,'r','ret']]);
 });
+/* contamination: particles shed by the operator and let in when the pass box inner door opens,
+   swept down by the supply air and out through the low-level return grilles */
+PATHS.contam=[[OP.x,20,OP.z,2.2,'c','room'],[OP.x-1,14,OP.z+0.5,2.8,'c','room'],[OP.x-4,6,OP.z-1,3.2,'c','room'],
+  [16,4.2,4,2.8,'c','room'],[3.2,GRILLE[0][0],GRILLE[0][1],1.6,'c','ret'],[0.6,GRILLE[0][0],GRILLE[0][1],1.2,'c','ret']];
+PATHS.contam2=[[OP.x+1,17,OP.z+1,2.2,'c','room'],[OP.x+3,9,OP.z+3,3.0,'c','room'],[OP.x-6,4.5,OP.z+5,3.2,'c','room'],
+  [9,4.4,-6,2.6,'c','room'],[3.2,GRILLE[1][0],GRILLE[1][1],1.6,'c','ret'],[0.6,GRILLE[1][0],GRILLE[1][1],1.2,'c','ret']];
+PATHS.pbx=[[(PBX.x0+PBX.x1)/2,(PBX.y0+PBX.y1)/2,PBX.zi-0.5,1.6,'c','room'],[10,12,PBX.zi-5,2.4,'c','room'],
+  [8,5,8,2.8,'c','room'],[3.2,GRILLE[0][0],GRILLE[0][1],1.6,'c','ret'],[0.6,GRILLE[0][0],GRILLE[0][1],1.2,'c','ret']];
 PATHS.retA=[[0.6,GRILLE[0][0],GRILLE[0][1],1.0,'r','ret'],[-3,P_AHU_RET.y,P_AHU_RET.z,1.0,'r','ret'],[P_AHU_RET.x-0.2,P_AHU_RET.y,P_AHU_RET.z,1.0,'r','ret']];
 PATHS.retB=[[0.6,GRILLE[1][0],GRILLE[1][1],0.7,'r','ret'],[-1.6,GRILLE[1][0],-13,0.7,'r','ret'],[-1.6,P_AHU_RET.y,1.0,0.7,'r','ret'],
   [-3.4,P_AHU_RET.y,P_AHU_RET.z,1.0,'r','ret'],[P_AHU_RET.x-0.2,P_AHU_RET.y,P_AHU_RET.z,1.0,'r','ret']];
@@ -1366,7 +1426,9 @@ var STREAMS=[
   stream('room',PATHS.room,1500,'Qsup',{size:0.85,vk:11}),
   stream('ret',[PATHS.retA,PATHS.retA,PATHS.retB],420,'Qret'),
   stream('extract',[PATHS.extract],560,'Qex',{size:0.42}),
-  stream('stale',[PATHS.stale],420,'Qex',{size:0.42,fadeOut:true})
+  stream('stale',[PATHS.stale],420,'Qex',{size:0.42,fadeOut:true}),
+  stream('contam',[PATHS.contam,PATHS.contam2],320,'Qcont',{size:0.6,vk:6,fadeIn:true}),
+  stream('pbx',[PATHS.pbx],160,'Qpbx',{size:0.6,vk:8,fadeIn:true})
 ];
 var _v=new THREE.Vector3(), _c=new THREE.Color();
 function tempColor(t,out){
@@ -1374,11 +1436,11 @@ function tempColor(t,out){
   var b=Math.max(0,Math.min(1,(t-21)/24)); return out.copy(T.tMid).lerp(T.tHot,b);
 }
 var colorMode='stream';
-function streamColor(k,out){ return out.copy(k==='f'?T.fresh:(k==='r'?T.ret:T.mix)); }
+function streamColor(k,out){ return out.copy(k==='f'?T.fresh:(k==='r'?T.ret:(k==='c'?T.contam:T.mix))); }
 function refreshPathColors(states){
   ALLPATHS.forEach(function(p){
     for(var i=0;i<p.v.length;i++){
-      if(colorMode==='temp' && states) tempColor(states[p.tk[i]]!==undefined?states[p.tk[i]]:21,p.col[i]);
+      if(colorMode==='temp' && states && p.ck[i]!=='c') tempColor(states[p.tk[i]]!==undefined?states[p.tk[i]]:21,p.col[i]);
       else streamColor(p.ck[i],p.col[i]);
     }
   });
@@ -1386,7 +1448,8 @@ function refreshPathColors(states){
 function updateStream(st,dt,speed,flows){
   var pos=st.geo.attributes.position.array, cols=st.geo.attributes.color.array;
   var q=flows[st.flow]||0, ff=Math.max(0,Math.min(3,q/flows.ref));
-  st.obj.visible=airVisible && q>0.02;
+  st.obj.visible=(st.name==='contam'||st.name==='pbx'?contamVisible:airVisible) && q>0.02;
+  if(st.name==='contam') st.geo.setDrawRange(0,Math.round(st.count*(flows.contamFrac||1)));
   for(var i=0;i<st.count;i++){
     var pp=st.parts[i], p=st.paths[pp.k], tot=p.total;
     var g=segAt(p,pp.s), j=g.i, t=g.t;
@@ -1407,7 +1470,7 @@ function updateStream(st,dt,speed,flows){
   st.geo.attributes.position.needsUpdate=true;
   st.geo.attributes.color.needsUpdate=true;
 }
-var airVisible=true;
+var airVisible=true, contamVisible=true;
 
 /* ---------------------------------------------- coloured air columns */
 var ribbons=new THREE.Group(); scene.add(ribbons);
@@ -1508,7 +1571,8 @@ var DEV=[
   ['TT-108','in', aw(-18.3,0,0).x+0.3,-4.2,aw(0,MY+MH/2,0).y+0.4],
   ['TT-106','in', 44,-BZ+TH+0.6,20,'z'],
   ['PDT-101','in', TH/2+0.25,-17.5,28.5,'x'],
-  ['PSU','in', -37.2,-17.3,TH+3.2]
+  ['PSU','in', -37.2,-17.3,TH+3.2],
+  ['PT-101','in', PT.x+0.8, -BZ+TH+0.6, PT.y-2.1]
 ];
 var traceGroup=new THREE.Group(); traceGroup.userData.asm='PCB wiring harness'; rig.add(traceGroup);
 var trTexU, trTexV;
@@ -1620,6 +1684,7 @@ var RIGLABELS=[
   {text:'Vial filling machine',sub:'fill + stopper line under an open RABS',a:W(36,VF.deck+8.4,VF.z0),o:W(6,9,-6)},
   {text:'Pass box',sub:'material transfer · interlocked doors + UV',a:W((PBX.x0+PBX.x1)/2,PBX.y1+0.3,BZ),o:W(-8,7,6)},
   {text:'Operator',sub:'Grade B gown, hands in the RABS gloves',a:W(OP.x,25.6,OP.z),o:W(7,6,8)},
+  {text:'Air particle sensor',sub:'PT-101 · room air + fill-point probe',a:W(PT.x,PT.y+2.1,PT.z),o:W(-2,18,4)},
   {text:'24 V DC supply',sub:'feeds the PCB',a:W(-40,TH+3.2,-20),o:W(-5,-5,-4),tier:'aux'},
   {text:'Room T + RH',sub:'MT-106 · SHT31',a:W(44,24,-BZ+TH+1.2),o:W(4,6,4),tier:'aux'},
   {text:'Room pressure',sub:'PDT-101 · SDP810',a:W(TH/2+1.2,31.5,-19),o:W(5,5,-2),tier:'aux'}
@@ -1667,10 +1732,10 @@ var TAGDEF=[
   ['CMP-101',C2W(-6.6,Y0-3.3,Z1+1.2),'out'], ['FAN-103',C2W(-8.9,Y1+3.1,0),'out'],
   ['TT-108',C2W(-18.3,MY+MH/2+2.6,MZL),'in'],
   ['FT-102',W(RX+0.5,24,RZ+3.4),'in'], ['TT-106',W(42,28,-21),'in'], ['PDT-101',W(4,35,-19),'in'],
-  ['ACH',W(20,30,4),'calc'], ['CT',W(-21,PCB.y0-2.4,PCB.z+1.2),'in']
+  ['ACH',W(20,30,4),'calc'], ['CT',W(-21,PCB.y0-2.4,PCB.z+1.2),'in'], ['PT-101',W(PT.x+6,PT.y-2,PT.z+2),'in']
 ];
 var TAGS=TAGDEF.map(function(d){
-  var cv=document.createElement('canvas'); cv.width=300; cv.height=88;
+  var cv=document.createElement('canvas'); cv.width=600; cv.height=176;     // 2× so the Large readings stay sharp
   var tex=new THREE.CanvasTexture(cv); tex.anisotropy=4;
   // constant on-screen size, so tags stay readable from the whole-box view to close-ups
   var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false,sizeAttenuation:false}));
@@ -1680,8 +1745,8 @@ var TAGS=TAGDEF.map(function(d){
 });
 function drawTag(t,line1,line2,state){
   var key=line1+'|'+line2+'|'+state+'|'+T.dark; if(key===t.last) return; t.last=key;
-  var c=t.cv.getContext('2d'), w=t.cv.width, h=t.cv.height;
-  c.clearRect(0,0,w,h);
+  var c=t.cv.getContext('2d'), w=300, h=88;
+  c.setTransform(2,0,0,2,0,0); c.clearRect(0,0,w,h);
   c.fillStyle=T.dark?'rgba(10,15,21,0.92)':'rgba(255,255,255,0.94)';
   roundRect(c,2,2,w-4,h-4,10); c.fill();
   c.lineWidth=3; c.strokeStyle=state==='alarm'?T.bad:(t.kind==='out'?tok('--sig-out'):(t.kind==='calc'?tok('--mix'):tok('--sig-in')));
@@ -1768,6 +1833,14 @@ function sgn(v,d){ var s=(d===0?f0(v):(d===2?f2(v):f1(v))); return (v<0?'−':''
 function tC(v){ return sgn(v)+' °C'; }
 function hms(t){ t=Math.floor(t); var h=Math.floor(t/3600), mi=Math.floor(t%3600/60), s=t%60;
   return (h<10?'0':'')+h+':'+(mi<10?'0':'')+mi+':'+(s<10?'0':'')+s; }
+function kfmt(v){ v=Math.max(0,v); return v>=1e6?(v/1e6).toFixed(2)+'M':(v>=1e4?Math.round(v/1e3)+'k':(v>=1e3?(v/1e3).toFixed(1)+'k':String(Math.round(v)))); }
+/* EU GMP Annex 1 (2022) / ISO 14644-1 airborne particle limits per m³, in operation */
+function gradeOf(c05,c5){
+  if(c05<=3520&&c5<=29) return {g:'A',iso:'ISO 5',short:'Grade A · ISO 5'};
+  if(c05<=352000&&c5<=2930) return {g:'B',iso:'ISO 7',short:'Grade B in op · ISO 7'};
+  if(c05<=3520000&&c5<=29300) return {g:'C',iso:'ISO 8',short:'Grade C in op · ISO 8'};
+  return {g:'—',iso:'> ISO 8',short:'above Grade C'};
+}
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 
 /* ====================================================================== HMI */
@@ -1794,6 +1867,7 @@ var IO=[
   ['CT-102','Current: fans',function(){return f2(m.s.CT102)+' A';},'ACS712-05B on the PCB','ADC1_CH4 · GPIO5','in'],
   ['CT-103','Current: reheat + humidifier',function(){return f2(m.s.CT103)+' A';},'ACS712-05B on the PCB','ADC1_CH5 · GPIO6','in'],
   ['VT-101','DC bus voltage',function(){return f1(m.s.VT101)+' V';},'100 k / 10 k divider','ADC1_CH6 · GPIO7','in'],
+  ['PT-101','Airborne particles ≥0.5 / ≥5.0 µm: room · fill point',function(){return kfmt(m.s.PT101)+' · '+kfmt(m.s.PT101A)+' /m³';},'Laser particle counter, 2.83 L/min, 2-port manifold (room air + isokinetic fill-point probe)','I²C mux ch5 · 0x69','in'],
   ['ACH','Air changes per hour',function(){return f1(m.kpi.ach)+' /h';},'FT-102 ÷ clean-room volume','calculated','calc'],
   ['FAN-101','Fresh-air compressor speed',function(){return f0(m.act.fa*100)+' %';},'24 V BLDC centrifugal blower','PWM GPIO38 · tach GPIO10','out'],
   ['FAN-102','Supply fan speed',function(){return f0(m.act.sf*100)+' %';},'24 V EC plug fan','PWM GPIO39 · tach GPIO11','out'],
@@ -1811,7 +1885,7 @@ function ioIndex(tag){ for(var i=0;i<IO.length;i++) if(IO[i][0]===tag) return i;
 /* KPI bar */
 var KPIS=[
   ['ach','Clean-room ACH','m'],['dp','Room pressure','g'],['rt','Room temp','m'],['rrh','Room RH','m'],
-  ['q','Supply airflow','m'],['fa','Fresh air','f'],['pw','Power now','p'],['red','Energy saving','g'],['co2','CO₂ footprint','r']
+  ['pt','Particles ≥0.5 µm','r'],['q','Supply airflow','m'],['fa','Fresh air','f'],['pw','Power now','p'],['red','Energy saving','g'],['co2','CO₂ footprint','r']
 ];
 $('kbar').innerHTML=KPIS.map(function(k){
   return '<div class="kp '+k[2]+'"><div class="n">'+k[1]+'</div><div class="v" id="k-'+k[0]+'">–</div><div class="d" id="kd-'+k[0]+'">&nbsp;</div></div>';
@@ -1956,7 +2030,12 @@ var CHARTS=[
   {id:'rh',title:'Relative humidity (%)',ser:[['MT105','MT-105 supply','--s1'],['MT106','MT-106 room','--s2']],unit:'%',dec:0},
   {id:'pw',title:'Electrical power (W)',ser:[['P','This rig','--s3'],['Pb','Baseline (no recovery)','--s2']],unit:'W',dec:1},
   {id:'ach',title:'Clean-room ACH (1/h)',ser:[['ACH','ACH','--s1']],unit:'/h',dec:1},
-  {id:'dp',title:'Clean-room pressure (Pa)',ser:[['DP','PDT-101','--s1']],unit:'Pa',dec:1}
+  {id:'dp',title:'Clean-room pressure (Pa)',ser:[['DP','PDT-101','--s1']],unit:'Pa',dec:1,lim:[15,'set point']},
+  {id:'pr',title:'Room particles ≥0.5 µm (per m³)',ser:[['PR','PT-101 room','--s1']],unit:'/m³',dec:0,lim:[352000,'Grade B in operation'],zero:true},
+  {id:'pa',title:'Fill-point particles ≥0.5 µm (per m³)',ser:[['PA','PT-101 fill point','--s3']],unit:'/m³',dec:0,lim:[3520,'Grade A'],zero:true},
+  {id:'q',title:'Airflows (m³/h)',ser:[['QS','FT-102 supply','--s1'],['QF','FT-101 fresh air','--s2'],['QE','Exhaust fans','--s3']],unit:'m³/h',dec:2,zero:true},
+  {id:'act',title:'Actuator outputs (%)',ser:[['USF','FAN-102 supply','--s1'],['UFA','FAN-101 compressor','--s2'],['UDM','SV-101 damper','--s3'],['UCM','CMP-101 air pump','--s4'],['URH','HTR-101 reheat','--s5']],unit:'%',dec:0,zero:true},
+  {id:'co',title:'CO₂ emissions (g/h)',ser:[['CO','This rig','--s3'],['COB','Baseline (no recovery)','--s2']],unit:'g/h',dec:1,zero:true}
 ];
 $('pane-tr').innerHTML='<div class="trends">'+CHARTS.map(function(c){
   return '<div class="chart" id="ch-'+c.id+'"><h4>'+c.title+'</h4>'+
@@ -1969,16 +2048,20 @@ function drawCharts(){
     var el=$('ch-'+c.id), svg=el.querySelector('svg');
     var lo=Infinity, hi=-Infinity;
     d.forEach(function(p){ c.ser.forEach(function(s){ var v=p[s[0]]; if(v<lo) lo=v; if(v>hi) hi=v; }); });
-    if(c.id==='ach'||c.id==='pw'){ lo=Math.min(lo,0); }
+    if(c.lim){ lo=Math.min(lo,c.lim[0]); hi=Math.max(hi,c.lim[0]); }
+    if(c.id==='ach'||c.id==='pw'||c.zero){ lo=Math.min(lo,0); }
     var pad=(hi-lo)*0.12||1; lo-=pad; hi+=pad;
-    if(c.id==='ach'||c.id==='pw') lo=Math.max(0,lo);
+    if(c.id==='ach'||c.id==='pw'||c.zero) lo=Math.max(0,lo);
     var X0=30,X1=316,Y0=8,Y1=106, t0=d[0].t, t1=d[d.length-1].t;
     function X(t){ return X0+(X1-X0)*(t-t0)/Math.max(t1-t0,1); }
     function Y(v){ return Y1-(Y1-Y0)*(v-lo)/(hi-lo); }
     var h='';
     for(var g=0;g<=3;g++){ var v=lo+(hi-lo)*g/3, y=Y(v);
       h+='<line x1="'+X0+'" x2="'+X1+'" y1="'+y+'" y2="'+y+'" stroke="var(--line-soft)" stroke-width="1"/>'+
-         '<text x="'+(X0-4)+'" y="'+(y+3)+'" text-anchor="end">'+(Math.abs(hi-lo)<10?v.toFixed(1):Math.round(v))+'</text>'; }
+         '<text x="'+(X0-4)+'" y="'+(y+3)+'" text-anchor="end">'+(Math.abs(hi-lo)<10?v.toFixed(1):(Math.abs(v)>=1e4?kfmt(v):Math.round(v)))+'</text>'; }
+    if(c.lim){ var yl=Y(c.lim[0]);
+      h+='<line x1="'+X0+'" x2="'+X1+'" y1="'+yl+'" y2="'+yl+'" stroke="var(--bad)" stroke-width="1" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>'+
+         '<text x="'+(X1-2)+'" y="'+(yl-3)+'" text-anchor="end" style="fill:var(--bad)">'+c.lim[1]+' '+(c.lim[0]>=1e4?kfmt(c.lim[0]):c.lim[0])+'</text>'; }
     h+='<text x="'+X1+'" y="118" text-anchor="end">now</text><text x="'+X0+'" y="118">−'+Math.round((t1-t0)/60)+' min</text>';
     c.ser.forEach(function(s){
       var pts=d.map(function(p){ return X(p.t).toFixed(1)+','+Y(p[s[0]]).toFixed(1); }).join(' ');
@@ -1999,7 +2082,8 @@ CHARTS.forEach(function(c){
     if(xh){ xh.setAttribute('x1',bx); xh.setAttribute('x2',bx); xh.setAttribute('visibility','visible'); }
     tip.hidden=false;
     tip.innerHTML='<div>t = '+hms(best.t)+'</div>'+c.ser.map(function(s){
-      return '<div><i style="display:inline-block;width:10px;height:2px;background:var('+s[2]+');vertical-align:middle;margin-right:5px"></i>'+s[1]+' <b>'+best[s[0]].toFixed(c.dec)+' '+c.unit+'</b></div>'; }).join('');
+      var bv=best[s[0]], txt=(c.unit==='/m³'&&bv>=1e4)?kfmt(bv):bv.toFixed(c.dec);
+      return '<div><i style="display:inline-block;width:10px;height:2px;background:var('+s[2]+');vertical-align:middle;margin-right:5px"></i>'+s[1]+' <b>'+txt+' '+c.unit+'</b></div>'; }).join('');
     var tx=e.clientX-el.getBoundingClientRect().left+12; if(tx>el.clientWidth-170) tx-=190;
     tip.style.left=tx+'px'; tip.style.top='24px';
   });
@@ -2019,6 +2103,65 @@ function drawAlarms(){
   $('pane-al').innerHTML=h+'</div>';
 }
 
+/* Contamination containment strategy: the barriers, each with its live state */
+var BARRIERS=[
+  {t:'Pressure cascade',d:'The clean room is held above the plant room and the lab, so any leak flows outward and outside air cannot get in. PDT-101 drives the exhaust fans (L7).'},
+  {t:'HEPA filtration',d:'Panel and ePM1 bag filters, then an H13 HEPA (99.95 % at MPPS). The supply air is almost particle-free.'},
+  {t:'Dilution and recovery',d:'A high air-change rate dilutes what people and the process shed. Recovery to 1 % of a peak takes 4.6 ÷ ACH hours.'},
+  {t:'First air at the fill point (Grade A)',d:'Filling runs under an open RABS straight below ceiling diffuser 2. Air from the HEPA reaches the needles first, then sweeps down and away.'},
+  {t:'Top-to-bottom airflow, low-level returns',d:'Supply at the ceiling, returns in the partition near the floor. Particles shed by the operator are carried down and out, away from open vials.'},
+  {t:'Material transfer through the pass box',d:'Two interlocked doors that never open together, with a UV cycle between them. The clean room is never open to the lab.'},
+  {t:'People: gowning and glove ports',d:'Grade B gown: hood, goggles, mask, overshoes, sterile gloves. Hands enter the RABS only through the glove ports; no open-door interventions.'},
+  {t:'Heat recovery without cross-contamination',d:''},
+  {t:'Monitoring, alert and action limits',d:'PT-101 counts continuously at the fill point and in the room. Alert at 70 % of a limit: investigate. Action at the limit: stop filling, clean, re-qualify.'}
+];
+var LIMITS=[['A','3 520','29','3 520','29','ISO 5'],['B','3 520','29','352 000','2 930','ISO 7'],
+            ['C','352 000','2 930','3 520 000','29 300','ISO 8'],['D','3 520 000','29 300','not set','not set','—']];
+$('pane-ct').innerHTML='<div class="ct">'+
+  '<div class="ct-top"><div class="ct-sum"><span class="stt" id="ct-pill">–</span><b id="ct-sum">–</b></div>'+
+  '<button class="hbtn" id="ctZones" type="button" aria-pressed="false">Show zones in 3D</button></div>'+
+  '<div class="ct-kpis">'+[['r05','Room ≥0.5 µm'],['r5','Room ≥5.0 µm'],['a05','Fill point ≥0.5 µm'],['a5','Fill point ≥5.0 µm'],['dp','Room pressure'],['rec','Recovery 100:1']]
+    .map(function(k){ return '<div class="ck"><div class="n">'+k[1]+'</div><div class="v" id="ct-k-'+k[0]+'">–</div><div class="d" id="ct-kd-'+k[0]+'">&nbsp;</div></div>'; }).join('')+'</div>'+
+  '<div class="ct-list">'+BARRIERS.map(function(b,i){
+    return '<div class="cbar"><span class="stt" id="ct-s-'+i+'">–</span><div><h5>'+(i+1)+' · '+esc(b.t)+'</h5><p id="ct-d-'+i+'">'+esc(b.d)+'</p></div><b id="ct-v-'+i+'">–</b></div>'; }).join('')+'</div>'+
+  '<p class="note" style="margin:6px 0 2px">Airborne particle limits per m³, EU GMP Annex 1 (2022) and ISO 14644-1. The rig\'s clean room is Grade B; the fill point under the RABS is Grade A.</p>'+
+  '<div style="overflow-x:auto"><table class="sens ct-lim"><thead><tr><th>Grade</th><th>At rest ≥0.5 µm</th><th>At rest ≥5.0 µm</th><th>In operation ≥0.5 µm</th><th>In operation ≥5.0 µm</th><th>ISO (in op.)</th><th>This rig now</th></tr></thead><tbody>'+
+  LIMITS.map(function(r){ return '<tr><td class="tg">'+r[0]+'</td><td class="v">'+r[1]+'</td><td class="v">'+r[2]+'</td><td class="v">'+r[3]+'</td><td class="v">'+r[4]+'</td><td>'+r[5]+'</td><td class="v" id="ct-g-'+r[0]+'">—</td></tr>'; }).join('')+
+  '</tbody></table></div></div>';
+$('ctZones').addEventListener('click',function(){ var cb=$('cbZones'); cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); });
+var STT={ok:['ok','✓ OK'],warn:['warn','! CHECK'],bad:['bad','✕ ACTION']};
+function setStt(id,st){ var el=$(id); if(!el) return; el.className='stt '+STT[st][0]; if(el.textContent!==STT[st][1]) el.textContent=STT[st][1]; }
+function lvl(v,lim){ return v>lim?'bad':(v>0.7*lim?'warn':'ok'); }
+function worst(a){ return a.indexOf('bad')>=0?'bad':(a.indexOf('warn')>=0?'warn':'ok'); }
+function updateContainment(){
+  var s=m.s, a=m.a, k=m.kpi, P_=P, st=[], v=[], d={};
+  var dp=s.PDT101; st[0]=dp>=10?'ok':(dp>=5?'warn':'bad'); v[0]=sgn(dp)+' Pa (set +'+f0(P_.dp)+')';
+  st[1]=s.PDT102>450?'warn':'ok'; v[1]='supply ≈ '+kfmt(a.Csup||0)+' /m³ · ΔP '+f0(s.PDT102)+' Pa';
+  var ach=k.ach, rec=ach>0.1?4.6/ach*60:Infinity; st[2]=ach>=40?'ok':(ach>=20?'warn':'bad');
+  v[2]=f1(ach)+' ACH · 100:1 in '+(isFinite(rec)?f1(rec)+' min':'—');
+  st[3]=worst([lvl(s.PT101A,3520),lvl(s.PT101A5,29)]); v[3]=kfmt(s.PT101A)+' /m³ · ≥5 µm '+f0(s.PT101A5);
+  st[4]='ok'; v[4]='2 grilles, centre 69 mm above the floor';
+  st[5]='ok'; v[5]=CR.pb.state+' · '+CR.pb.transfers+' transfers';
+  st[6]='ok'; v[6]='operator working through the gloves';
+  if(!m.recovery){ st[7]='ok'; v[7]='recovery bypassed: no transfer'; d[7]='In the baseline test both recovery cores are bypassed, so exhaust and fresh air cannot meet.'; }
+  else if(m.hrv==='wheel'){ st[7]='warn'; v[7]='thermal wheel: ≈3 % exhaust carry-over'; d[7]='A rotating wheel carries some exhaust air into the supply (exhaust air transfer ratio ≈2-5 %). It needs a purge sector and fans arranged so the supply side runs at higher pressure; a plate core avoids this.'; }
+  else { st[7]='ok'; v[7]='plate cores: no air contact'; d[7]='The plate cores and the air-pump coils keep exhaust and fresh air in separate channels, so nothing from the clean-room exhaust comes back in the supply.'; }
+  var ids={}; m.alarms.forEach(function(x){ ids[x.id]=1; });
+  st[8]=(ids.A11||ids.A12)?'bad':(ids.A10?'warn':'ok'); v[8]=(ids.A11||ids.A12||ids.A10)?'limit exceeded: see Alarms':'within alert limits';
+  BARRIERS.forEach(function(b,i){ setStt('ct-s-'+i,st[i]); setText('ct-v-'+i,v[i]); if(d[i]) setText('ct-d-'+i,d[i]); });
+  var all=worst(st); setStt('ct-pill',all);
+  var bad=BARRIERS.filter(function(b,i){ return st[i]!=='ok'; }).map(function(b){ return b.t.charAt(0).toLowerCase()+b.t.slice(1); });
+  var room=gradeOf(s.PT101,s.PT101R5), fill=gradeOf(s.PT101A,s.PT101A5);
+  setText('ct-sum',bad.length?('Check: '+bad.join(', ')+'.'):('Contained. Room '+room.short+', fill point '+fill.short+'.'));
+  setText('ct-k-r05',kfmt(s.PT101)); setText('ct-kd-r05','/m³ · limit 352k (B in op)');
+  setText('ct-k-r5',f0(s.PT101R5)); setText('ct-kd-r5','/m³ · limit 2 930');
+  setText('ct-k-a05',kfmt(s.PT101A)); setText('ct-kd-a05','/m³ · limit 3 520 (A)');
+  setText('ct-k-a5',f0(s.PT101A5)); setText('ct-kd-a5','/m³ · limit 29');
+  setText('ct-k-dp',sgn(dp)+' Pa'); setText('ct-kd-dp','vs plant room and lab');
+  setText('ct-k-rec',isFinite(rec)?f1(rec)+' min':'—'); setText('ct-kd-rec','Annex 1 guide: 15-20 min');
+  setText('ct-g-A','fill point '+kfmt(s.PT101A)+' / '+f0(s.PT101A5)); setText('ct-g-B','room '+kfmt(s.PT101)+' / '+f0(s.PT101R5));
+}
+
 /* tab switching + collapse */
 var activePane='ov';
 $('hmiTabs').addEventListener('click',function(e){
@@ -2029,12 +2172,27 @@ $('hmiTabs').addEventListener('click',function(e){
   updateHMI(true);
 });
 function setHmiOpen(open){
+  if(open && hmiEl.hidden) setHmiHidden(false);
   hmiEl.classList.toggle('collapsed',!open);
   $('btnHmi').textContent=open?'Collapse':'Open HMI';
   $('btnHmi').setAttribute('aria-expanded',String(open));
   setTimeout(resize,30);
 }
 $('btnHmi').addEventListener('click',function(){ setHmiOpen(hmiEl.classList.contains('collapsed')); });
+/* pull-tabs: hide the whole HMI dock (bottom) or the control rail (top right), e.g. when presenting */
+function setHmiHidden(h){
+  hmiEl.hidden=h; var b=$('hmiTab');
+  b.setAttribute('aria-expanded',String(!h)); b.title=h?'Show the HMI dock':'Hide the HMI dock';
+  b.querySelector('span').textContent=h?'Show HMI-101 · Rig controller':'Hide HMI-101';
+  setTimeout(resize,30);
+}
+$('hmiTab').addEventListener('click',function(){ setHmiHidden(!hmiEl.hidden); });
+function setRailHidden(h){
+  $('stage').classList.toggle('railHidden',h); var b=$('railTab');
+  b.setAttribute('aria-expanded',String(!h)); b.title=h?'Show the control panel':'Hide the control panel';
+  b.querySelector('span').textContent=h?'Operating mode · controls':'Hide controls';
+}
+$('railTab').addEventListener('click',function(){ setRailHidden(!$('stage').classList.contains('railHidden')); });
 $('btnRun').addEventListener('click',function(){ m.on=!m.on; syncModePill(); });
 function syncModePill(){
   $('pRun').className='pill '+(m.on?'run':'stop'); $('pRunT').textContent=m.on?'RUN':'STOPPED';
@@ -2055,6 +2213,7 @@ function updateHMI(force){
   setText('k-dp',sgn(s.PDT101)+' Pa'); setText('kd-dp','set +'+f0(P.dp)+' Pa');
   setText('k-rt',tC(s.TT106)); setText('kd-rt','supply '+tC(s.TT105));
   setText('k-rrh',f0(s.MT106)+' %'); setText('kd-rrh','set '+f0(P.rh)+' %');
+  setText('k-pt',kfmt(s.PT101)+' /m³'); setText('kd-pt',gradeOf(s.PT101,s.PT101R5).short+' · fill pt '+kfmt(s.PT101A));
   setText('k-q',f2(s.FT102)+' m³/h'); setText('kd-q','set '+f2(P.flow));
   setText('k-fa',f0(k.f*100)+' %'); setText('kd-fa',f2(s.FT101)+' m³/h');
   setText('k-pw',f1(pw.total)+' W'); setText('kd-pw',f2(pw.total/P.volt)+' A @ '+f0(P.volt)+' V');
@@ -2072,7 +2231,7 @@ function updateHMI(force){
     setText('m-tt102',tC(s.TT102)); setText('m-tt103',tC(s.TT103)); setText('m-tt104',tC(s.TT104));
     setText('m-tt105',tC(s.TT105)+' · '+f0(s.MT105)+' %'); setText('m-ft102',f2(s.FT102)+' m³/h'); setText('m-tt107',tC(s.TT107));
     setText('m-ach',f1(k.ach)+' ACH'); setText('m-room',tC(s.TT106)+' · '+f0(s.MT106)+' % RH');
-    setText('m-dp',sgn(s.PDT101)+' Pa'); setText('m-vol','V = '+RigModel.ROOM.V.toFixed(4)+' m³');
+    setText('m-dp',sgn(s.PDT101)+' Pa'); var gr=gradeOf(s.PT101,s.PT101R5); setText('m-vol','PT-101 '+kfmt(s.PT101)+'/m³ · '+(gr.g==='—'?'> Grade C':'Grade '+gr.g));
     $('m-phc').setAttribute('opacity',String(0.2+0.8*(m.season==='winter'?m.act.cmp:0)));
     $('m-ccc').setAttribute('opacity',String(0.2+0.8*(m.season==='summer'?m.act.cmp:0)));
     $('m-rhc').setAttribute('opacity',String(0.2+0.8*m.act.rh));
@@ -2113,6 +2272,7 @@ function updateHMI(force){
     setText('e-achf','ACH = Q ÷ V = '+f2(s.FT102)+' m³/h ÷ '+RigModel.ROOM.V.toFixed(4)+' m³');
     var R=RigModel.ROOM; setText('e-dims',(R.L*1000).toFixed(0)+' × '+(R.W*1000).toFixed(0)+' × '+(R.H*1000).toFixed(0)+' mm');
     setText('e-area',R.A.toFixed(3)+' m²'); setText('e-iso',isoBand(k.ach));
+  } else if(activePane==='ct'){ updateContainment();
   } else if(activePane==='tr'){ drawCharts(); }
   else if(activePane==='al'){ drawAlarms(); }
 }
@@ -2165,11 +2325,12 @@ function updateTags(){
     'FAN-103':['FAN-103 exhaust',f0(A.ef*100)+' %'], 'TT-108':['TT-108 exhaust',sgn(s.TT108)+' °C'],
     'FT-102':['FT-102 supply',f2(s.FT102)+' m³/h'], 'TT-106':['TT-106 · MT-106',sgn(s.TT106)+'° '+f0(s.MT106)+'%'],
     'PDT-101':['PDT-101 room',sgn(s.PDT101)+' Pa'], 'ACH':['ACH = Q ÷ V',f1(m.kpi.ach)+' /h'],
-    'CT':['CT-101…103',f2(s.CT101+s.CT102+s.CT103)+' A']
+    'CT':['CT-101…103',f2(s.CT101+s.CT102+s.CT103)+' A'],
+    'PT-101':['PT-101 ≥0.5 µm',kfmt(s.PT101)+' · A '+kfmt(s.PT101A)]
   };
   TAGS.forEach(function(t){
     var d=map[t.id]; if(!d) return;
-    var al=(t.id==='PDT-101'&&(alarmIds.A02||alarmIds.A03))||(t.id==='TT-108'&&alarmIds.A05)||(t.id==='FT-102'&&alarmIds.A01);
+    var al=(t.id==='PT-101'&&(alarmIds.A11||alarmIds.A12))||(t.id==='PDT-101'&&(alarmIds.A02||alarmIds.A03))||(t.id==='TT-108'&&alarmIds.A05)||(t.id==='FT-102'&&alarmIds.A01);
     drawTag(t,d[0],d[1],al?'alarm':'');
   });
 }
@@ -2237,7 +2398,23 @@ function cb(id,fn){ $(id).addEventListener('change',function(e){ fn(e.target.che
 cb('cbAir',function(v){ airVisible=v; });
 cb('cbRibbon',function(v){ ribbons.visible=v && state.explode<0.25; });
 cb('cbArrows',function(v){ arrows.visible=v; });
-cb('cbTags',function(v){ tagGroup.visible=v; });
+cb('cbTags',function(v){ setReadings(v?(readMode==='off'?'on':readMode):'off'); });
+/* live readings in the 3D view: Hide / Show / Large (large tags for presenting to an audience).
+   The on-stage control, the R key and the "Live sensor tags" box all drive the same state. */
+var readMode='on';
+function setReadings(v){
+  readMode=v; $('cbTags').checked=v!=='off';
+  var k=v==='big'?1.9:1;
+  TAGS.forEach(function(t){ var big=t.id==='ACH'; t.sp.scale.set((big?0.15:0.105)*k,(big?0.044:0.031)*k,1); });
+  Array.prototype.forEach.call(document.querySelectorAll('#segRead button'),function(x){ x.setAttribute('aria-pressed',String(x.dataset.v===v)); });
+  if(v!=='off') updateTags();
+}
+seg('segRead',setReadings);
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey||(e.key!=='r'&&e.key!=='R')) return;
+  var tg=e.target, tn=tg&&tg.tagName; if(tn==='INPUT'||tn==='SELECT'||tn==='TEXTAREA'||(tg&&tg.isContentEditable)) return;
+  setReadings({on:'big',big:'off',off:'on'}[readMode]);
+});
 cb('cbPcb',function(v){ traceGroup.visible=v; sigDots.obj.visible=v && $('cbSignals').checked; });
 cb('cbSignals',function(v){ sigDots.obj.visible=v && $('cbPcb').checked; });
 cb('cbModule',function(v){ modUnit.visible=v; });
@@ -2246,6 +2423,11 @@ cb('cbDoors',function(v){ state.doors=v; doors.visible=v && state.casing!=='off'
 cb('cbRefrig',function(v){ state.refrig=v; refrig.visible=v; refDots.obj.visible=v; });
 cb('cbDucts',function(v){ state.ducts=v; ducts.visible=v; rigDucts.visible=v; });
 cb('cbSpin',function(v){ state.spin=v; });
+cb('cbContam',function(v){ contamVisible=v; });
+cb('cbZones',function(v){
+  zoneGroup.visible=v; var b=$('ctZones');
+  if(b){ b.textContent=v?'Hide zones in 3D':'Show zones in 3D'; b.setAttribute('aria-pressed',String(v)); }
+});
 var btnPlay=$('btnPlay');
 btnPlay.addEventListener('click',function(){
   state.playing=!state.playing;
@@ -2268,7 +2450,7 @@ railToggle.addEventListener('click',function(){
 var FIELDS=[
   ['inFlow','flow',false,0.5,20],['inOa','oa',false,0,100],['inSplit','split',false,0,100],
   ['inE1','e1',false,0,90],['inE2','e2',false,0,90],['inRh','rh',false,20,70],['inDp','dp',false,0,50],
-  ['inGain','gain',false,0,40],['inAmb','amb',false,0,45],['inUa','ua',false,0,20],['inVolt','volt',false,5,60],
+  ['inGain','gain',false,0,40],['inGen','gen',false,0,200000],['inAmb','amb',false,0,45],['inUa','ua',false,0,20],['inVolt','volt',false,5,60],
   ['inEf','ef',false,0,1.5],['inCop','cop',false,1,8],['inHours','hours',false,100,8760],
   ['inOat','oat',true,-30,55],['inOrh','orh',true,0,100],['inMix','mix',true,0,40],['inCoil','coil',true,4,40],['inSup','sup',true,8,40]
 ];
@@ -2368,7 +2550,7 @@ function retheme(){
   ribbons.visible=$('cbRibbon').checked && state.explode<0.25;
   arrows.visible=$('cbArrows').checked;
   TAGS.forEach(function(t){ t.last=''; });
-  refreshLabels();
+  refreshLabels(); buildZones();
 }
 if(window.matchMedia){
   var mq=window.matchMedia('(prefers-color-scheme:dark)');
@@ -2382,7 +2564,7 @@ new MutationObserver(retheme).observe(document.documentElement,{attributes:true,
 window.__rigExportCAD=function(){
   scene.updateMatrixWorld(true);
   var out=[], pos=new THREE.Vector3(), quat=new THREE.Quaternion(), scl=new THREE.Vector3(), mtx=new THREE.Matrix4();
-  function visible(o){ for(var p=o;p;p=p.parent){ if(!p.visible) return false; } return true; }
+  function visible(o){ for(var p=o;p;p=p.parent){ if(!p.visible || p.userData.noExport) return false; } return true; }
   function partOf(o){ for(var p=o;p;p=p.parent){ if(p.userData && p.userData.part) return p.userData.part; } return 'Misc'; }
   function asmOf(o){ for(var p=o;p;p=p.parent){ if(p.userData && p.userData.asm) return p.userData.asm; } return 'Rig'; }
   function matOf(mm){ var mt=Array.isArray(mm)?mm[4]||mm[0]:mm; var c=(mt.map&&!mt.isMeshBasicMaterial)?T.pcb:(mt.color||new THREE.Color(1,1,1));
@@ -2433,7 +2615,11 @@ if(window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').mat
 function flows(){
   var a=m.a;
   return {ref:Math.max(P.flow,0.5),Qfa:a.Qfa||0,Qhr:(a.Qhr||0)*1.6,Qdir:(a.Qdir||0)*1.6,Qrec:a.Qrec||0,
-    Qsup:a.Qsup||0,Qret:Math.max(0,(a.Qsup||0)-(a.Qleak||0)),Qex:a.Qex||0};
+    Qsup:a.Qsup||0,Qret:Math.max(0,(a.Qsup||0)-(a.Qleak||0)),Qex:a.Qex||0,
+    // operator contamination rides the room air; how much of it shows follows the room count.
+    // The pass box sheds only while its inner door is open.
+    Qcont:m.on?(a.Qsup||0):0, contamFrac:Math.max(0.15,Math.min(1,(a.Cp||0)/200000)),
+    Qpbx:CR.pb.innerOpen?Math.max(P.flow,0.5)*1.2:0};
 }
 function frame(){
   requestAnimationFrame(frame);
@@ -2449,6 +2635,7 @@ function frame(){
   tagGroup.visible = $('cbTags').checked && far && cam.r<125;   // whole-box view: values are on the HMI
   if(state.playing){
     var sdt=dt*state.simSpeed, n=Math.min(400,Math.max(1,Math.ceil(sdt/0.05)));
+    m.extGen=CR.pb.innerOpen?15000:0;                    // pass-box inner door open: a short burst of particles
     for(var i=0;i<n;i++) RigModel.step(m,sdt/n);
     var fl=flows();
     for(var j=0;j<STREAMS.length;j++) updateStream(STREAMS[j],dt,state.speed,fl);
@@ -2465,6 +2652,8 @@ function frame(){
     }
     if(sigDots.obj.visible) updateSignals(dt);
     updateCleanRoom(dt*state.speed,m.on);
+    var ptc=m.alarms.some(function(x){ return x.id==='A11'||x.id==='A12'; })?0xef4444:(m.alarms.some(function(x){ return x.id==='A10'; })?0xf59e0b:0x22c55e);
+    CR.ptLed.material.color.setHex(ptc); CR.ptLed.visible=!m.on || (time%1.2)<0.9;   // PT-101 status LED blinks while sampling
     actuatorVisuals();
   }
   uiT+=dt; scrT+=dt; colT+=dt;
@@ -2475,9 +2664,9 @@ function frame(){
 }
 
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ refreshLabels(); TAGS.forEach(function(t){ t.last=''; }); });
-for(var w0=0;w0<200;w0++) RigModel.step(m,0.05);               // let the loops settle before the first frame
+for(var w0=0;w0<1800;w0++) RigModel.step(m,0.05);              // 90 s: let the loops and the room particle count settle before the first frame
 refreshPathColors(m.a); colorRibbons();
-applySeason(); applyHrv(); applyCasing(); applyExplode(); applyBox('clear');
+applySeason(); applyHrv(); applyCasing(); applyExplode(); applyBox('clear'); buildZones();
 if(window.innerHeight<700 || window.innerWidth<760) setHmiOpen(false);
 resize();
 var fl0=flows(); for(var s0=0;s0<STREAMS.length;s0++) updateStream(STREAMS[s0],0,0,fl0);

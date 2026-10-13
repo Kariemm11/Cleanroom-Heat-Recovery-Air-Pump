@@ -46,10 +46,10 @@ AHU,Coil reheat -2,16,6.9,20.9,31.6,Copper tube + aluminium fins
 AHU,Coil reheat -3,1,12.1,21.5,31.9,Copper tube + aluminium fins
 AHU,Coil reheat -4,1,13.2,0.9,31.9,Copper tube + aluminium fins
 AHU,Supply fan,4,20.9,24.9,24.9,See model colour
-AHU,Supply fan -2,9,2.8,20.9,21.2,See model colour
+AHU,Supply fan -2,9,2.8,21.0,21.2,See model colour
 AHU,Supply fan -3,1,5.5,23.8,23.8,See model colour
 AHU,Extract transfer fan,4,20.9,24.9,24.9,See model colour
-AHU,Extract transfer fan -2,9,2.8,20.4,20.2,See model colour
+AHU,Extract transfer fan -2,9,2.8,20.9,20.7,See model colour
 AHU,Extract transfer fan -3,1,5.5,23.8,23.8,See model colour
 AHU,Outdoor air intake,8,2.3,23.1,30.8,See model colour
 AHU,Exhaust air outlet,8,2.3,23.1,30.8,See model colour
@@ -84,7 +84,7 @@ AHU,AHU control panel -2,1,1.1,4.4,1.1,See model colour
 AHU,Misc,16,196.3,25.7,2.9,See model colour
 AHU,R32 refrigerant pipework,4,261.4,43.0,124.6,Copper refrigerant tube (R32)
 AHU,R32 refrigerant pipework -2,1,3.7,3.7,3.7,Copper refrigerant tube (R32)
-AHU,SV-101 servo linkage,1,6.9,1.2,0.5,See model colour
+AHU,SV-101 servo linkage,1,6.8,1.0,0.5,See model colour
 AHU,SV-101 servo linkage -2,2,10.9,14.8,0.9,See model colour
 Heat-recovery air-pump unit,Coil extract,26,8.8,19.2,14.5,Copper tube + aluminium fins
 Heat-recovery air-pump unit,Coil extract -2,16,6.9,20.9,16.9,Copper tube + aluminium fins
@@ -100,14 +100,14 @@ Heat-recovery air-pump unit,Fresh-air filter -2,9,2.9,16.2,14.9,Filter media in 
 Heat-recovery air-pump unit,Exhaust filter,2,4.0,23.1,16.0,Filter media in aluminium frame
 Heat-recovery air-pump unit,Exhaust filter -2,9,2.9,16.2,14.9,Filter media in aluminium frame
 Heat-recovery air-pump unit,Tempered-air fan,3,10.9,17.3,17.3,See model colour
-Heat-recovery air-pump unit,Tempered-air fan -2,9,2.0,13.2,13.1,See model colour
+Heat-recovery air-pump unit,Tempered-air fan -2,9,2.0,13.5,13.4,See model colour
 Heat-recovery air-pump unit,Exhaust fan,3,10.9,17.3,17.3,See model colour
-Heat-recovery air-pump unit,Exhaust fan -2,9,2.0,14.2,14.1,See model colour
+Heat-recovery air-pump unit,Exhaust fan -2,9,2.0,14.5,14.3,See model colour
 Heat-recovery air-pump unit,Recovery unit control box,1,12.1,6.1,8.8,See model colour
 Heat-recovery air-pump unit,Recovery unit spigot,4,148.5,22.0,35.2,See model colour
 Heat-recovery air-pump unit,Recovery unit support posts,4,124.9,30.5,33.6,See model colour
 Fresh-air compressor,FAN-101 fresh-air compressor,2,36.0,100.0,84.5,See model colour
-Fresh-air compressor,FAN-101 fresh-air compressor -2,14,116.0,97.5,70.1,See model colour
+Fresh-air compressor,FAN-101 fresh-air compressor -2,14,116.0,97.5,69.6,See model colour
 Fresh-air compressor,FAN-101 fresh-air compressor -3,1,50.0,38.0,38.0,See model colour
 Fresh-air compressor,FAN-101 fresh-air compressor -4,11,144.0,139.4,69.2,See model colour
 Fresh-air compressor,FAN-101 fresh-air compressor -5,2,44.0,54.0,44.0,See model colour
@@ -148,7 +148,7 @@ Clean room,Pass box outer door -3,1,5.0,26.0,5.0,Stainless steel 304 with glass 
 Clean room,Pass box inner door,1,96.0,96.0,3.0,Stainless steel 304 with glass vision panels
 Clean room,Pass box inner door -2,1,56.0,54.0,3.6,Stainless steel 304 with glass vision panels
 Clean room,Pass box inner door -3,1,5.0,26.0,5.0,Stainless steel 304 with glass vision panels
-Clean room,Vial filling machine,5,222.0,107.0,82.0,Glass vial with product and rubber stopper
+Clean room,Vial filling machine,5,222.0,107.0,84.0,Glass vial with product and rubber stopper
 Clean room,Vial filling machine -2,23,244.0,186.0,114.5,Glass vial with product and rubber stopper
 Clean room,Vial filling machine -3,3,172.0,64.0,1.5,Glass vial with product and rubber stopper
 Clean room,Vial filling machine -4,4,240.0,82.0,110.0,Glass vial with product and rubber stopper
@@ -199,6 +199,13 @@ Controls and HMI,MT-106 room TplusRH (SHT31),1,30.0,40.0,12.0,See model colour
 Controls and HMI,PDT-101 room dP (SDP810),1,12.0,30.0,26.0,See model colour
 Controls and HMI,PDT-101 reference tube,1,24.0,3.6,3.6,See model colour
 Controls and HMI,TT-108 exhaust T (DS18B20),1,8.0,8.0,8.0,See model colour
+Controls and HMI,PT-101 air particle sensor,1,32.0,42.0,16.0,"Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"
+Controls and HMI,PT-101 air particle sensor -2,1,22.0,12.0,1.2,"Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"
+Controls and HMI,PT-101 air particle sensor -3,1,4.0,2.5,1.2,"Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"
+Controls and HMI,PT-101 air particle sensor -4,1,24.0,7.0,10.0,"Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"
+Controls and HMI,PT-101 air particle sensor -5,4,22.0,21.5,12.0,"Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"
+Controls and HMI,PT-101 isokinetic probe,2,9.0,23.0,9.0,Stainless steel 316L isokinetic sampling probe
+Controls and HMI,PT-101 sample tube,1,51.6,81.5,159.3,"Conductive PU sample tubing, 4 mm OD"
 PCB wiring harness,PCB strip TT-101,5,195.5,273.8,220.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip TT-101 copper,15,194.5,272.8,219.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip FT-101,5,203.3,273.6,246.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
@@ -243,5 +250,7 @@ PCB wiring harness,PCB strip PDT-101,5,145.5,280.4,132.0,"FR4 flex/rigid strip, 
 PCB wiring harness,PCB strip PDT-101 copper,15,144.5,279.4,131.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip PSU,5,250.3,269.2,138.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip PSU copper,15,249.3,268.2,137.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PT-101,5,432.9,269.0,156.5,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PT-101 copper,15,431.9,268.0,155.5,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip HMI-101,5,250.5,108.5,494.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip HMI-101 copper,15,249.5,107.5,493.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"

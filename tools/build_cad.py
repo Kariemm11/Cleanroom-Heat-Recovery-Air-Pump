@@ -262,6 +262,11 @@ def material(part, col):
     if {"filler", "panel"} <= words:
         return "Filler HMI panel"
     rules = [
+        (("receiver",), "Steel liquid receiver, painted, rotalock valve + level sight glass (R32)"),
+        (("accumulator",), "Steel suction accumulator with U-tube, painted (R32)"),
+        (("drier",), "Bi-flow filter-drier, copper shell, molecular-sieve core"),
+        (("sight",), "Sight glass with moisture indicator, brass body"),
+        (("charging",), "Brass service valve with Schrader charging port and cap"),
         (("isokinetic",), "Stainless steel 316L isokinetic sampling probe"),
         (("sample",), "Conductive PU sample tubing, 4 mm OD"),
         (("particle",), "Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"),

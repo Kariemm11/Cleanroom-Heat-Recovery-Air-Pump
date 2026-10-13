@@ -82,8 +82,19 @@ AHU,Filter dP gauge,5,194.0,28.4,0.9,Filter media in aluminium frame
 AHU,AHU control panel,2,18.7,25.3,3.2,See model colour
 AHU,AHU control panel -2,1,1.1,4.4,1.1,See model colour
 AHU,Misc,16,196.3,25.7,2.9,See model colour
-AHU,R32 refrigerant pipework,4,261.4,43.0,124.6,Copper refrigerant tube (R32)
+AHU,R32 refrigerant pipework,4,261.2,43.9,124.6,Copper refrigerant tube (R32)
 AHU,R32 refrigerant pipework -2,1,3.7,3.7,3.7,Copper refrigerant tube (R32)
+AHU,R32 liquid receiver,3,6.6,15.4,6.6,"Steel liquid receiver, painted, rotalock valve + level sight glass (R32)"
+AHU,R32 liquid receiver -2,1,2.4,3.5,2.4,"Steel liquid receiver, painted, rotalock valve + level sight glass (R32)"
+AHU,R32 liquid receiver -3,1,2.0,2.0,0.5,"Steel liquid receiver, painted, rotalock valve + level sight glass (R32)"
+AHU,R32 suction accumulator,3,7.5,17.4,7.5,"Steel suction accumulator with U-tube, painted (R32)"
+AHU,R32 filter-drier (bi-flow),1,6.8,3.1,3.1,"Bi-flow filter-drier, copper shell, molecular-sieve core"
+AHU,R32 sight glass plus moisture indicator,1,2.9,2.4,2.9,"Sight glass with moisture indicator, brass body"
+AHU,R32 sight glass plus moisture indicator -2,1,1.9,1.9,0.4,"Sight glass with moisture indicator, brass body"
+AHU,R32 charging port (liquid side),1,1.3,3.7,1.3,Brass service valve with Schrader charging port and cap
+AHU,R32 charging port (liquid side) -2,1,1.9,1.3,1.9,Brass service valve with Schrader charging port and cap
+AHU,R32 charging port (suction side),1,1.3,3.7,1.3,Brass service valve with Schrader charging port and cap
+AHU,R32 charging port (suction side) -2,1,1.9,1.3,1.9,Brass service valve with Schrader charging port and cap
 AHU,SV-101 servo linkage,1,6.8,1.0,0.5,See model colour
 AHU,SV-101 servo linkage -2,2,10.9,14.8,0.9,See model colour
 Heat-recovery air-pump unit,Coil extract,26,8.8,19.2,14.5,Copper tube + aluminium fins

@@ -10,13 +10,14 @@ This repository has two parts:
 | | What | Where |
 |---|---|---|
 | **3D simulation** | An interactive, live-running digital twin with HMI, control loops, energy, CO₂, ACH, airborne particles and a contamination containment screen | [`index.html`](index.html) |
-| **3D CAD design** | A STEP assembly that SolidWorks opens directly, with 255 named and coloured parts in 8 sub-assemblies | [`cad/`](cad/) |
+| **3D CAD design** | A STEP assembly that SolidWorks opens directly, with 266 named and coloured parts in 8 sub-assemblies | [`cad/`](cad/) |
 
 ![The rig in the simulator](docs/img/rig-overview.jpg)
 
 ### Open the simulator
 - **Online:** enable GitHub Pages (Settings → Pages → *Deploy from a branch* → `main` / root). The rig is then live at **https://kariemm11.github.io/Cleanroom-Heat-Recovery-Air-Pump/**.
 - **Offline:** open `index.html` in a browser. Everything except the web fonts is in this repository: Three.js is in `assets/vendor/`.
+- **Not seeing the latest version?** GitHub Pages lets browsers keep a copy for up to 10 minutes after an update. The page detects an old cached copy and reloads itself. If it still looks old, press **Ctrl+Shift+R** (**Cmd+Shift+R** on a Mac).
 
 ---
 
@@ -24,7 +25,7 @@ This repository has two parts:
 
 | Zone | Contents |
 |---|---|
-| **Plant room** (x < 0) | **AHU**: outdoor-air pre-filter, plate core or thermal wheel, recovery bypass damper, mixing box with **servo-driven dampers**, panel + bag filters, **pre-heat coil**, cooling coil, droplet eliminator, **reheat coil**, steam humidifier, EC supply fan, H13 HEPA, attenuators, extract deck with transfer fan. **Heat-recovery air-pump unit**, in parallel behind it: crossflow core, two filters, exhaust-air coil (the air pump's evaporator), fans, control box. One R32 circuit (scroll compressor, 4-way valve, EEV) joins the two. |
+| **Plant room** (x < 0) | **AHU**: outdoor-air pre-filter, plate core or thermal wheel, recovery bypass damper, mixing box with **servo-driven dampers**, panel + bag filters, **pre-heat coil**, cooling coil, droplet eliminator, **reheat coil**, steam humidifier, EC supply fan, H13 HEPA, attenuators, extract deck with transfer fan. **Heat-recovery air-pump unit**, in parallel behind it: crossflow core, two filters, exhaust-air coil (the air pump's evaporator), fans, control box. One R32 circuit joins the two: scroll compressor, 4-way valve, liquid receiver, filter-drier, sight glass, EEV, suction accumulator and two charging ports (see *Refrigerant circuit* below). |
 | **Fresh air** | **Fresh-air compressor** (centrifugal, PWM speed) behind a wall louvre. It discharges into a header with one branch to the air-pump unit's fresh lane and one to the AHU's outdoor-air intake. |
 | **Supply** | AHU supply → boot → **riser** (FT-102 airflow) → through the partition → ceiling-void duct → **two 4-way square ceiling diffusers** under a false ceiling at 400 mm. |
 | **Return / exhaust** | **Two low-level return grilles** in the partition → AHU extract deck → recirculated through the mixing box, or exhausted through both cores and the evaporator → outdoor louvre. |
@@ -88,6 +89,22 @@ Typical results at the default settings, after 30 simulated minutes: about **44 
 
 ![Summer, air coloured by temperature, energy screen](docs/img/rig-summer-temperature.jpg)
 
+## Refrigerant circuit: where the R32 comes from and where it is stored
+
+The air pump has one sealed R32 circuit, in the machine compartment under the AHU. In **winter** the compressor sends hot gas through the 4-way valve to the **pre-heat coil**, which acts as the condenser. The liquid then goes through the **liquid receiver**, the **filter-drier** and the **sight glass** to the **expansion valve (EEV)**. It boils in the **exhaust-air coil** of the air-pump unit, which acts as the evaporator, and returns through the **suction accumulator** to the compressor. In **summer** the 4-way valve reverses the flow, so the cooling coil becomes the evaporator and the exhaust-air coil becomes the condenser. The purple refrigerant line in 3D shows this, and its dots reverse direction with the season.
+
+| Question | Answer in this rig |
+|---|---|
+| Where does the refrigerant come from? | It is charged at commissioning from an R32 cylinder through the two **Schrader charging ports**: liquid side at the receiver outlet, suction side at the accumulator inlet. The charge is weighed in. The design charge is about **40 g**, an estimate for a circuit of about 40 W coil duty; confirm it by weighing and by checking the sight glass and superheat at commissioning. |
+| Where is it stored while running? | The charge circulates. The **liquid receiver** holds the surplus liquid, so the coils and the EEV always get liquid in both seasons. The **suction accumulator** catches any liquid the evaporator did not boil off (mode change, defrost), so the compressor only takes in vapour. |
+| Where is it stored for service? | It is **pumped down into the receiver** (close the liquid valve and run the compressor), or recovered into a recovery cylinder. R32 is never vented (EU F-gas Regulation 2024/573). |
+| What keeps it clean? | The bi-flow **filter-drier** removes moisture and acid. The sight glass shows bubbles (short of charge) and its indicator changes colour if moisture gets in. |
+| Safety and climate | R32 is class A2L (mildly flammable) with a GWP of 675, so 40 g is 27 kg CO₂e. That is far below the charge limits for room installations in IEC 60335-2-40. |
+
+The receiver, accumulator, filter-drier, sight glass and charging ports are mechanical refrigerant parts with **no PCB connection**. They are in the STEP model and the BOM. The HMI's *Energy & CO₂ → Air pump + recovery* card lists the refrigerant and its charge.
+
+![R32 circuit: suction accumulator (left) and liquid receiver (right) on the machine compartment](docs/img/rig-refrigerant.jpg)
+
 ## Contamination containment strategy
 
 The HMI's **Containment** screen shows nine barriers, each with a live status (✓ OK, ! CHECK, ✕ ACTION) worked out from the sensors. The limits are those of EU GMP Annex 1 (2022) and ISO 14644-1. The clean room is Grade B and the fill point under the RABS is Grade A.
@@ -124,7 +141,7 @@ V · dC/dt = Q<sub>sup</sub> · C<sub>sup</sub> + Q<sub>in</sub> · C<sub>lab</s
 
 At the defaults, the room reads about 122 000 /m³ (Grade B in operation) and the fill point about 1 600 /m³ (Grade A). Set *Room pressure* to 0 Pa, or raise the shedding, and the alarms and the Containment screen react.
 
-**Containment zones in 3D.** Tick *Show → Containment zones*, or press *Show zones in 3D* on the Containment screen. The Grade A zone (green), the Grade B room (blue), the pass-box airlock (amber) and the unclassified plant room (grey) are drawn as coloured volumes with floor footprints. *Contamination particles* shows, in pink, what the operator sheds and what enters through the pass box, carried by the room air to the return grilles.
+**Containment zones in 3D.** The zones are shown by default, each with a coloured badge: **GRADE A** (green, first air at the fill point), **GRADE B** (blue, the clean room), **PASS BOX** (amber, the airlock) and **UNCLASSIFIED** (grey, the plant room). Each zone is a translucent volume with a floor footprint. Turn them off or on with the *Zones* control at the bottom left of the 3D view, the **Z** key, *Show → Containment zones* or *Show zones in 3D* on the Containment screen. *Contamination particles* shows, in pink, what the operator sheds and what enters through the pass box, carried by the room air to the return grilles.
 
 ![Containment zones](docs/img/rig-containment-zones.jpg)
 
@@ -137,10 +154,13 @@ At the defaults, the room reads about 122 000 /m³ (Grade B in operation) and th
 - **Every design value is editable**: airflow, minimum fresh air, the fresh-air share through the air pump, both core efficiencies, room RH and pressure, heat gain, particles shed in the room, outdoor °C/RH, mixed-air / coil / supply set points, lab temperature, envelope UA, DC bus voltage, grid factor, baseline COP and operating hours. The values for each season are kept separately.
 - **HMI screens**: Overview mimic, Sensors (live, with device and PCB channel), Control loops (auto/manual), Energy & CO₂, **Containment**, Trends and Alarms.
 - **Trends**: 10 charts over the last 15 minutes of simulated time: air temperatures, humidity, electrical power vs. baseline, ACH, room pressure (with set point), room particles (with the Grade B limit), fill-point particles (with the Grade A limit), airflows, actuator outputs and CO₂ emissions.
-- **Readings in 3D**: the *Readings* control at the bottom left of the 3D view switches the live sensor values between **Hide**, **Show** and **Large**. Large is meant for showing the rig to an audience or on a projector. Press **R** to cycle through them.
+- **Readings in 3D**: the *Readings* control at the bottom left of the 3D view switches the live sensor values between **Hide**, **Show** and **Large**. Large is meant for showing the rig to an audience or on a projector. Press **R** to cycle through them. Large also enlarges the zone badges.
+- **Air flow in ducts**: a glowing core inside every duct shows the air moving, with chevrons that travel downstream. Their speed follows that duct's live airflow, and their colour follows the air colour mode, by stream or by temperature. Switch it with *Duct air* Off/On at the bottom left of the 3D view, the **D** key or *Show → Air flow in ducts*. It is hidden automatically when a duct carries no air, for example the air-pump lane in the baseline test.
+
+  ![Air flowing in the ducts: fresh air (blue), return (orange), supply riser and ceiling duct (teal)](docs/img/rig-duct-air.jpg)
 - **Pull-tabs**: *Hide controls* on the left edge of the top-right panel and *Hide HMI-101* on top of the bottom dock slide each panel away, so the 3D view fills the screen. The same tabs bring them back, and clicking the 3D HMI screen also reopens the dock.
 - **Share / QR** saves the current setup in a link, for example:
-  `index.html?season=summer&flow=8&oat=38&rec=base&color=temp&hide=ribbon`. Add `read=big` for large readings.
+  `index.html?season=summer&flow=8&oat=38&rec=base&color=temp&hide=ribbon`. Add `read=big` for large readings, `zones=off` to start without the zones or `duct=off` without the duct air.
 
 ![Presenting: both panels hidden, large readings](docs/img/rig-presentation.jpg)
 
@@ -150,7 +170,7 @@ At the defaults, the room reads about 122 000 /m³ (Grade B in operation) and th
 
 ![STEP model, re-imported and rendered](docs/img/cad-step-render.jpg)
 
-- [`cad/cleanroom-rig-assembly.step`](cad/cleanroom-rig-assembly.step) is the whole rig as an AP214 STEP file in **mm**. It has **8 sub-assemblies, 255 named, coloured parts and 1 493 solids**, and the overall size is 1028 × 532 × 539 mm. It includes the PT-101 particle counter, its isokinetic probe, sample tube and PCB strip.
+- [`cad/cleanroom-rig-assembly.step`](cad/cleanroom-rig-assembly.step) is the whole rig as an AP214 STEP file in **mm**. It has **8 sub-assemblies, 266 named, coloured parts and 1 507 solids**, and the overall size is 1028 × 532 × 539 mm. It includes the PT-101 particle counter (probe, sample tube, PCB strip) and the R32 receiver, accumulator, filter-drier, sight glass and charging ports.
 - [`cad/step/`](cad/step/) holds one STEP file per sub-assembly: enclosure, AHU, heat-recovery air-pump unit, fresh-air compressor, ductwork, clean room, controls and HMI, PCB wiring harness.
 - [`cad/BOM.csv`](cad/BOM.csv) lists every part with its size and material.
 - [`cad/drawings/enclosure-GA.pdf`](cad/drawings/enclosure-GA.pdf) is the acrylic **fabrication drawing**: panel views, every cut-out with its position, and the cut list.
@@ -171,5 +191,7 @@ tools/export_geometry.js    dumps the simulator's solids to cad/rig-geometry.jso
 tools/build_cad.py          rebuilds them as STEP solids (CadQuery / OpenCascade)
 tools/make_drawings.py      enclosure fabrication drawing
 ```
+
+When `assets/js/rig.js` changes, bump the build stamp in three places: `BUILD` in `rig.js`, `data-build` on `#app` in `index.html`, and the `?b=` on the script tags. A browser holding an older page then reloads it instead of mixing old and new files.
 
 The physics model runs headless for testing: `node -e "const R=require('./assets/js/rig-model.js'); const m=R.create(); for(let i=0;i<12000;i++) R.step(m,0.05); console.log(m.kpi)"`.

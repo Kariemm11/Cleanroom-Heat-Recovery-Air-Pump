@@ -31,8 +31,10 @@
   function cap(k) { return k.charAt(0).toUpperCase() + k.slice(1); }
   function rail() { return document.getElementById("rail") || document; }
   function segs() {
-    var s = Array.prototype.slice.call(rail().querySelectorAll(".seg[id^=seg]")), r = document.getElementById("segRead");
-    if (r) s.push(r);                                   // the on-stage Readings control (read=off|on|big)
+    var s = Array.prototype.slice.call(rail().querySelectorAll(".seg[id^=seg]"));
+    ["segRead", "segZones", "segDuct"].forEach(function (id) {   // on-stage: read=off|on|big, zones=off|on, duct=off|on
+      var el = document.getElementById(id); if (el) s.push(el);
+    });
     return s;
   }
   function nums() { return Array.prototype.slice.call(rail().querySelectorAll("input[type=number][id^=in]")); }

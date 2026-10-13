@@ -7,6 +7,21 @@
 "use strict";
 if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeend','<p class="sub" style="margin-top:8px">3D library could not load.</p>');return;}
 
+/* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
+   an old cached page can meet this newer script (or the other way round) and the scene fails to start.
+   The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
+var BUILD='2026-10-13c';
+var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
+if(pageBuild!==BUILD){
+  var q=new URLSearchParams(location.search);
+  if(q.get('b')!==BUILD){ q.set('b',BUILD); location.replace(location.pathname+'?'+q.toString()+location.hash); return; }
+  // a fresh load still brought an older page: say so instead of failing half-way
+  var lg=document.querySelector('.legend');
+  if(lg) lg.insertAdjacentHTML('beforeend','<p class="sub" style="margin-top:8px;color:var(--bad)">This page is an older cached copy. '+
+    'Press Ctrl+Shift+R (Cmd+Shift+R on a Mac) to load the latest version.</p>');
+  return;
+}
+
 /* ---------------------------------------------------------------- tokens */
 var css = getComputedStyle(document.documentElement);
 function tok(n){ return css.getPropertyValue(n).trim(); }
@@ -628,15 +643,61 @@ var refrig=new THREE.Group(), refrigCurves=[];
   var zf=Z1+0.35;
   run([[-6.2,Y0-0.45,0.35],[-6.2,Y0-0.30,zf],[-4.6,Y0-0.15,zf],[-2.6,Y0-0.6,zf],[-0.9,YS-1.2,zf],[-0.9,YS,Z1-0.1]]);
   run([[-0.9,YS+0.4,Z1-0.1],[-0.2,YS+0.6,zf],[0.6,Y0-0.9,zf],[1.9,YS-1.3,zf],[1.9,YS,Z1-0.1]]);
-  // liquid line crossing to the recovery unit's exhaust coil
-  run([[3.8,YS,Z1-0.1],[3.0,YS-1.3,zf],[0.9,Y0-1.3,zf],[-3.2,Y0-1.5,zf],
+  // liquid line: coils → liquid receiver → filter-drier → sight glass → EEV → the recovery unit's exhaust coil
+  run([[3.8,YS,Z1-0.1],[3.0,YS-1.3,zf],[0.9,Y0-1.3,zf],[-0.7,Y0-1.35,zf],[-1.7,Y0-1.45,zf],[-2.45,Y0-1.47,zf],[-3.2,Y0-1.5,zf],
        [-7.6,Y0-1.3,0.4],[-10.5,Y0-0.9,-3.4],[-14.5,MY-1.0,-6.6],[-17.3,MY-0.9,MZL+0.5],[-17.3,MY,MZL+0.4]]);
-  // suction line back from the recovery unit to the compressor
+  // suction line back from the recovery unit, through the suction accumulator, to the compressor
   run([[-17.3,MY+0.5,MZL+0.4],[-19.8,MY+0.4,-6.4],[-15.0,MY-1.3,-4.2],
-       [-9.4,Y0-1.4,-1.4],[-7.2,Y0-1.0,0.9],[-6.2,Y0-0.55,0.35]],0.09);
+       [-9.4,Y0-1.4,-1.4],[-8.3,Y0-1.55,1.3],[-7.3,Y0-1.2,zf],[-6.7,Y0-0.5,1.3],[-6.2,Y0-0.45,0.35]],0.09);
   refrig.add(at(box(0.34,0.34,0.34,M.frame),-3.2,Y0-1.5,zf));
   labels.push({text:'Electronic expansion valve', sub:'superheat control', tier:'aux',
     anchor:new THREE.Vector3(-3.2,Y0-1.5,zf), off:new THREE.Vector3(0.4,-1.1,0.9)});
+
+  /* Where the refrigerant comes from and where it is kept. The R32 is weighed in through the Schrader
+     charging ports at commissioning (design charge ≈ 40 g) and never vented. While running, the liquid
+     receiver holds the surplus liquid, and the suction accumulator catches liquid that the evaporator
+     has not boiled off (mode change, defrost) so the compressor only takes in vapour. For service the
+     charge is pumped down into the receiver, or recovered into a recovery cylinder. */
+  var shell=std(new THREE.Color('#3d4650'),{m:0.55,r:0.45}), brass=std(new THREE.Color('#b8923a'),{m:0.85,r:0.3});
+  function vessel(name,x,y,z,r,h){
+    var g=new THREE.Group(); tag(g,name);
+    g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,24),shell),x,y,z));
+    [1,-1].forEach(function(sg){ var cap=new THREE.Mesh(new THREE.SphereGeometry(r,24,12,0,Math.PI*2,0,Math.PI/2),shell);
+      if(sg<0) cap.rotation.x=Math.PI; at(cap,x,y+sg*h/2,z); g.add(cap); });
+    return g;
+  }
+  // liquid receiver, with its rotalock outlet valve and a level sight glass
+  var rcv=vessel('R32 liquid receiver',-0.7,Y0-1.3,zf,0.3,0.8);
+  rcv.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.11,0.32,12),brass),-0.7,Y0-0.66,zf));
+  var lvl=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,0.05,16),std(new THREE.Color('#9fd8f5'),{m:0.1,r:0.1,e:0x1d5f86,ei:0.6}));
+  lvl.rotation.x=Math.PI/2; at(lvl,-0.7,Y0-1.42,zf+0.3); rcv.add(lvl);
+  refrig.add(rcv);
+  // suction accumulator (U-tube inside), between the 4-way valve and the compressor suction
+  refrig.add(vessel('R32 suction accumulator',-7.3,Y0-1.2,zf,0.34,0.9));
+  // bi-flow filter-drier and sight glass with moisture indicator, ahead of the EEV
+  var dr=new THREE.Group(); tag(dr,'R32 filter-drier (bi-flow)');
+  var drb=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,0.62,16),M.copper); drb.rotation.z=Math.PI/2; at(drb,-1.7,Y0-1.45,zf); dr.add(drb);
+  refrig.add(dr);
+  var sg=new THREE.Group(); tag(sg,'R32 sight glass + moisture indicator');
+  sg.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,0.22,16),brass),-2.45,Y0-1.47,zf));
+  var eye=new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.04,16),std(new THREE.Color('#22c55e'),{m:0.1,r:0.2,e:0x0b5a24,ei:0.8}));
+  eye.rotation.x=Math.PI/2; at(eye,-2.45,Y0-1.47,zf+0.13); sg.add(eye);
+  refrig.add(sg);
+  // Schrader charging / service ports: liquid side on the receiver outlet, suction side at the accumulator inlet
+  [['R32 charging port (liquid side)',-1.15,Y0-1.38],['R32 charging port (suction side)',-7.85,Y0-1.42]].forEach(function(c){
+    var g=new THREE.Group(); tag(g,c[0]);
+    g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.34,10),brass),c[1],c[2]+0.17,zf));
+    g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.085,0.085,0.12,12),std(new THREE.Color('#1d4ed8'),{m:0.3,r:0.5})),c[1],c[2]+0.38,zf));  // cap
+    refrig.add(g);
+  });
+  labels.push({text:'Liquid receiver', sub:'stores the R32 charge · pump-down vessel',
+    anchor:new THREE.Vector3(-0.7,Y0-0.95,zf), off:new THREE.Vector3(0.9,-1.6,1.5)});
+  labels.push({text:'Suction accumulator', sub:'catches liquid · protects the compressor',
+    anchor:new THREE.Vector3(-7.3,Y0-0.8,zf), off:new THREE.Vector3(-1.2,-1.7,1.5)});
+  labels.push({text:'Filter-drier + sight glass', sub:'bi-flow · moisture indicator', tier:'aux',
+    anchor:new THREE.Vector3(-2.1,Y0-1.45,zf), off:new THREE.Vector3(-0.2,-1.9,1.2)});
+  labels.push({text:'Charging ports', sub:'Schrader valves · R32 weighed in here', tier:'aux',
+    anchor:new THREE.Vector3(-1.15,Y0-1.0,zf), off:new THREE.Vector3(1.6,-0.6,1.0)});
   tag(refrig,'R32 refrigerant pipework'); unit.add(refrig);
 })();
 
@@ -750,6 +811,7 @@ function duct(name,pts,r,mat,group,bend){
   var len=cv.getLength();
   var m=new THREE.Mesh(new THREE.TubeGeometry(cv,Math.max(24,Math.round(len*2)),r,18,false),mat||MR.pvc);
   m.userData.cad={type:'duct',pts:pts.map(function(p){return [p[0],p[1],p[2]];}),r:r,wall:0.15,bend:bend||r*1.6};
+  m.userData.curve=cv; m.userData.r=r;                 // reused by the duct-airflow layer
   m.renderOrder=2; tag(m,name); (group||rigDucts).add(m);
   return m;
 }
@@ -1255,16 +1317,45 @@ var PT={x:30,y:16,z:-BZ+TH+0.8};
 })();
 
 /* ------------------------------------------------ containment zones (display only, not exported) */
-var zoneGroup=new THREE.Group(); zoneGroup.visible=false; zoneGroup.userData.noExport=true; scene.add(zoneGroup);
+/* Each zone is a translucent volume with a floor footprint and a solid colour badge (GRADE A, GRADE B …).
+   Badges keep a constant size on screen, like the sensor tags, and grow with the Large readings mode. */
+var zoneGroup=new THREE.Group(); zoneGroup.userData.noExport=true; scene.add(zoneGroup);
 var ZONES=[
-  {name:'Grade A · ISO 5 · first air under the RABS',c:'#16a34a',o:0.22,f:0.45,b:[VF.x0+0.3,VF.deck,VF.z0+0.3,VF.x1-0.3,VF.deck+8.2,VF.z1-0.3]},
-  {name:'Grade B · ISO 7 in operation · +15 Pa',c:'#2563eb',o:0.07,f:0.22,b:[TH/2+0.1,TH,-BZ+TH,BX-TH,CEIL,BZ-TH]},
-  {name:'Pass box · airlock · interlocked + UV',c:'#d97706',o:0.26,f:0.5,b:[PBX.x0,PBX.y0,PBX.zi,PBX.x1,PBX.y1,PBX.zo]},
-  {name:'Plant room · unclassified · 0 Pa reference',c:'#64748b',o:0.04,f:0.18,b:[-BX+TH,TH,-BZ+TH,-TH/2-0.1,BY-TH,BZ-TH]}
+  {t:'GRADE A',s:'ISO 5 · first air at the fill point',c:'#16a34a',bc:'#15803d',o:0.22,f:0.45,
+   b:[VF.x0+0.3,VF.deck,VF.z0+0.3,VF.x1-0.3,VF.deck+8.2,VF.z1-0.3],at:[VF.x1-5,VF.deck+10.4,VF.z1]},
+  {t:'GRADE B',s:'ISO 7 in operation · +15 Pa',c:'#2563eb',bc:'#1d4ed8',o:0.07,f:0.22,
+   b:[TH/2+0.1,TH,-BZ+TH,BX-TH,CEIL,BZ-TH],at:[30,3.5,17]},
+  {t:'PASS BOX',s:'airlock · interlocked doors + UV',c:'#d97706',bc:'#b45309',o:0.26,f:0.5,
+   b:[PBX.x0,PBX.y0,PBX.zi,PBX.x1,PBX.y1,PBX.zo],at:[(PBX.x0+PBX.x1)/2,PBX.y0-2.6,PBX.zo+0.5]},
+  {t:'UNCLASSIFIED',s:'plant room · 0 Pa reference',c:'#64748b',bc:'#475569',o:0.04,f:0.18,
+   b:[-BX+TH,TH,-BZ+TH,-TH/2-0.1,BY-TH,BZ-TH],at:[-30,3.5,17]}
 ];
+var zoneBadges=[], ZB_SCALE=0.00050, zoneBadgeK=1;
+function makeZoneBadge(title,sub,color){
+  var dpr=2,pad=12,fs=30,ss=19, cv=document.createElement('canvas'), c=cv.getContext('2d');
+  c.font='700 '+fs+'px "IBM Plex Sans", sans-serif'; var w=c.measureText(title).width;
+  c.font='500 '+ss+'px "IBM Plex Mono", monospace'; w=Math.max(w,c.measureText(sub).width);
+  var Wd=Math.ceil(w+pad*2), Hh=Math.ceil(fs+ss+pad*2+2);
+  cv.width=Wd*dpr; cv.height=Hh*dpr; c.scale(dpr,dpr);
+  c.fillStyle=color; roundRect(c,0,0,Wd,Hh,7); c.fill();
+  c.strokeStyle='rgba(255,255,255,0.75)'; c.lineWidth=2; roundRect(c,2.5,2.5,Wd-5,Hh-5,5); c.stroke();
+  c.textBaseline='top'; c.fillStyle='#ffffff';
+  c.font='700 '+fs+'px "IBM Plex Sans", sans-serif'; c.fillText(title,pad,pad-3);
+  c.fillStyle='rgba(255,255,255,0.9)'; c.font='500 '+ss+'px "IBM Plex Mono", monospace'; c.fillText(sub,pad,pad+fs);
+  var tex=new THREE.CanvasTexture(cv); tex.anisotropy=4;
+  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false,sizeAttenuation:false}));
+  sp.renderOrder=10.5; sp.userData.wh=[Wd,Hh];        // above the name labels (10), under the live readings (11)
+  sp.scale.set(Wd*ZB_SCALE*zoneBadgeK,Hh*ZB_SCALE*zoneBadgeK,1);
+  return sp;
+}
+function scaleZoneBadges(k){
+  zoneBadgeK=k;
+  zoneBadges.forEach(function(sp){ sp.scale.set(sp.userData.wh[0]*ZB_SCALE*k,sp.userData.wh[1]*ZB_SCALE*k,1); });
+}
 function buildZones(){
   while(zoneGroup.children.length){ var c=zoneGroup.children.pop(); if(c.geometry) c.geometry.dispose(); if(c.material){ if(c.material.map) c.material.map.dispose(); c.material.dispose(); } }
-  ZONES.forEach(function(z,i){
+  zoneBadges=[];
+  ZONES.forEach(function(z){
     var b=z.b, w=b[3]-b[0], h=b[4]-b[1], d=b[5]-b[2];
     var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshBasicMaterial({color:new THREE.Color(z.c),transparent:true,opacity:z.o,depthWrite:false,side:THREE.DoubleSide}));
     m.position.set(b[0]+w/2,b[1]+h/2,b[2]+d/2); m.renderOrder=4; zoneGroup.add(m);
@@ -1272,8 +1363,7 @@ function buildZones(){
     e.position.copy(m.position); zoneGroup.add(e);
     var fl=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({color:new THREE.Color(z.c),transparent:true,opacity:z.f,depthWrite:false,side:THREE.DoubleSide}));
     fl.rotation.x=-Math.PI/2; fl.position.set(b[0]+w/2,b[1]+0.06,b[2]+d/2); fl.renderOrder=3; zoneGroup.add(fl);   // zone footprint, read like a zoning plan
-    var sp=makeLabelSprite(z.name.split(' · ')[0],z.name.split(' · ').slice(1).join(' · '),0.00048);
-    sp.position.set(b[0]+w/2,b[4]+(i===1?-4:2.2),b[2]+d/2+(i===1?18:0)); zoneGroup.add(sp);
+    var sp=makeZoneBadge(z.t,z.s,z.bc); sp.position.set(z.at[0],z.at[1],z.at[2]); zoneGroup.add(sp); zoneBadges.push(sp);
   });
 }
 
@@ -1643,6 +1733,71 @@ function updateSignals(dt){
   sigDots.geo.attributes.position.needsUpdate=true; sigDots.geo.attributes.color.needsUpdate=true;
 }
 
+/* ================================================== air flow in the ducts */
+/* A glowing core inside every duct, with chevrons that travel in the flow direction. The speed follows
+   the live airflow of that duct; the colour follows the air colour mode (by stream or by temperature).
+   Display only: the group is skipped by the CAD export. */
+var ductFlow=new THREE.Group(); ductFlow.userData.noExport=true; scene.add(ductFlow);
+var ductFlowOn=true, DUCTFLOW=[];
+function makeFlowTex(){
+  var cv=document.createElement('canvas'); cv.width=128; cv.height=64;
+  var c=cv.getContext('2d');
+  c.fillStyle='rgba(255,255,255,0.20)'; c.fillRect(0,0,128,64);              // the air itself
+  var g=c.createLinearGradient(8,0,92,0);                                     // streak trailing each chevron
+  g.addColorStop(0,'rgba(255,255,255,0)'); g.addColorStop(1,'rgba(255,255,255,0.55)');
+  c.fillStyle=g; c.fillRect(8,26,84,12);
+  c.fillStyle='rgba(255,255,255,0.98)';                                       // chevron pointing downstream (+u)
+  c.beginPath(); c.moveTo(80,12); c.lineTo(104,32); c.lineTo(80,52); c.lineTo(88,32); c.closePath(); c.fill();
+  var t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4;
+  return t;
+}
+var flowTex0=makeFlowTex();
+/* q: flow key from flows(); share: part of that flow in this duct; ck/tk: stream colour + air state */
+function addDuctFlow(curve,r,q,share,ck,tk){
+  var len=curve.getLength(), tex=flowTex0.clone(); tex.needsUpdate=true;
+  tex.repeat.set(Math.max(1,len/4.5),2);
+  var mat=new THREE.MeshBasicMaterial({map:tex,color:0xffffff,transparent:true,opacity:0.95,depthWrite:false,side:THREE.DoubleSide});
+  var mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(16,Math.round(len*1.5)),r,12,false),mat);
+  mesh.renderOrder=3; ductFlow.add(mesh);
+  DUCTFLOW.push({mesh:mesh,tex:tex,mat:mat,q:q,share:share||1,ck:ck,tk:tk});
+}
+var DUCTAIR={
+  'Compressor discharge':['Qfa',1,'f','oa'],
+  'Fresh-air header':['Qfa',1,'f','oa'],
+  'Header → recovery unit (fresh lane)':['Qhr',1,'f','oa'],
+  'Header → AHU outdoor-air intake':['Qdir',1,'f','oa'],
+  'Tempered-air duct: recovery unit → AHU':['Qhr',1,'f','t1'],
+  'Extract transfer duct: AHU → recovery unit':['Qex',1,'r','r1'],
+  'Exhaust duct: recovery unit → louvre':['Qex',1,'r','exh'],
+  'Supply riser':['Qsup',1,'m','sup'],
+  'Diffuser drop 1':['Qsup',0.5,'m','sup'],
+  'Return branch (grille 2)':['Qret',0.5,'r','ret']
+};
+rigDucts.children.forEach(function(d){
+  var k=DUCTAIR[d.userData.part]; if(!k || !d.userData.curve) return;
+  addDuctFlow(d.userData.curve,d.userData.r*0.62,k[0],k[1],k[2],k[3]);
+});
+function line3(pts){ var cp=new THREE.CurvePath(); for(var i=0;i<pts.length-1;i++) cp.add(new THREE.LineCurve3(W(pts[i][0],pts[i][1],pts[i][2]),W(pts[i+1][0],pts[i+1][1],pts[i+1][2]))); return cp; }
+// the straight runs that are boxes or open cylinders rather than swept ducts
+addDuctFlow(line3([[-BX-1.2,COMP.y,COMP.z],[COMP.x-2.2,COMP.y,COMP.z]]),1.15,'Qfa',1,'f','oa');                         // louvre → compressor
+addDuctFlow(roundedPath([[P_AHU_SUP.x+0.2,P_AHU_SUP.y,P_AHU_SUP.z],[RX,P_AHU_SUP.y,P_AHU_SUP.z+0.6],[RX,P_AHU_SUP.y,RZ]],1.2),0.85,'Qsup',1,'m','sup');  // supply boot
+addDuctFlow(line3([[-0.4,P_AHU_RET.y,P_AHU_RET.z],[P_AHU_RET.x+0.3,P_AHU_RET.y,P_AHU_RET.z]]),0.85,'Qret',1,'r','ret');                              // return duct
+function colorDuctFlow(){
+  var states=m.a;
+  DUCTFLOW.forEach(function(d){
+    if(colorMode==='temp' && states) tempColor(states[d.tk]!==undefined?states[d.tk]:21,d.mat.color);
+    else streamColor(d.ck,d.mat.color);
+  });
+}
+function updateDuctFlow(dt,speed,fl){
+  var ref=Math.max(fl.ref||1,0.5);
+  DUCTFLOW.forEach(function(d){
+    var q=(fl[d.q]||0)*d.share, ff=Math.max(0,Math.min(3,q/ref));
+    d.mesh.visible=q>0.02;
+    d.tex.offset.x-=dt*speed*ff*2.2;                  // −offset moves the chevrons downstream
+  });
+}
+
 /* ============================================================== labels */
 function roundRect(ctx,x,y,w,h,rr){
   ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.lineTo(x+w-rr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
@@ -1732,7 +1887,7 @@ var TAGDEF=[
   ['CMP-101',C2W(-6.6,Y0-3.3,Z1+1.2),'out'], ['FAN-103',C2W(-8.9,Y1+3.1,0),'out'],
   ['TT-108',C2W(-18.3,MY+MH/2+2.6,MZL),'in'],
   ['FT-102',W(RX+0.5,24,RZ+3.4),'in'], ['TT-106',W(42,28,-21),'in'], ['PDT-101',W(4,35,-19),'in'],
-  ['ACH',W(20,30,4),'calc'], ['CT',W(-21,PCB.y0-2.4,PCB.z+1.2),'in'], ['PT-101',W(PT.x+6,PT.y-2,PT.z+2),'in']
+  ['ACH',W(20,30,4),'calc'], ['CT',W(-21,PCB.y0-2.4,PCB.z+1.2),'in'], ['PT-101',W(PT.x-7,PT.y+1,PT.z+2),'in']
 ];
 var TAGS=TAGDEF.map(function(d){
   var cv=document.createElement('canvas'); cv.width=600; cv.height=176;     // 2× so the Large readings stay sharp
@@ -2014,7 +2169,10 @@ $('pane-en').innerHTML='<div class="energy">'+
     '<div class="kv"><span>Compressor input</span><b id="e-w">–</b></div>'+
     '<div class="kv"><span>Recovered by the two cores</span><b id="e-qrec">–</b></div>'+
     '<div class="kv"><span>Desuperheater reheat (free)</span><b id="e-dsh">–</b></div>'+
-    '<div class="kv"><span>To outdoor condenser</span><b id="e-out">–</b></div></div>'+
+    '<div class="kv"><span>To outdoor condenser</span><b id="e-out">–</b></div>'+
+    '<div class="kv"><span>Refrigerant</span><b>R32 · A2L · GWP 675</b></div>'+
+    '<div class="kv"><span>Charge (design)</span><b>≈ 40 g · 27 kg CO₂e</b></div>'+
+    '<p class="note">Charged through the Schrader ports at commissioning, by weight. While running, the surplus liquid sits in the liquid receiver; the suction accumulator keeps liquid out of the compressor. For service the charge is pumped down into the receiver or recovered into a cylinder, never vented.</p></div>'+
   '<div class="card"><h4>Air changes per hour</h4><div class="big" id="e-ach">–</div>'+
     '<p class="note" id="e-achf">–</p>'+
     '<div class="kv"><span>Room (net)</span><b id="e-dims">–</b></div>'+
@@ -2378,7 +2536,7 @@ function seg(id,fn){
 function clearSeg(id){ Array.prototype.forEach.call(document.querySelectorAll('#'+id+' button'),function(x){ x.setAttribute('aria-pressed','false'); }); }
 seg('segSeason',function(v){ state.season=v; applySeason(); });
 seg('segRec',function(v){ m.recovery=v==='on'; applySeason(); });
-seg('segColor',function(v){ colorMode=v; $('keysStream').hidden=v==='temp'; $('keysTemp').hidden=v!=='temp'; refreshPathColors(m.a); colorRibbons(); });
+seg('segColor',function(v){ colorMode=v; $('keysStream').hidden=v==='temp'; $('keysTemp').hidden=v!=='temp'; refreshPathColors(m.a); colorRibbons(); colorDuctFlow(); });
 seg('segHrv',function(v){ m.hrv=v; applyHrv(); });
 seg('segCase',function(v){ state.casing=v; applyCasing(); applyExplode(); });
 seg('segBox',function(v){ applyBox(v); });
@@ -2406,14 +2564,18 @@ function setReadings(v){
   readMode=v; $('cbTags').checked=v!=='off';
   var k=v==='big'?1.9:1;
   TAGS.forEach(function(t){ var big=t.id==='ACH'; t.sp.scale.set((big?0.15:0.105)*k,(big?0.044:0.031)*k,1); });
+  scaleZoneBadges(v==='big'?1.5:1);
   Array.prototype.forEach.call(document.querySelectorAll('#segRead button'),function(x){ x.setAttribute('aria-pressed',String(x.dataset.v===v)); });
   if(v!=='off') updateTags();
 }
 seg('segRead',setReadings);
 document.addEventListener('keydown',function(e){
-  if(e.ctrlKey||e.metaKey||e.altKey||(e.key!=='r'&&e.key!=='R')) return;
+  var k=(e.key||'').toLowerCase();
+  if(e.ctrlKey||e.metaKey||e.altKey||(k!=='r'&&k!=='z'&&k!=='d')) return;
   var tg=e.target, tn=tg&&tg.tagName; if(tn==='INPUT'||tn==='SELECT'||tn==='TEXTAREA'||(tg&&tg.isContentEditable)) return;
-  setReadings({on:'big',big:'off',off:'on'}[readMode]);
+  if(k==='r') setReadings({on:'big',big:'off',off:'on'}[readMode]);
+  else if(k==='z') setZones(!zoneGroup.visible);
+  else setDuctAir(!ductFlowOn);
 });
 cb('cbPcb',function(v){ traceGroup.visible=v; sigDots.obj.visible=v && $('cbSignals').checked; });
 cb('cbSignals',function(v){ sigDots.obj.visible=v && $('cbPcb').checked; });
@@ -2424,10 +2586,22 @@ cb('cbRefrig',function(v){ state.refrig=v; refrig.visible=v; refDots.obj.visible
 cb('cbDucts',function(v){ state.ducts=v; ducts.visible=v; rigDucts.visible=v; });
 cb('cbSpin',function(v){ state.spin=v; });
 cb('cbContam',function(v){ contamVisible=v; });
-cb('cbZones',function(v){
-  zoneGroup.visible=v; var b=$('ctZones');
-  if(b){ b.textContent=v?'Hide zones in 3D':'Show zones in 3D'; b.setAttribute('aria-pressed',String(v)); }
-});
+/* containment zones: the on-stage toggle, the Z key, the "Containment zones" box and the
+   Containment screen's button all drive the same state */
+function setZones(v){
+  zoneGroup.visible=v; $('cbZones').checked=v;
+  Array.prototype.forEach.call(document.querySelectorAll('#segZones button'),function(x){ x.setAttribute('aria-pressed',String((x.dataset.v==='on')===v)); });
+  var b=$('ctZones'); if(b){ b.textContent=v?'Hide zones in 3D':'Show zones in 3D'; b.setAttribute('aria-pressed',String(v)); }
+}
+cb('cbZones',setZones);
+seg('segZones',function(v){ setZones(v==='on'); });
+/* air flow in the ducts: on-stage toggle, the D key and the "Air flow in ducts" box */
+function setDuctAir(v){
+  ductFlowOn=v; $('cbDuctAir').checked=v;
+  Array.prototype.forEach.call(document.querySelectorAll('#segDuct button'),function(x){ x.setAttribute('aria-pressed',String((x.dataset.v==='on')===v)); });
+}
+cb('cbDuctAir',setDuctAir);
+seg('segDuct',function(v){ setDuctAir(v==='on'); });
 var btnPlay=$('btnPlay');
 btnPlay.addEventListener('click',function(){
   state.playing=!state.playing;
@@ -2546,7 +2720,7 @@ function retheme(){
   MR.acrylic.color=T.acrylic.clone(); MR.acrylicEdge.color=T.acrylic.clone(); MR.pvc.color=T.metal.clone();
   MR.pcb.color=T.pcb.clone(); MR.copper.color=T.copper.clone();
   refDots.mat.color=T.refrig.clone(); leaderMat.color=T.metalDark.clone();
-  buildRibbons(); buildArrows(); refreshPathColors(m.a); colorRibbons();
+  buildRibbons(); buildArrows(); refreshPathColors(m.a); colorRibbons(); colorDuctFlow();
   ribbons.visible=$('cbRibbon').checked && state.explode<0.25;
   arrows.visible=$('cbArrows').checked;
   TAGS.forEach(function(t){ t.last=''; });
@@ -2633,12 +2807,14 @@ function frame(){
   var far=cam.r>36;                                       // close-ups (e.g. the HMI view) read better without callouts
   labelGroup.visible = labelMode!=='off' && far;
   tagGroup.visible = $('cbTags').checked && far && cam.r<125;   // whole-box view: values are on the HMI
+  ductFlow.visible = ductFlowOn && rigDucts.visible && state.explode<0.25;
   if(state.playing){
     var sdt=dt*state.simSpeed, n=Math.min(400,Math.max(1,Math.ceil(sdt/0.05)));
     m.extGen=CR.pb.innerOpen?15000:0;                    // pass-box inner door open: a short burst of particles
     for(var i=0;i<n;i++) RigModel.step(m,sdt/n);
     var fl=flows();
     for(var j=0;j<STREAMS.length;j++) updateStream(STREAMS[j],dt,state.speed,fl);
+    if(ductFlow.visible) updateDuctFlow(dt,state.speed,fl);
     var cmpOn=m.act.cmp>0.01 && (m.recovery || m.season==='summer');
     refDots.obj.visible=state.refrig && cmpOn;
     if(state.refrig && cmpOn) updateRefrig(dt,state.speed*(0.4+m.act.cmp),MODE[state.season].dir);
@@ -2659,18 +2835,19 @@ function frame(){
   uiT+=dt; scrT+=dt; colT+=dt;
   if(uiT>0.25){ uiT=0; updateHMI(); if(tagGroup.visible) updateTags(); }
   if(scrT>0.5){ scrT=0; drawScreen(); }
-  if(colorMode==='temp' && colT>0.4){ colT=0; refreshPathColors(m.a); colorRibbons(); }
+  if(colorMode==='temp' && colT>0.4){ colT=0; refreshPathColors(m.a); colorRibbons(); colorDuctFlow(); }
   renderer.render(scene,camera);
 }
 
-if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ refreshLabels(); TAGS.forEach(function(t){ t.last=''; }); });
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ refreshLabels(); buildZones(); TAGS.forEach(function(t){ t.last=''; }); });
 for(var w0=0;w0<1800;w0++) RigModel.step(m,0.05);              // 90 s: let the loops and the room particle count settle before the first frame
-refreshPathColors(m.a); colorRibbons();
-applySeason(); applyHrv(); applyCasing(); applyExplode(); applyBox('clear'); buildZones();
+refreshPathColors(m.a); colorRibbons(); colorDuctFlow();
+applySeason(); applyHrv(); applyCasing(); applyExplode(); applyBox('clear'); buildZones(); setZones($('cbZones').checked);
 if(window.innerHeight<700 || window.innerWidth<760) setHmiOpen(false);
 resize();
 var fl0=flows(); for(var s0=0;s0<STREAMS.length;s0++) updateStream(STREAMS[s0],0,0,fl0);
+updateDuctFlow(0,0,fl0); setDuctAir($('cbDuctAir').checked);
 updateRefrig(0,0,1); updateSignals(0); actuatorVisuals(); updateHMI(true); updateTags(); drawScreen();
-window.__rig={model:m,goView:goView,state:state,setView:function(d){ VIEWS.custom=d; goView('custom',true); }};
+window.__rig={model:m,goView:goView,state:state,zones:zoneGroup,ductFlow:ductFlow,build:BUILD,setView:function(d){ VIEWS.custom=d; goView('custom',true); }};
 frame();
 })();

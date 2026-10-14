@@ -13,9 +13,11 @@ T = 5.0  # acrylic thickness, mm
 # panel: name, qty, size A × B, plane, cut-outs [(kind, u, v, w, h, note)] in the panel's own view coords
 PANELS = [
     ("Base plate", 1, (1000, 500), "x-z", []),
-    ("Roof", 1, (1000, 500), "x-z", []),
+    ("Roof", 1, (1000, 500), "x-z", [
+        ("rect", -75, 100, 22, 16, "common exhaust stack 22 × 16 (front-right, away from the fresh-air intake)"),
+    ]),
     ("Front wall", 1, (1000, 490), "x-y", [
-        ("rect", 330, 200, 200, 320, "door opening (door panel 220 × 340)"),
+        ("rect", 390, 200, 160, 320, "door opening (door panel 180 × 340)"),
         ("rect", 110, 175, 102, 102, "pass box opening 102 × 102"),
         ("hole", -440, 385, 4.5, 0, "HMI standoff M4"), ("hole", -320, 385, 4.5, 0, ""),
         ("hole", -440, 445, 4.5, 0, ""), ("hole", -320, 445, 4.5, 0, ""),
@@ -28,20 +30,24 @@ PANELS = [
     ]),
     ("Left wall (outdoor side)", 1, (490, 490), "z-y", [
         ("hole", -140, 220, 38, 0, "fresh-air compressor intake Ø38"),
-        ("hole", -73, 50, 14, 0, "exhaust outlet Ø14"),
         ("hole", -200, 21, 8, 0, "24 V supply cable gland Ø8"),
         ("hole", -178, 200, 4.5, 0, "compressor bracket M4"), ("hole", -138, 200, 4.5, 0, ""),
     ]),
-    ("Right wall", 1, (490, 490), "z-y", []),
+    ("Right wall", 1, (490, 490), "z-y", [
+        ("hole", -10, 300, 50, 0, "BIBO change port, wall terminal 2 (high) Ø50"),
+        ("hole", -10, 155, 50, 0, "BIBO change port, wall terminal 3 (low) Ø50"),
+    ]),
     ("Partition wall", 1, (490, 490), "z-y", [
-        ("hole", 85, 445, 30, 0, "supply duct Ø30"),
-        ("rect", 30, 69, 34, 24, "return duct 34 × 24"),
-        ("hole", -130, 69, 21, 0, "return branch Ø21"),
+        ("rect", 85, 445, 31, 22, "supply duct 31 × 22"),
+        ("rect", 30, 69, 70, 54, "exhaust terminal 1 (H14 BIBO) 70 × 54"),
+        ("rect", -130, 69, 70, 54, "exhaust terminal 2 (H14 BIBO) 70 × 54"),
         ("hole", -190, 308, 4, 0, "PDT-101 reference tube Ø4"),
         ("rect", -103, 8, 20, 4, "PCB harness slot (floor)"),
     ]),
     ("Clean-room false ceiling", 1, (492.5, 490), "x-z", [
-        ("rect", 140, 0, 36, 36, "diffuser neck 36 × 36"), ("rect", 360, 0, 36, 36, ""),
+        ("rect", 140, 0, 86, 86, "ceiling H14 BIBO terminal 86 × 86"),
+        ("rect", 305, -40, 24, 17, "LAF supply drop 24 × 17"), ("rect", 477, 0, 22, 31, "right-wall plenum feed 22 × 31"),
+        ("hole", 266, -144, 4, 0, "LAF hanger Ø4"), ("hole", 344, -144, 4, 0, ""), ("hole", 266, 64, 4, 0, ""), ("hole", 344, 64, 4, 0, ""),
         ("hole", 240, -150, 6, 0, "luminaire cable Ø6"),
     ]),
     ("Clean-room door", 1, (220, 340), "x-y", []),

@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-13e';
+var BUILD='2026-10-14c';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -96,12 +96,14 @@ function tag(o,name){ o.userData.part=name; return o; }
 
 /* fresh-air louvre: moved to the compressor intake on the left wall (model units) */
 var LZU=W2C(0,0,-14).z, LYU=W2C(0,22,0).y;
-var dmpRA=[], dmpOA=[], mixGroup=null, humGroup=null, bypassGroup=null;
+var humGroup=null;
 
 /* ======================================================================
-   AHU + heat-recovery air-pump unit — the geometry of the earlier 3D model,
-   unchanged in shape. It is built in that model's own units and the whole
+   AHU + heat-recovery air-pump unit, in the earlier 3D model's own units; the whole
    group is scaled into the plant-room half of the box (see K, XO, YO, ZO).
+   Hazardous-material design: the AHU is a single-deck 100 % fresh-air unit. There is no
+   mixing box, no recirculation, no extract deck and no heat-recovery core in the AHU;
+   the only exhaust path is the air-pump unit's copper plate core (non-contact).
    ====================================================================== */
 /* ------------------------------------------------------------- materials */
 function std(c,o){ o=o||{}; return new THREE.MeshStandardMaterial({
@@ -130,8 +132,9 @@ var unit=new THREE.Group(); plant.add(unit); unit.userData.asm='AHU';
 var explodables=[], labels=[], casingParts=[], spinners=[];
 var L=20.0, H=4.6, D=3.4;
 var X0=-L/2, X1=L/2, Y0=-H/2, Y1=H/2, Z0=-D/2, Z1=D/2;
-var YS=-1.12, YE=1.12;          // supply deck / extract deck centre lines
-var MIXX=-3.4;                  // where return air drops into the mixing box
+var YS=-1.12, YE=1.12;          // supply deck centre line (YE: the old extract deck, now removed)
+var YT=0.0;                     // roof of the single-deck 100 % fresh-air AHU
+var YC=(Y0+YT)/2, HC=YT-Y0;     // casing centre line and height
 
 /* the parallel heat-recovery air-pump unit, standing behind the AHU */
 var MX0=-20.5, MX1=-9.0, MXC=(MX0+MX1)/2;
@@ -144,13 +147,12 @@ function at(o,x,y,z){ o.position.set(x,y,z); return o; }
 (function frame(){
   var t=0.14, g=new THREE.Group();
   function bar(w,h,d,x,y,z){ g.add(at(box(w,h,d,M.frame),x,y,z)); }
-  [[Y0,Z0],[Y0,Z1],[Y1,Z0],[Y1,Z1]].forEach(function(p){ bar(L,t,t,0,p[0],p[1]); });
-  [[X0,Z0],[X0,Z1],[X1,Z0],[X1,Z1]].forEach(function(p){ bar(t,H,t,p[0],0,p[1]); });
-  [[X0,Y0],[X0,Y1],[X1,Y0],[X1,Y1]].forEach(function(p){ bar(t,t,D,p[0],p[1],0); });
+  [[Y0,Z0],[Y0,Z1],[YT,Z0],[YT,Z1]].forEach(function(p){ bar(L,t,t,0,p[0],p[1]); });
+  [[X0,Z0],[X0,Z1],[X1,Z0],[X1,Z1]].forEach(function(p){ bar(t,HC,t,p[0],YC,p[1]); });
+  [[X0,Y0],[X0,YT],[X1,Y0],[X1,YT]].forEach(function(p){ bar(t,t,D,p[0],p[1],0); });
   [-9.2,-8.0,-4.1,-2.6,-1.5,1.2,3.0,5.0,6.9,8.2].forEach(function(x){
-    bar(t*0.8,H,t*0.8,x,0,Z0); bar(t*0.8,H,t*0.8,x,0,Z1);
+    bar(t*0.8,HC,t*0.8,x,YC,Z0); bar(t*0.8,HC,t*0.8,x,YC,Z1);
   });
-  bar(L,t,t,0,0,Z0); bar(L,t,t,0,0,Z1);
   tag(g,'AHU frame'); unit.add(g);
 })();
 
@@ -159,18 +161,10 @@ function panel(w,h,d,x,y,z,dir){
   tag(m,'AHU casing panel'); unit.add(m); casingParts.push(m);
   explodables.push({obj:m, dir:dir.clone(), base:m.position.clone(), scale:3.6});
 }
-panel(L,H,0.06, 0,0,Z1, new THREE.Vector3(0,0,1));
-panel(L,H,0.06, 0,0,Z0, new THREE.Vector3(0,0,-1));
-panel(L,0.06,D, 0,Y1,0, new THREE.Vector3(0,1,0));
+panel(L,HC,0.06, 0,YC,Z1, new THREE.Vector3(0,0,1));
+panel(L,HC,0.06, 0,YC,Z0, new THREE.Vector3(0,0,-1));
+panel(L,0.06,D, 0,YT,0, new THREE.Vector3(0,1,0));
 panel(L,0.06,D, 0,Y0,0, new THREE.Vector3(0,-1,0));
-
-/* deck divider, with an opening at the mixing box */
-(function(){
-  var g=new THREE.Group();
-  g.add(at(box(L/2+MIXX-0.75-0.15,0.09,D-0.3,M.inner), (X0+(MIXX-0.75))/2, 0, 0));
-  g.add(at(box(X1-(MIXX+0.75)-0.15,0.09,D-0.3,M.inner), ((MIXX+0.75)+X1)/2, 0, 0));
-  tag(g,'AHU deck divider'); unit.add(g);
-})();
 
 /* --- base / machine compartment --- */
 (function(){
@@ -238,87 +232,18 @@ function hepaFilter(x,y,label){
 }
 
 preFilter(-8.7, YS, 'Outdoor-air pre-filter');
-preFilter(-2.0, YS, 'Panel filter', 'after the mixing box');
+preFilter(-2.0, YS, 'Panel filter', 'ISO ePM10 50 % · 100 % fresh air');
 bagFilter( 0.3, YS, 'Bag filter');
 hepaFilter( 7.0, YS, 'HEPA final filter');
-preFilter( 8.6, YE, 'Extract pre-filter');
-bagFilter( 6.6, YE, 'Extract bag filter');
 
-/* --- heat recovery: plate core or thermal wheel --- */
-var HRVX=-5.7;
-var plateHX=new THREE.Group();
-(function(){
-  var w=2.8,h=4.0,d=D-0.6;
-  plateHX.add(at(box(w,h,d,std(T.glass.clone(),{m:0.3,r:0.6,t:true,o:0.14,side:THREE.DoubleSide,dw:false})),0,0,0));
-  var pm=std(T.glass.clone(),{m:0.6,r:0.35,t:true,o:0.5,side:THREE.DoubleSide});
-  for(var i=0;i<17;i++) plateHX.add(at(box(w-0.1,0.035,d-0.1,pm),0,-1.85+i*0.2313,0));
-  [-1,1].forEach(function(s){ plateHX.add(at(box(0.10,h,d,M.frame),s*(w/2),0,0)); });
-  // diagonal stiffeners on the front face, as drawn on a crossflow core
-  var dm=new THREE.LineBasicMaterial({color:T.metalDark.clone(),transparent:true,opacity:0.75});
-  [[-1,1],[1,1]].forEach(function(s){
-    var gg=new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(-w/2*s[0],-h/2,d/2+0.02), new THREE.Vector3(w/2*s[0],h/2,d/2+0.02)]);
-    plateHX.add(new THREE.Line(gg,dm));
-  });
-  plateHX.add(at(box(w+0.4,0.12,d,M.inner),0,-2.08,0));
-  plateHX.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.09,1.5,14),M.frame),0,-2.8,Z1-0.4));
-  plateHX.position.x=HRVX; tag(plateHX,'Plate heat-recovery core');
-  unit.add(plateHX);
-  explodables.push({obj:plateHX, dir:new THREE.Vector3(0,0,1), base:new THREE.Vector3(HRVX,0,0), scale:3.2});
-})();
-
-var wheel=new THREE.Group();
-(function(){
-  var rotor=new THREE.Group();
-  var core=new THREE.Mesh(new THREE.CylinderGeometry(2.0,2.0,0.55,56,1,true),
-    std(T.metal.clone(),{m:0.6,r:0.45,t:true,o:0.5,side:THREE.DoubleSide}));
-  core.rotation.z=Math.PI/2; rotor.add(core);
-  var sm=std(T.metal.clone(),{m:0.7,r:0.35,t:true,o:0.75,side:THREE.DoubleSide});
-  for(var i=0;i<28;i++){
-    var s=box(0.5,2.0,0.035,sm);
-    s.position.set(0, Math.cos(i/28*Math.PI*2)*1.0, Math.sin(i/28*Math.PI*2)*1.0);
-    s.rotation.x=-i/28*Math.PI*2; rotor.add(s);
-  }
-  var rim=new THREE.Mesh(new THREE.TorusGeometry(2.0,0.07,10,56),M.frame);
-  rim.rotation.y=Math.PI/2; rotor.add(rim);
-  wheel.add(rotor);
-  spinners.push({obj:rotor, axis:'x', rate:0.55, id:'wheel'});
-  wheel.add(at(box(0.9,4.3,D-0.5,std(T.glass.clone(),{m:0.3,r:0.6,t:true,o:0.12,side:THREE.DoubleSide,dw:false})),0,0,0));
-  var mot=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,0.5,18),M.frame);
-  mot.rotation.z=Math.PI/2; at(mot,0,-2.35,0.9); wheel.add(mot);
-  wheel.position.x=HRVX; wheel.visible=false; tag(wheel,'Thermal wheel'); unit.add(wheel);
-  explodables.push({obj:wheel, dir:new THREE.Vector3(0,0,1), base:new THREE.Vector3(HRVX,0,0), scale:3.2});
-})();
-var hrvLabel={text:'Plate heat-recovery core', sub:'counterflow · 75 % sensible',
-  anchor:new THREE.Vector3(HRVX,2.1,0), off:new THREE.Vector3(0,1.5,1.4)};
-labels.push(hrvLabel);
-
-/* --- mixing section --- */
-(function(){
+/* --- 100 % fresh-air plenum where the mixing box and the AHU core used to be --- */
+(function freshPlenum(){
   var g=new THREE.Group();
-  var bm=std(T.metalDark.clone(),{m:0.7,r:0.4,side:THREE.DoubleSide});
-  // recirculation damper sitting in the divider opening
-  for(var i=0;i<5;i++){
-    var b=box(0.26,0.05,D-0.9,bm); at(b,MIXX-0.55+i*0.28,0,0); b.rotation.z=0.0;
-    g.add(b); dmpRA.push(b);
-  }
-  g.add(at(box(1.5,0.1,0.1,M.frame),MIXX,0,(D-0.9)/2));
-  g.add(at(box(1.5,0.1,0.1,M.frame),MIXX,0,-(D-0.9)/2));
-  // outdoor-air damper on the mixing-box inlet face
-  for(var j=0;j<5;j++){
-    var c=box(0.05,0.30,D-0.9,bm); at(c,MIXX-0.9,YS-0.7+j*0.36,0); c.rotation.z=0.78; g.add(c); dmpOA.push(c);
-  }
-  // mixing baffles
-  var vm=std(T.glass.clone(),{m:0.4,r:0.6,t:true,o:0.4,side:THREE.DoubleSide});
-  g.add(at(box(0.06,1.1,D-0.8,vm),MIXX+0.2,YS+0.45,0));
-  g.add(at(box(0.06,1.1,D-0.8,vm),MIXX+0.55,YS-0.45,0));
-  // damper actuators outside the skin
-  g.add(at(box(0.3,0.3,0.3,M.frame),MIXX,0.15,Z1+0.25));
-  g.add(at(box(0.3,0.3,0.3,M.frame),MIXX-0.9,YS,Z1+0.25));
-  tag(g,'Mixing section + servo dampers'); unit.add(g); mixGroup=g;
-  explodables.push({obj:g, dir:new THREE.Vector3(0,-0.5,1).normalize(), base:new THREE.Vector3(0,0,0), scale:2.4});
-  labels.push({text:'Mixing section', sub:'70 % outdoor / 30 % recirculated',
-    anchor:new THREE.Vector3(MIXX,YS+0.6,0), off:new THREE.Vector3(-1.4,-2.0,1.5)});
+  var vm=std(T.glass.clone(),{m:0.4,r:0.6,t:true,o:0.35,side:THREE.DoubleSide});
+  [-6.8,-4.6].forEach(function(x){ for(var j=0;j<4;j++){ var b=box(0.05,0.42,D-0.8,vm); at(b,x,YS-0.7+j*0.47,0); b.rotation.z=0.35; g.add(b); } });
+  tag(g,'Fresh-air plenum + turning vanes'); unit.add(g);
+  labels.push({text:'100 % fresh air',sub:'no mixing box · no recirculation · no exhaust in the AHU',
+    anchor:new THREE.Vector3(-5.7,YS+0.6,0), off:new THREE.Vector3(-1.2,2.2,1.5)});
 })();
 
 /* --- coils --- */
@@ -383,7 +308,6 @@ function fan(x,y,dirSign,label){
     anchor:new THREE.Vector3(x,y,0), off:new THREE.Vector3(dirSign*0.5,y>0?1.6:-1.6,1.5)});
 }
 fan( 5.9, YS,  1, 'Supply fan');
-fan(-8.9, YE, -1, 'Extract transfer fan');
 
 /* --- dampers on the four openings --- */
 function damper(x,y,label,sub){
@@ -398,14 +322,12 @@ function damper(x,y,label,sub){
   labels.push({text:label, sub:sub, tier:'aux',
     anchor:new THREE.Vector3(x,y,0), off:new THREE.Vector3(x<0?-1.7:1.7,y>0?1.3:-1.3,1.2)});
 }
-damper(X0+0.2, YS, 'Outdoor air intake', 'motorised damper');
-damper(X0+0.2, YE, 'Exhaust air outlet', 'motorised damper');
-damper(X1-0.2, YS, 'Supply air to building', 'duct connection');
-damper(X1-0.2, YE, 'Return air from building', 'duct connection');
+damper(X0+0.2, YS, 'Fresh-air inlet', 'from the air-pump Cu core');
+damper(X1-0.2, YS, 'Supply air to the clean room', 'duct connection');
 
 /* --- ductwork --- */
 var ducts=new THREE.Group(); tag(ducts,'AHU duct connections');
-[[-1,YS],[-1,YE],[1,YS],[1,YE]].forEach(function(p){
+[[-1,YS],[1,YS]].forEach(function(p){
   var d=box(3.4,2.1,D-0.4,M.duct); at(d,p[0]*(L/2+1.7),p[1],0); ducts.add(d);
   var e=new THREE.LineSegments(new THREE.EdgesGeometry(d.geometry),
     new THREE.LineBasicMaterial({color:T.metalDark.clone(),transparent:true,opacity:0.55}));
@@ -454,21 +376,6 @@ function attenuator(x,y,label){
     anchor:new THREE.Vector3(x,y,0),off:new THREE.Vector3(x>0?1.5:-1.5,y>0?1.5:-1.5,1.2)});
 }
 attenuator( 8.2, YS, 'Supply attenuator');
-attenuator( 3.4, YE, 'Extract attenuator');
-
-(function bypass(){
-  var g=new THREE.Group();
-  var bm=std(T.metalDark.clone(),{m:0.7,r:0.4,side:THREE.DoubleSide});
-  for(var i=0;i<5;i++){
-    var b=box(0.05,0.28,D-0.9,bm); at(b,-4.4,YS-0.72+i*0.36,0); b.rotation.z=0.78; g.add(b);
-  }
-  g.add(at(box(0.10,0.10,D-0.8,M.frame),-4.4,YS+0.95,0));
-  g.add(at(box(0.10,0.10,D-0.8,M.frame),-4.4,YS-0.95,0));
-  g.add(at(box(0.3,0.3,0.3,M.frame),-4.4,YS,Z1+0.25));
-  tag(g,'Recovery bypass damper'); aux.add(g); bypassGroup=g;
-  labels.push({text:'Recovery bypass damper',sub:'free cooling + frost control',tier:'aux',
-    anchor:new THREE.Vector3(-4.4,YS,0),off:new THREE.Vector3(-2.3,-2.1,1.2)});
-})();
 
 function sensor(x,y,z,text,sub){
   var g=new THREE.Group();
@@ -479,38 +386,35 @@ function sensor(x,y,z,text,sub){
     off:new THREE.Vector3(0,y>0?1.3:-1.4,1.1)});
 }
 sensor( 7.2, YS+0.85, 0.75, 'Supply T + RH', 'cascade control');
-sensor( 9.4, YE+0.85, 0.75, 'Return T + RH + CO₂', 'demand-controlled ventilation');
-sensor(-9.4, YS+0.85, 0.75, 'AHU intake T + RH', 'after the recovery unit');
-sensor(-2.3, YS+0.85, -0.75,'Mixed-air sensor', 'damper modulation');
-sensor(-4.3, YE+0.85, -0.75,'Frost thermostat', 'exhaust side of core');
+sensor(-9.4, YS+0.85, 0.75, 'TT-109 off the Cu core', 'fresh air after the non-contact pre-cooling');
 /* rig additions in the same style: the two coil-leaving sensors */
 sensor(-0.25, YS+0.85, 0.75, 'TT-103 after pre-heat', 'pre-heat coil control');
 sensor( 3.35, YS+0.85,-0.75, 'TT-104 off cooling coil', 'cooling coil control');
 
 (function gauges(){
   var gm=std(new THREE.Color('#d7dde3'),{m:0.2,r:0.7});
-  [[-8.7,YS+0.55],[0.3,YS+0.55],[7.0,YS+0.55],[8.6,YE+0.55],[6.6,YE+0.55]].forEach(function(p){
+  [[-8.7,YS+0.55],[-2.0,YS+0.55],[0.3,YS+0.55],[7.0,YS+0.55]].forEach(function(p){
     var d=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.08,18),gm);
     d.rotation.x=Math.PI/2; at(d,p[0],p[1],Z1+0.08); tag(d,'Filter ΔP gauge'); aux.add(d);
   });
-  labels.push({text:'Filter ΔP gauges',sub:'5 × 0–500 Pa',tier:'aux',
+  labels.push({text:'Filter ΔP gauges',sub:'4 × 0–500 Pa',tier:'aux',
     anchor:new THREE.Vector3(0.3,YS+0.55,Z1+0.08),off:new THREE.Vector3(-0.8,-2.6,1.3)});
 })();
 
 (function controlPanel(){
   var g=new THREE.Group();
-  g.add(at(box(1.7,2.3,0.26,M.frame),9.0,0.1,Z1+0.22));
-  g.add(at(box(1.5,2.1,0.03,std(T.metalDark.clone(),{m:0.4,r:0.6})),9.0,0.1,Z1+0.37));
-  g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.4,10),M.inner),9.7,0.1,Z1+0.4));
+  g.add(at(box(1.7,1.9,0.26,M.frame),9.0,YC,Z1+0.22));
+  g.add(at(box(1.5,1.7,0.03,std(T.metalDark.clone(),{m:0.4,r:0.6})),9.0,YC,Z1+0.37));
+  g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.4,10),M.inner),9.7,YC,Z1+0.4));
   tag(g,'AHU control panel'); aux.add(g);
   labels.push({text:'Control panel',sub:'BMS + EC fan drives',tier:'aux',
-    anchor:new THREE.Vector3(9.0,0.1,Z1+0.3),off:new THREE.Vector3(1.6,1.6,1.0)});
+    anchor:new THREE.Vector3(9.0,YC,Z1+0.3),off:new THREE.Vector3(1.6,1.6,1.0)});
 })();
 
 (function weatherLouvres(){
   var bm=std(T.metalDark.clone(),{m:0.6,r:0.5,side:THREE.DoubleSide});
-  [[LZU,LYU],[MZL,MY]].forEach(function(q){
-    var z=q[0], yy=q[1], lg=new THREE.Group(); tag(lg,z===MZL?'Exhaust louvre + bird mesh':'Fresh-air louvre + bird mesh');
+  [[LZU,LYU]].forEach(function(q){                  // fresh-air intake only: no exhaust leaves through this wall
+    var z=q[0], yy=q[1], lg=new THREE.Group(); tag(lg,'Fresh-air louvre + bird mesh');
     for(var i=0;i<6;i++){
       var b=box(0.20,0.16,1.45,bm); at(b,MX0-5.6,yy-0.55+i*0.22,z);
       b.rotation.z=0.72; lg.add(b);
@@ -522,7 +426,7 @@ sensor( 3.35, YS+0.85,-0.75, 'TT-104 off cooling coil', 'cooling coil control');
   labels.push({text:'Weather louvre + bird mesh',sub:'fresh-air compressor intake',tier:'aux',
     anchor:new THREE.Vector3(MX0-5.6,LYU,LZU),off:new THREE.Vector3(1.6,1.9,-0.8)});
   var fm=std(new THREE.Color('#5d6b78'),{m:0.1,r:0.95,t:true,o:0.85,side:THREE.DoubleSide});
-  [[-1,YS],[-1,YE],[1,YS],[1,YE]].forEach(function(p){
+  [[-1,YS],[1,YS]].forEach(function(p){
     for(var k=0;k<3;k++) ducts.add(at(box(0.07,2.2+k*0.06,D-0.3+k*0.05,fm), p[0]*(L/2+0.3+k*0.09), p[1], 0));
   });
 })();
@@ -539,7 +443,7 @@ sensor( 3.35, YS+0.85,-0.75, 'TT-104 off cooling coil', 'cooling coil control');
     h1.rotation.x=Math.PI/2; at(h1,x+w/2-0.22,y,Z1+0.13); doors.add(h1);
   }
   [[-8.6,1.5],[-5.7,2.2],[-3.3,1.9],[-0.6,2.4],[2.1,2.0],[4.6,1.9],[7.5,2.3],[9.3,1.2]]
-    .forEach(function(s){ door(s[0],YS,s[1]); door(s[0],YE,s[1]); });
+    .forEach(function(s){ door(s[0],YS,s[1]); });
 })();
 
 /* ============ parallel heat-recovery air-pump unit (the HRV package) === */
@@ -564,16 +468,17 @@ modUnit.add(coilExtract);                       // the evaporator sits in its ex
   modUnit.add(at(box((MXC-1.5)-MX0,MH-0.2,0.05,dm),(MX0+(MXC-1.5))/2,MY,MZ));
   modUnit.add(at(box(MX1-(MXC+1.5),MH-0.2,0.05,dm),((MXC+1.5)+MX1)/2,MY,MZ));
 
-  // crossflow heat-exchange core, set on the diagonal
+  // non-contact crossflow core, set on the diagonal (same look as the first design). The plates are
+  // copper (Cu-ETP), polished to a surface roughness Ra ≤ 0.8 µm: smooth and cleanable, nothing sticks.
+  // They stack horizontally: one stream takes the odd layers, the other the even layers, so the
+  // exhaust never touches the fresh air; it only pre-cools / pre-heats it through the plates.
   var coreG=new THREE.Group();
-  // separating plates stack horizontally: one stream takes the odd layers,
-  // the other the even layers, so the two airstreams never touch
   var cm=std(T.glass.clone(),{m:0.55,r:0.4,t:true,o:0.40,side:THREE.DoubleSide});
   for(var i=0;i<11;i++) coreG.add(at(box(2.2,0.035,2.2,cm),0,-0.95+i*0.19,0));
   coreG.add(at(box(2.2,MH-0.5,2.2,std(T.glass.clone(),{m:0.3,r:0.6,t:true,o:0.10,side:THREE.DoubleSide,dw:false})),0,0,0));
-  coreG.rotation.y=Math.PI/4; at(coreG,MXC,MY,MZ); tag(coreG,'Crossflow recovery core'); modUnit.add(coreG);
+  coreG.rotation.y=Math.PI/4; at(coreG,MXC,MY,MZ); tag(coreG,'Cu plate core (Ra ≤ 0.8 µm)'); modUnit.add(coreG);
   explodables.push({obj:coreG,dir:new THREE.Vector3(0,1,0),base:new THREE.Vector3(MXC,MY,MZ),scale:2.6});
-  labels.push({text:'Crossflow recovery core',sub:'separated plates · no air contact',
+  labels.push({text:'Cu plate core',sub:'copper plates · Ra ≤ 0.8 µm · no air contact',
     anchor:new THREE.Vector3(MXC,MY+1.2,MZ),off:new THREE.Vector3(0,2.0,-1.0)});
 
   // inlet filters, one on each incoming lane
@@ -615,7 +520,7 @@ modUnit.add(coilExtract);                       // the evaporator sits in its ex
       anchor:new THREE.Vector3(x,MY,z),off:new THREE.Vector3(dirSign*0.8,-1.7,-0.9)});
   }
   modFan(MX1-1.5, MZL,  1, 'Tempered-air fan');
-  modFan(MX0+1.4, MZL, -1, 'Exhaust fan');
+  modFan(MX0+1.4, MZL, -1, 'FAN-103 exhaust fan');
 
   // control box and power feed, drawn on top as on the reference
   modUnit.add(tag(at(box(1.1,0.55,0.8,M.frame),MXC+2.2,MY+MH/2+0.3,MZ+0.4),'Recovery unit control box'));
@@ -628,7 +533,7 @@ modUnit.add(coilExtract);                       // the evaporator sits in its ex
     modUnit.add(tag(at(box(1.0,MH-0.6,1.5,M.duct),p[0],MY,p[1]),'Recovery unit spigot'));
   });
 
-  labels.push({text:'Heat-recovery air-pump unit',sub:'runs in parallel with the AHU',
+  labels.push({text:'Heat-recovery air-pump unit',sub:'the only exhaust path · non-contact pre-cooling',
     anchor:new THREE.Vector3(MXC,MY+MH/2,MZ),off:new THREE.Vector3(-3.4,2.9,-1.2)});
 })();
 
@@ -703,21 +608,6 @@ var refrig=new THREE.Group(), refrigCurves=[];
 
 /* earlier-model labels live in model units; flag them so they are mapped to the world */
 labels.forEach(function(l){ l.space='c'; });
-/* link the two damper actuators: one servo (SV-101) drives the outdoor-air and the
-   recirculation blades in opposition through a linkage rod */
-(function servoLinkage(){
-  var g=new THREE.Group(); tag(g,'SV-101 servo linkage');
-  var horn=new THREE.Group();
-  horn.add(at(box(0.62,0.08,0.05,std(new THREE.Color('#f2f2f2'),{m:0.1,r:0.6})),0.24,0,0));
-  horn.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.08,12),M.frame),0,0,0));
-  horn.children[1].rotation.x=Math.PI/2;
-  horn.position.set(MIXX-0.9,YS,Z1+0.43); g.add(horn);
-  var rod=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,1.0,8),M.frame);
-  g.add(rod);
-  unit.add(g);
-  window.__servo={horn:horn,rod:rod};
-})();
-
 /* ===================================================================== RIG */
 var rig=new THREE.Group(); rig.userData.asm='Rig'; scene.add(rig);
 var BX=50, BY=50, BZ=25, TH=0.5;                 // outer half-length, height, half-depth, acrylic
@@ -792,7 +682,7 @@ var floorGrid;
 /* clean-room door on the front face */
 (function door(){
   var g=new THREE.Group(); tag(g,'Clean-room access door'); g.userData.asm='Acrylic enclosure';
-  var z=BZ+0.05, x0=22, x1=44, y0=3, y1=37;          // the pass box takes the wall to its left
+  var z=BZ+0.05, x0=30, x1=48, y0=3, y1=37;          // the pass box and the staging bench take the wall to its left
   var dm=new THREE.LineBasicMaterial({color:T.metalDark.clone(),transparent:true,opacity:0.9});
   g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([W(x0,y0,z),W(x1,y0,z),W(x1,y1,z),W(x0,y1,z),W(x0,y0,z)]),dm));
   [y0+5,y1-5].forEach(function(y){
@@ -821,14 +711,37 @@ function roundedPath(pts,bend){
   }
   return cp;
 }
-function duct(name,pts,r,mat,group,bend){
-  var cv=roundedPath(pts,bend||r*1.6);
-  var len=cv.getLength();
-  var m=new THREE.Mesh(new THREE.TubeGeometry(cv,Math.max(24,Math.round(len*2)),r,18,false),mat||MR.pvc);
-  m.userData.cad={type:'duct',pts:pts.map(function(p){return [p[0],p[1],p[2]];}),r:r,wall:0.15,bend:bend||r*1.6};
-  m.userData.curve=cv; m.userData.r=r;                 // reused by the duct-airflow layer
-  m.renderOrder=2; tag(m,name); (group||rigDucts).add(m);
-  return m;
+/* Every air duct is rectangular. r is the round duct the airflow was sized for (calculations §11):
+   the rectangle w × h = 2.2 r × 1.55 r has the same friction loss (Huebscher equivalent diameter
+   De = 1.30 (w h)^0.625 / (w + h)^0.25 ≈ 2 r). Each straight run is one box section; sections overlap
+   at the corners like mitred elbows. Width stays horizontal, height vertical; a vertical run keeps
+   the width of the run before it. */
+var DUCT_W=2.2, DUCT_H=1.55;
+function duct(name,pts,r,mat,group,bend,wh){
+  var w=wh?wh[0]:DUCT_W*r, h=wh?wh[1]:DUCT_H*r, e=Math.max(w,h)/2;     // wh: an explicit section where space is tight
+  var g=new THREE.Group(); tag(g,name);
+  var v=pts.map(function(p){ return W(p[0],p[1],p[2]); });
+  var side=null, k;
+  for(k=0;k<v.length-1;k++){ var d0=v[k+1].clone().sub(v[k]).normalize(); if(Math.abs(d0.y)<0.9){ side=W(d0.z,0,-d0.x).normalize(); break; } }
+  if(!side) side=W(0,0,1);
+  var edgeMat=new THREE.LineBasicMaterial({color:T.metalDark.clone(),transparent:true,opacity:0.5});
+  for(k=0;k<v.length-1;k++){
+    var a=v[k], b=v[k+1], dv=b.clone().sub(a), L=dv.length(); if(L<1e-3) continue;
+    var n=dv.clone().divideScalar(L), ax;
+    if(Math.abs(n.y)<0.9){ ax=W(n.z,0,-n.x).normalize(); side=ax.clone(); } else ax=side.clone();
+    var ay=new THREE.Vector3().crossVectors(n,ax).normalize();
+    var e0=k>0?e:0, e1=k<v.length-2?e:0;
+    var sec=new THREE.Mesh(new THREE.BoxGeometry(w,h,L+e0+e1),mat||MR.pvc);
+    sec.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(ax,ay,n));
+    sec.position.copy(a).addScaledVector(n,(L+e1-e0)/2);
+    sec.userData.cad={type:'rseg',wall:0.15};
+    if(!g.children.length) sec.userData.cad.duct={pts:pts.map(function(p){ return [p[0],p[1],p[2]]; }),r:r,w:w,h:h};   // centre line for the calculations
+    sec.renderOrder=2; sec.add(new THREE.LineSegments(new THREE.EdgesGeometry(sec.geometry),edgeMat));
+    g.add(sec);
+  }
+  g.userData.curve=roundedPath(pts,bend||r*1.6); g.userData.r=r; g.userData.rect=[w,h];   // reused by the duct-airflow layer
+  (group||rigDucts).add(g);
+  return g;
 }
 function rectDuct(name,w,h,d,x,y,z){
   var m=at(box(w,h,d,MR.pvc),x,y,z); m.renderOrder=2; tag(m,name);
@@ -836,44 +749,119 @@ function rectDuct(name,w,h,d,x,y,z){
     new THREE.LineBasicMaterial({color:T.metalDark.clone(),transparent:true,opacity:0.55}));
   m.add(e); rigDucts.add(m); return m;
 }
-function flangeRing(name,x,y,z,r,axis){
-  var t=new THREE.Mesh(new THREE.TorusGeometry(r+0.25,0.22,8,28),MR.steel);
-  if(axis==='x') t.rotation.y=Math.PI/2; else if(axis==='y') t.rotation.x=Math.PI/2;
-  at(t,x,y,z); tag(t,name); rigDucts.add(t); return t;
+function flangeRing(name,x,y,z,r,axis){             // rectangular wall sleeve flange around a duct
+  var w=DUCT_W*r+0.5, h=DUCT_H*r+0.5, t=0.4, g=new THREE.Group(); tag(g,name);
+  g.add(at(box(t,t,w+2*t,MR.steel),0,h/2+t/2,0)); g.add(at(box(t,t,w+2*t,MR.steel),0,-h/2-t/2,0));
+  g.add(at(box(t,h,t,MR.steel),0,0,w/2+t/2)); g.add(at(box(t,h,t,MR.steel),0,0,-w/2-t/2));
+  if(axis==='y') g.rotation.z=Math.PI/2; else if(axis==='z') g.rotation.y=Math.PI/2;
+  at(g,x,y,z); rigDucts.add(g); return g;
 }
 
+var MBIBO={bag:std(new THREE.Color('#e8f2f8'),{m:0,r:0.35,t:true,o:0.45,side:THREE.DoubleSide,dw:false}),
+  pack:std(new THREE.Color('#e9edf1'),{m:0.05,r:0.9}), ring:std(new THREE.Color('#9aa7b2'),{m:0.85,r:0.3})};
 /* key world points from the earlier model */
-var P_AHU_OA = C2W(-13.4,YS,0), P_AHU_SUP=C2W(13.4,YS,0), P_AHU_RET=C2W(13.4,YE,0);
+var P_AHU_OA = C2W(-13.4,YS,0), P_AHU_SUP=C2W(13.4,YS,0);
+var P_HR_EXIN=C2W(MX1+0.5,MY,MZU);                     // the air-pump unit's exhaust inlet spigot (the only exhaust path)
+var P_HR_TOUT=C2W(MX1+0.5,MY,MZL);                     // … and its tempered fresh-air outlet spigot
+var TEMPR=[[P_HR_TOUT.x,P_HR_TOUT.y,P_HR_TOUT.z],[-24.8,P_HR_TOUT.y,P_HR_TOUT.z],[-24.8,P_HR_TOUT.y,-1.0],[-34.6,P_HR_TOUT.y,-1.0],[-34.6,P_AHU_OA.y,2.6]];
 var P_HR_FRESH=C2W(MX0-1.0,MY,MZU), P_HR_EXH=C2W(MX0-1.0,MY,MZL);
+/* outer HEPA on its own floor stand at the front-right of the plant room, next to the common exhaust stack;
+   the stack takes both exhausts (FAN-103 normal, FAN-103B bypass), each through a backdraft damper */
+var BYP={y:22, z:-5.415, x0:-42.4, x1:-36, fx:-43.6, rx:-46.4, ty:40, sx:-7.5, sz:10, top:57, jy:45};
+var EXR=[[P_HR_EXH.x+0.1,P_HR_EXH.y,P_HR_EXH.z],[-48.4,P_HR_EXH.y,P_HR_EXH.z],[-48.4,P_HR_EXH.y,-21],[-48.4,BYP.jy,-21],
+         [BYP.sx,BYP.jy,-21],[BYP.sx,BYP.jy,BYP.sz-0.8]];
 var HX=-46.5, HY=11;                                   // fresh-air header line
 var COMP={x:-42.5,y:22,z:-14};                         // fresh-air compressor (volute centre)
 
 /* fresh-air header: compressor → recovery air-pump unit + AHU */
 duct('Compressor discharge',[[COMP.x,17.6,-11.3],[COMP.x,13.6,-11.3],[COMP.x-2.6,HY,-11.3],[HX+0.2,HY,-11.3]],1.1);
 duct('Fresh-air header',[[HX,HY,-12.4],[HX,HY,3.4]],1.15);
-duct('Header → recovery unit (fresh lane)',[[HX,HY,P_HR_FRESH.z],[HX,P_HR_FRESH.y,P_HR_FRESH.z],[P_HR_FRESH.x-0.2,P_HR_FRESH.y,P_HR_FRESH.z]],0.75);
-duct('Header → AHU outdoor-air intake',[[HX,HY,P_AHU_OA.z],[HX,P_AHU_OA.y,P_AHU_OA.z],[P_AHU_OA.x+0.3,P_AHU_OA.y,P_AHU_OA.z]],1.0);
-/* the connections the earlier model drew only as air: recovery unit ⇄ AHU, and the exhaust run */
+/* the air-pump unit's lanes now carry all the fresh air and all the exhaust: tall, narrow sections that fit
+   its spigots (1.6 × 2.2 cm), so the velocity stays near 5 m/s */
+var LANE=[1.6,2.2];
+duct('Header → recovery unit (fresh lane)',[[HX,HY,P_HR_FRESH.z],[HX,P_HR_FRESH.y,P_HR_FRESH.z],[P_HR_FRESH.x-0.2,P_HR_FRESH.y,P_HR_FRESH.z]],0.75,null,null,null,LANE);
+duct('Core bypass: header → AHU (baseline test)',[[HX,HY,P_AHU_OA.z],[HX,P_AHU_OA.y,P_AHU_OA.z],[P_AHU_OA.x+0.3,P_AHU_OA.y,P_AHU_OA.z]],1.0);
+/* the connections the earlier model drew only as air: recovery unit → AHU, and the exhaust run */
 (function transfer(){
   var LNr=0.62;
-  function cduct(name,pts,r){
+  function cduct(name,pts,r,wh){
     var w=pts.map(function(p){ var v=C2W(p[0],p[1],p[2]); return [v.x,v.y,v.z]; });
-    return duct(name,w,r*K);
+    return duct(name,w,r*K,null,null,null,wh);
   }
-  cduct('Tempered-air duct: recovery unit → AHU',[[MX1+0.5,MY,MZL],[MX1+1.8,MY-0.3,MZL+0.3],[-6.9,MY-0.6,-6.6],[-7.8,YS,-3.6],[-10.4,YS,-1.4],[-12.6,YS,-0.1]],LNr);
-  cduct('Extract transfer duct: AHU → recovery unit',[[-12.6,YE,-0.1],[-10.6,1.5,-1.6],[-8.2,1.2,-4.2],[-7.0,0.2,-6.6],[MX1+1.8,MY+0.3,MZU-0.2],[MX1+0.5,MY,MZU]],LNr);
-  cduct('Exhaust duct: recovery unit → louvre',[[MX0-1.0,MY,MZL],[MX0-5.3,MY,MZL]],0.6);
+  /* tempered air leaves the unit, runs towards the partition first, then behind the AHU to its intake,
+     so it never crosses the exhaust inlet */
+  duct('Tempered-air duct: recovery unit → AHU',TEMPR,LNr*K,null,null,null,LANE);
+  /* the air-pump unit's exhaust no longer leaves through the outdoor wall next to the fresh-air intake:
+     it climbs in the back-left corner, runs along the top of the plant room and joins the common roof
+     stack at the front-right, as far from the intake as the room allows */
+  duct('Exhaust: air-pump unit → roof stack',EXR,0.6*K,null,null,null,LANE);
 })();
 /* supply: AHU supply connection → boot → riser → through the partition → ceiling void */
 var RZ=8.5, RX=-4.5, RY=44.5;
 rectDuct('Supply boot',3.0,2.32,8.7, -4.5,P_AHU_SUP.y,5.7);
-duct('Supply riser',[[RX,P_AHU_SUP.y+1.1,RZ],[RX,RY,RZ],[0.6,RY,RZ],[8,RY,RZ],[8,RY,0],[36,RY,0],[36,CEIL+1.4,0]],1.4);
-duct('Diffuser drop 1',[[14,RY,0],[14,CEIL+1.4,0]],1.25);
+/* the riser feeds the three bag-in/bag-out terminals: ceiling terminal 1, the LAF hood over the filler,
+   and the right-wall supply plenum with its two wall terminals (operator side) */
+var LAF={x0:25.6,x1:35.4,z0:-15.4,z1:7.4,y0:24,y1:27.6};       // unidirectional-flow hood over the filler
+var RWP={x0:46,x1:BX-TH,y0:8,y1:CEIL,z0:-6.5,z1:4.5};          // right-wall supply plenum
+duct('Supply riser',[[RX,P_AHU_SUP.y+1.1,RZ],[RX,RY,RZ],[0.6,RY,RZ],[8,RY,RZ],[8,RY,0],[(RWP.x0+RWP.x1)/2,RY,0],[(RWP.x0+RWP.x1)/2,CEIL+0.3,0]],1.4);
+duct('Terminal drop 1 (ceiling)',[[14,RY,0],[14,CEIL+1.4,0]],1.0);
+duct('LAF supply drop',[[30.5,RY,0],[30.5,RY-1.4,-4],[30.5,LAF.y1+0.2,-4]],1.1);
 flangeRing('Partition sleeve: supply',0,RY,RZ,1.4,'x');
-/* return: low-level grilles → through the partition → AHU return connection */
-rectDuct('Return duct',P_AHU_RET.x*-1-0.25,2.31,3.3,(P_AHU_RET.x-0.25)/2,P_AHU_RET.y,P_AHU_RET.z);
-duct('Return branch (grille 2)',[[-0.3,P_AHU_RET.y,-13],[-1.6,P_AHU_RET.y,-13],[-1.6,P_AHU_RET.y,1.3]],1.0);
-flangeRing('Partition sleeve: return 2',0,P_AHU_RET.y,-13,1.0,'x');
+/* exhaust: low-level BIBO HEPA exhaust terminals in the partition → collector → PT-102 → DV-101 →
+   straight to the air-pump unit (Cu core). Nothing goes back to the AHU. */
+var GRILLE=[[6.9,3],[6.9,-13]];                                // low-level exhaust terminals: centre y, z
+var EXY=11, EXZ=P_HR_EXIN.z, DVX=-23.5;                          // exhaust main height, line, diverter position
+duct('Exhaust collector A (behind the partition)',[[-1.75,9.6,GRILLE[0][1]],[-1.75,EXY,GRILLE[0][1]],[-1.75,EXY,EXZ-0.9]],0.85);
+duct('Exhaust collector B (behind the partition)',[[-1.75,9.6,GRILLE[1][1]],[-1.75,EXY,GRILLE[1][1]],[-1.75,EXY,EXZ+0.9]],0.85);
+duct('Exhaust main: clean room → DV-101',[[-1.75,EXY,EXZ],[DVX+1.4,EXY,EXZ]],0.75,null,null,null,LANE);
+duct('Exhaust: DV-101 → air-pump unit (Cu core)',[[DVX-1.4,EXY,EXZ],[-27.2,EXY,EXZ],[-27.2,P_HR_EXIN.y,EXZ],[P_HR_EXIN.x+0.45,P_HR_EXIN.y,EXZ]],0.75,null,null,null,LANE);
+/* the HEPA bypass climbs from DV-101 and runs to the front of the plant room, towards the partition; the outer
+   HEPA, FAN-103B and a vertical stack through the roof sit there, well away from the fresh-air compressor and
+   its intake louvre (a contaminated discharge must never be drawn back into the fresh air) */
+
+/* the outer HEPA sits on a shelf beside the fresh-air compressor (both serviced from the outdoor-wall side);
+   its discharge still rises and runs to the one roof stack at the front-right, far from the fresh-air intake */
+duct('HEPA bypass: DV-101 → outer BIBO HEPA',[[DVX,EXY+1.4,EXZ],[DVX,BYP.y,EXZ],[BYP.x1,BYP.y,BYP.z]],0.75,null,null,null,LANE);
+duct('Bypass discharge: FAN-103B → roof stack',[[BYP.fx-1.2,BYP.y,BYP.z],[BYP.rx,BYP.y,BYP.z],[BYP.rx,BYP.ty,BYP.z],[BYP.sx,BYP.ty,BYP.z],
+  [BYP.sx,BYP.ty,BYP.sz],[BYP.sx,BYP.top,BYP.sz]],0.75,null,null,null,LANE);
+flangeRing('Roof sleeve: common exhaust stack',BYP.sx,BY-TH/2,BYP.sz,0.75,'y');
+/* contaminated-exhaust protection: PT-102 watches the exhaust on its way to the air pump; if it carries
+   particles (a release in the room, or a leaking exhaust-terminal filter) L3 throws DV-101 and the exhaust
+   goes through the outer BIBO HEPA (police filter) and FAN-103B to outdoors, never through the Cu core.
+   DV-101 is spring return: with no power it rests on the HEPA bypass (fail-safe). */
+var exhSafe=new THREE.Group(); exhSafe.userData.asm='Exhaust safety: PT-102 + DV-101 + outer HEPA'; rig.add(exhSafe);
+var DVBLADE;
+(function exhaustSafety(){
+  var top=EXY+LANE[1]/2;
+  var pt=new THREE.Group(); tag(pt,'PT-102 exhaust particle sensor');
+  pt.add(at(box(3.0,2.6,2.2,MR.white),-17,top+1.3,EXZ));
+  pt.add(at(box(2.0,1.0,0.12,MR.black),-17,top+1.6,EXZ+1.12));
+  pt.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,1.6,10),MR.steel),-17.8,top-0.2,EXZ));     // sample probe into the duct
+  exhSafe.add(pt);
+  var tt=new THREE.Group(); tag(tt,'TT-107 exhaust air T (DS18B20)');
+  tt.add(at(box(0.9,0.9,0.9,MR.white),-14.2,top+0.45,EXZ)); exhSafe.add(tt);
+  var dv=new THREE.Group(); tag(dv,'DV-101 diverter damper + spring-return actuator');
+  dv.add(at(box(2.8,2.8,2.4,MR.steel),DVX,EXY+0.3,EXZ));
+  dv.add(at(box(1.8,1.8,1.3,MR.black),DVX,EXY+0.3,EXZ+2.0));                                              // 24 V spring-return actuator
+  dv.add(at(box(0.5,0.5,0.4,std(new THREE.Color('#f59e0b'),{m:0.2,r:0.5})),DVX+0.5,EXY+0.9,EXZ+2.7));     // position indicator
+  DVBLADE=at(box(2.4,0.12,1.9,MR.alu),DVX,EXY+0.3,EXZ); dv.add(DVBLADE);
+  exhSafe.add(dv);
+  bibo('Outer BIBO HEPA housing (H14 police filter)',(BYP.x0+BYP.x1)/2,BYP.y,BYP.z,BYP.x1-BYP.x0,6.0,6.0,'+z',exhSafe);
+  var fb=new THREE.Group(); tag(fb,'FAN-103B HEPA-bypass exhaust fan');
+  fb.add(at(box(2.4,4.4,4.4,MR.blue),BYP.fx,BYP.y,BYP.z));
+  var mo=new THREE.Mesh(new THREE.CylinderGeometry(1.2,1.2,1.6,20),MR.alu); mo.rotation.x=Math.PI/2; at(mo,BYP.fx,BYP.y,BYP.z+3.0); fb.add(mo);
+  exhSafe.add(fb);
+  var cap=new THREE.Mesh(new THREE.ConeGeometry(2.2,1.4,4),MR.steel); cap.rotation.y=Math.PI/4; at(cap,BYP.sx,BYP.top+1.6,BYP.sz); tag(cap,'Exhaust stack rain cap');
+  var st=new THREE.Group(); tag(st,'Outer HEPA wall shelf');                       // on the outdoor wall, beside FAN-101
+  st.add(at(box(14,0.5,6.6,MR.alu),-42.2,BYP.y-3.25,BYP.z));
+  st.add(at(box(0.5,5.5,6.6,MR.alu),-BX+TH+0.25,BYP.y-5.75,BYP.z));
+  var br2=box(0.5,8,0.5,MR.alu); br2.rotation.z=-0.72; at(br2,-BX+3.9,BYP.y-6.6,BYP.z); st.add(br2);
+  exhSafe.add(st);
+  [['Backdraft damper: normal exhaust',BYP.sx,BYP.jy,BYP.sz-1.6,0],['Backdraft damper: HEPA bypass',BYP.sx-2,BYP.ty,BYP.z,1]].forEach(function(q){
+    var g=new THREE.Group(); tag(g,q[0]); g.add(at(box(q[4]?0.5:2.0,2.6,q[4]?2.0:0.5,MR.steel),q[1],q[2],q[3]));
+    var bl=box(q[4]?0.1:1.6,1.9,q[4]?1.6:0.1,MR.alu); bl.rotation[q[4]?'z':'x']=0.5; at(bl,q[1],q[2],q[3]); g.add(bl); exhSafe.add(g); });
+  exhSafe.add(cap);
+})();
 
 /* --------------------------------------------- fresh-air compressor */
 var compRotor=new THREE.Group();
@@ -887,8 +875,7 @@ var compRotor=new THREE.Group();
   // inlet bell + intake duct to the wall louvre
   var bell=new THREE.Mesh(new THREE.TorusGeometry(2.0,0.45,12,32),MR.steel); bell.rotation.y=Math.PI/2;
   at(bell,COMP.x-2.0,COMP.y,COMP.z); g.add(bell);
-  var intake=new THREE.Mesh(new THREE.CylinderGeometry(1.9,1.9,5.0,28,1,true),MR.pvc); intake.rotation.z=Math.PI/2;
-  at(intake,COMP.x-4.5,COMP.y,COMP.z); g.add(intake);
+  var intake=box(5.0,3.4,3.4,MR.pvc); at(intake,COMP.x-4.5,COMP.y,COMP.z); intake.userData.cad={type:'rseg',wall:0.15}; g.add(intake);
   // motor on the far side
   var mot=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.2,5.2,28),MR.alu); mot.rotation.z=Math.PI/2;
   at(mot,COMP.x+4.6,COMP.y,COMP.z); g.add(mot);
@@ -920,27 +907,87 @@ var compRotor=new THREE.Group();
 
 /* ------------------------------------------------------- clean room */
 var clean=new THREE.Group(); clean.userData.asm='Clean room'; rig.add(clean);
-var DIFF=[[14,0],[36,0]], GRILLE=[[P_AHU_RET.y,P_AHU_RET.z],[P_AHU_RET.y,-13]];
+var DIFF=[[14,0]];
+/* Bag-in/bag-out (BIBO) HEPA housing: stainless body, H14 pack, a clamped filter-change port with its
+   PVC change bag on the ring, so a used filter is bagged out without anyone touching it. ax is the
+   air direction ('x','y','z'); bag is the side the change port is on ('+x','-z' …). */
+function bibo(name,cx,cy,cz,w,h,d,bag,host){
+  var g=new THREE.Group(); tag(g,name);
+  g.add(at(box(w,h,d,MR.steel),cx,cy,cz));
+  var sx=bag[1]==='x'?(bag[0]==='+'?1:-1):0, sy=bag[1]==='y'?(bag[0]==='+'?1:-1):0, sz=bag[1]==='z'?(bag[0]==='+'?1:-1):0;
+  var px=cx+sx*(w/2+0.25), py=cy+sy*(h/2+0.25), pz=cz+sz*(d/2+0.25), rr=Math.min(sx?Math.min(h,d):(sy?Math.min(w,d):Math.min(w,h)),6)*0.32;
+  var ring=new THREE.Mesh(new THREE.TorusGeometry(rr,0.22,8,28),MBIBO.ring);
+  if(sx) ring.rotation.y=Math.PI/2; else if(sy) ring.rotation.x=Math.PI/2;
+  at(ring,px,py,pz); g.add(ring);
+  var bg=new THREE.Mesh(new THREE.SphereGeometry(rr,18,12),MBIBO.bag); bg.scale.set(sx?1.4:0.95,sy?1.4:0.95,sz?1.4:0.95);
+  bg.position.set(px+sx*rr*0.9,py+sy*rr*0.9-(sy?0:rr*0.25),pz+sz*rr*0.9); g.add(bg);
+  var lv=box(0.35,0.35,1.6,MBIBO.ring); at(lv,px+sx*0.3+(sx?0:rr+0.6),py+sy*0.3,pz+sz*0.3); g.add(lv);   // clamp lever
+  (host||clean).add(g); return g;
+}
+/* perforated stainless grille (round holes on a square pitch) on every terminal face */
+var PERF_TEX=(function(){
+  var cv=document.createElement('canvas'); cv.width=cv.height=64; var c=cv.getContext('2d');
+  c.fillStyle='#e8edf1'; c.fillRect(0,0,64,64); c.fillStyle='#3a4552';
+  for(var i=0;i<4;i++) for(var j=0;j<4;j++){ c.beginPath(); c.arc(8+i*16,8+j*16,4.2,0,Math.PI*2); c.fill(); }
+  var t=new THREE.CanvasTexture(cv); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=4; return t;
+})();
+function hepaFace(name,cx,cy,cz,a,b,normal,host){              // perforated grille seen from the room
+  // normal 'x': a = height (y), b = width (z) · 'y': a = x, b = z · 'z': a = x, b = y
+  var g=new THREE.Group(); tag(g,name);
+  var tex=PERF_TEX.clone(); tex.needsUpdate=true; tex.repeat.set(Math.max(1,a/1.1),Math.max(1,b/1.1));
+  var mt=new THREE.MeshStandardMaterial({map:tex,metalness:0.55,roughness:0.4});
+  mt.userData.cadColor=new THREE.Color('#d4dbe1');               // the CAD export keeps a plain stainless colour
+  var plate=normal==='x'?box(0.3,a,b,mt):(normal==='y'?box(a,0.3,b,mt):box(a,b,0.3,mt));
+  g.add(at(plate,cx,cy,cz));
+  var fr=0.5, fm=MR.steel;                                         // frame
+  if(normal==='y'){ g.add(at(box(a+fr,0.4,fr,fm),cx,cy,cz-b/2)); g.add(at(box(a+fr,0.4,fr,fm),cx,cy,cz+b/2));
+    g.add(at(box(fr,0.4,b,fm),cx-a/2,cy,cz)); g.add(at(box(fr,0.4,b,fm),cx+a/2,cy,cz)); }
+  else if(normal==='x'){ g.add(at(box(0.4,fr,b+fr,fm),cx,cy-a/2,cz)); g.add(at(box(0.4,fr,b+fr,fm),cx,cy+a/2,cz));
+    g.add(at(box(0.4,a,fr,fm),cx,cy,cz-b/2)); g.add(at(box(0.4,a,fr,fm),cx,cy,cz+b/2)); }
+  (host||clean).add(g); return g;
+}
+/* ceiling terminal 1: H14 BIBO housing in the ceiling void, filter face flush with the false ceiling */
 DIFF.forEach(function(d,i){
-  var g=new THREE.Group(); tag(g,'Ceiling diffuser '+(i+1));
-  g.add(at(box(9,0.3,9,MR.white),d[0],CEIL-0.15,d[1]));
-  [7.2,5.4,3.6].forEach(function(s,k){
-    var fr=new THREE.Group();
-    [[0,s/2],[0,-s/2]].forEach(function(o){ fr.add(at(box(s,0.25,0.35,MR.steel),0,0,o[1])); });
-    [[s/2,0],[-s/2,0]].forEach(function(o){ fr.add(at(box(0.35,0.25,s,MR.steel),o[0],0,0)); });
-    fr.position.set(d[0],CEIL-0.4-k*0.35,d[1]); g.add(fr);
-  });
-  g.add(at(box(2.4,0.3,2.4,MR.steel),d[0],CEIL-1.5,d[1]));
-  g.add(at(box(3.6,1.2,3.6,MR.white),d[0],CEIL+0.9,d[1]));            // neck / plenum box
-  clean.add(g);
+  bibo('Ceiling BIBO HEPA terminal '+(i+1)+' (H14)',d[0],CEIL+2.2,d[1],8.6,3.6,8.6,'+z');
+  hepaFace('Ceiling terminal '+(i+1)+' face screen',d[0],CEIL-0.15,d[1],8.6,8.6,'y');
 });
-GRILLE.forEach(function(gr,i){
-  var g=new THREE.Group(); tag(g,'Low-level return grille '+(i+1));
-  var y=gr[0], z=gr[1];
-  g.add(at(box(0.4,5.2,0.4,MR.white),TH/2+0.2,y,z-3.3)); g.add(at(box(0.4,5.2,0.4,MR.white),TH/2+0.2,y,z+3.3));
-  g.add(at(box(0.4,0.4,7,MR.white),TH/2+0.2,y+2.6,z)); g.add(at(box(0.4,0.4,7,MR.white),TH/2+0.2,y-2.6,z));
-  for(var k=0;k<6;k++){ var b=box(0.9,0.12,6.4,MR.steel); b.rotation.z=-0.6; at(b,TH/2+0.45,y-2.0+k*0.8,z); g.add(b); }
+/* LAF hood over the vial filler: unidirectional down-flow, H14 BIBO pack, fed with 100 % fresh air from
+   the riser (no fan, no recirculation); clear PVC skirts guide the first air down to the RABS */
+(function lafHood(){
+  var cx=(LAF.x0+LAF.x1)/2, cz=(LAF.z0+LAF.z1)/2, w=LAF.x1-LAF.x0, d=LAF.z1-LAF.z0;
+  bibo('LAF hood: H14 BIBO filter housing',cx,(LAF.y0+LAF.y1)/2,cz,w,LAF.y1-LAF.y0,d,'-z');
+  hepaFace('LAF hood: perforated outlet screen',cx,LAF.y0-0.15,cz,w-0.6,d-0.6,'y');
+  var g=new THREE.Group(); tag(g,'LAF hood: PVC skirts + hangers');
+  var sk=std(new THREE.Color('#dbeef7'),{m:0.05,r:0.05,t:true,o:0.18,side:THREE.DoubleSide,dw:false});
+  var sh=4.4, sy=LAF.y0-sh/2-0.3;
+  [[cx,LAF.z0,w,0.15],[cx,LAF.z1,w,0.15]].forEach(function(q){ var m_=at(box(q[2],sh,q[3],sk),q[0],sy,q[1]); m_.renderOrder=2; g.add(m_); });
+  [[LAF.x0,cz],[LAF.x1,cz]].forEach(function(q){ var m_=at(box(0.15,sh,d,sk),q[0],sy,q[1]); m_.renderOrder=2; g.add(m_); });
+  [[LAF.x0+1,LAF.z0+1],[LAF.x0+1,LAF.z1-1],[LAF.x1-1,LAF.z0+1],[LAF.x1-1,LAF.z1-1]].forEach(function(q){
+    g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,CEIL-LAF.y1,8),MR.steel),q[0],(CEIL+LAF.y1)/2,q[1])); });
   clean.add(g);
+})();
+/* right-wall supply plenum with two BIBO HEPA terminals, high and low, behind the operator: clean air
+   reaches the operator first, then the filler, then the low-level exhausts on the far wall */
+(function rightWall(){
+  var g=new THREE.Group(); tag(g,'Right-wall supply plenum');
+  var cz=(RWP.z0+RWP.z1)/2, w=RWP.x1-RWP.x0, d=RWP.z1-RWP.z0;
+  g.add(at(box(w,0.3,d,MR.white),RWP.x0+w/2,RWP.y0,cz));
+  g.add(at(box(w,RWP.y1-RWP.y0,0.3,MR.white),RWP.x0+w/2,(RWP.y0+RWP.y1)/2,RWP.z0));
+  g.add(at(box(w,RWP.y1-RWP.y0,0.3,MR.white),RWP.x0+w/2,(RWP.y0+RWP.y1)/2,RWP.z1));
+  var fm=box(0.3,RWP.y1-RWP.y0,d,std(new THREE.Color('#eef1f4'),{m:0.1,r:0.55,t:true,o:0.35,side:THREE.DoubleSide,dw:false}));
+  at(fm,RWP.x0,(RWP.y0+RWP.y1)/2,cz); fm.renderOrder=2; g.add(fm);
+  clean.add(g);
+  [[30,'Right-wall BIBO HEPA terminal 2 (high, H14)'],[15.5,'Right-wall BIBO HEPA terminal 3 (low, H14)']].forEach(function(q){
+    bibo(q[1],RWP.x0+w/2+0.2,q[0],cz,w-0.6,7.2,7.6,'+x');   // bagged out from outside, through the right wall
+    hepaFace(q[1].replace('BIBO HEPA terminal','terminal').replace(' (high, H14)',' face').replace(' (low, H14)',' face'),RWP.x0-0.1,q[0],cz,7.2,7.6,'x');
+  });
+})();
+/* low-level exhaust terminals in the partition: H14 BIBO housings on the plant-room side, so a
+   contaminated filter is bagged out from outside the clean room */
+GRILLE.forEach(function(gr,i){
+  var y=gr[0], z=gr[1];
+  hepaFace('Low-level exhaust terminal '+(i+1)+' face screen',TH/2+0.2,y,z,5.4,7.0,'x');
+  bibo('Exhaust BIBO HEPA terminal '+(i+1)+' (H14)',-1.6,y,z,2.6,5.4,7.0,i?'-z':'+z',rigDucts);
 });
 (function ledPanel(){
   var m=at(box(22,0.3,6,MR.led),24,CEIL-0.25,-15); tag(m,'LED clean-room luminaire'); clean.add(m);
@@ -1052,16 +1099,18 @@ var hmiTex, hmiCanvas, hmiScreenMesh;
    so the operator is 25 cm tall and the machine sizes follow from that. */
 var CR={};                                         // animated parts, driven by updateCleanRoom()
 
-/* staging bench at the back-left, where material from the pass box is set down */
+/* staging bench on the front wall, right beside the pass box: material goes pass box → bench → filler
+   infeed in a few steps, and the bench stays out of the air path to the low-level exhausts
+   (at the back-left it stood right in front of exhaust terminal 2) */
 (function bench(){
   var g=new THREE.Group(); tag(g,'Staging bench + vial tray');
-  var x=12, z=-15.5, h=13;
-  g.add(at(box(14,0.6,8,MR.steel),x,h,z));
-  g.add(at(box(12.4,0.4,6.4,MR.steel),x,4,z));
-  [[-6.4,-3.4],[-6.4,3.4],[6.4,-3.4],[6.4,3.4]].forEach(function(p){
+  var x=23, z=19.6, h=13;
+  g.add(at(box(12,0.6,8,MR.steel),x,h,z));
+  g.add(at(box(10.6,0.4,6.4,MR.steel),x,4,z));
+  [[-5.4,-3.4],[-5.4,3.4],[5.4,-3.4],[5.4,3.4]].forEach(function(p){
     g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.45,h-0.5,12),MR.steel),x+p[0],(h-0.5)/2+0.5,z+p[1]));
   });
-  g.add(at(box(7,0.5,4.4,MR.white),x-1.5,h+0.55,z));
+  g.add(at(box(7,0.5,4.4,MR.white),x-1.0,h+0.55,z));
   var vg=std(new THREE.Color('#bfe6ff'),{m:0.1,r:0.1,t:true,o:0.6});
   for(var i=0;i<4;i++) for(var j=0;j<2;j++)
     g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,1.6,14),vg),x-4.1+i*1.5,h+1.6,z-1.0+j*2.0));
@@ -1118,7 +1167,11 @@ var PBX={x0:6,x1:16,y0:12.5,y1:22.5,zi:18,zo:28};   // body; the front wall sits
 })();
 
 /* ------------------------------------------------ vial filling machine (stand-alone, not wired to the rig PCB) */
-var VF={x0:24,x1:48,z0:-11.5,z1:-0.5,deck:10.9,cz:-6};
+/* The filler and the operator stand next to the right wall. They are built in the filler's own frame
+   (VF, OP: line along x, glove side +z) and turned a quarter turn, so the line runs along the wall and
+   the operator's back faces the two right-wall HEPA terminals: FW() maps the frame to the world. */
+var VF={x0:24,x1:48,z0:-11.5,z1:-0.5,deck:10.9,cz:-6}, FTX=36.5, FTZ=32;
+function FW(x,y,z){ return W(z+FTX,y,FTZ-x); }
 (function filler(){
   var g=new THREE.Group(); tag(g,'Vial filling machine'); g.userData.asm='Clean room';
   var cx=(VF.x0+VF.x1)/2, L=VF.x1-VF.x0, D=VF.z1-VF.z0;
@@ -1214,11 +1267,12 @@ var VF={x0:24,x1:48,z0:-11.5,z1:-0.5,deck:10.9,cz:-6};
       v.userData.liq.visible=q[3]; v.userData.stop.visible=q[3]; q[0].add(v);
     }
   });
-  clean.add(g);
+  g.rotation.y=Math.PI/2; g.position.set(FTX,0,FTZ);           // along the right wall
+  clean.add(g); CR.filler=g;
 })();
 
 /* ------------------------------------------------ gowned operator */
-var OP={x:33,z:6.4};
+var OP={x:33,z:6.4}, OPW=FW(33,0,6.4);                         // filler frame / world
 (function operator(){
   var g=new THREE.Group(); tag(g,'Operator (Grade B gown)'); g.userData.asm='Clean room';
   var suit=std(new THREE.Color('#f1f4f7'),{m:0.0,r:0.85}), boot=std(new THREE.Color('#d5dde5'),{m:0,r:0.8}),
@@ -1248,7 +1302,7 @@ var OP={x:33,z:6.4};
     g.add(up); g.add(lo); g.add(hand); g.add(sh);
     CR.arms.push({s:q[0],port:q[1],up:up,lo:lo,hand:hand,sh:sh});
   });
-  g.position.set(OP.x,0,OP.z);
+  g.position.set(OPW.x,0,OPW.z); g.rotation.y=Math.PI/2;          // back to the right-wall terminals
   clean.add(g); CR.op=g;
 })();
 function limb(m,a,b){
@@ -1323,9 +1377,10 @@ var PT={x:30,y:16,z:-BZ+TH+0.8};
   var pr=new THREE.Group(); tag(pr,'PT-101 isokinetic probe');
   pr.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.45,0.14,0.9,16,1,true),MR.steel),0,0.45,0));
   pr.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,1.4,8),MR.steel),0,-0.7,0));
-  pr.position.set(35.6,VF.deck+2.6,-7.8); g.add(pr);
-  var tube=new THREE.Mesh(new THREE.TubeGeometry(roundedPath([[35.6,VF.deck+1.2,-7.8],[35.6,VF.deck+0.9,-10.5],
-    [35.6,VF.deck+8.7,-10.7],[35.6,VF.deck+8.9,-12.3],[31.2,PT.y+3.6,-20.5],[PT.x+0.7,PT.y+3.6,PT.z]],0.9),80,0.13,8,false),
+  pr.position.copy(FW(35.6,VF.deck+2.6,-7.8)); g.add(pr);
+  function fw(x,y,z){ var v=FW(x,y,z); return [v.x,v.y,v.z]; }
+  var tube=new THREE.Mesh(new THREE.TubeGeometry(roundedPath([fw(35.6,VF.deck+1.2,-7.8),fw(35.6,VF.deck+0.9,-10.5),
+    fw(35.6,VF.deck+8.7,-10.7),fw(35.6,VF.deck+8.9,-12.3),[23.6,PT.y+3.6,-8.0],[PT.x-0.7,PT.y+3.6,-20.5],[PT.x+0.7,PT.y+3.6,PT.z]],0.9),80,0.13,8,false),
     std(new THREE.Color('#e6eef4'),{m:0,r:0.4,t:true,o:0.8}));
   tag(tube,'PT-101 sample tube'); g.add(tube);
   ctrl.add(g);
@@ -1336,8 +1391,8 @@ var PT={x:30,y:16,z:-BZ+TH+0.8};
    Badges keep a constant size on screen, like the sensor tags, and grow with the Large readings mode. */
 var zoneGroup=new THREE.Group(); zoneGroup.userData.noExport=true; scene.add(zoneGroup);
 var ZONES=[
-  {t:'GRADE A',s:'ISO 5 · first air at the fill point',c:'#16a34a',bc:'#15803d',o:0.22,f:0.45,
-   b:[VF.x0+0.3,VF.deck,VF.z0+0.3,VF.x1-0.3,VF.deck+8.2,VF.z1-0.3],at:[VF.x1-5,VF.deck+10.4,VF.z1]},
+  {t:'GRADE A',s:'ISO 5 · LAF first air at the fill point',c:'#16a34a',bc:'#15803d',o:0.22,f:0.45,
+   b:[LAF.x0+0.2,VF.deck,LAF.z0+0.2,LAF.x1-0.2,LAF.y0,LAF.z1-0.2],at:[LAF.x1+1.5,LAF.y1+1.6,LAF.z0+2]},
   {t:'GRADE B',s:'ISO 7 in operation · +15 Pa',c:'#2563eb',bc:'#1d4ed8',o:0.07,f:0.22,
    b:[TH/2+0.1,TH,-BZ+TH,BX-TH,CEIL,BZ-TH],at:[30,3.5,17]},
   {t:'PASS BOX',s:'airlock · interlocked doors + UV',c:'#d97706',bc:'#b45309',o:0.26,f:0.5,
@@ -1395,11 +1450,11 @@ function buildZones(){
 
 /* ========================================================== air paths */
 /* vertices: [x,y,z,radius,colourKey,temperatureKey] in world cm.
-   colourKey f/r/m = fresh/return/mixed; temperatureKey names an air state of the model */
+   colourKey f/r/m = fresh / exhaust / supply; temperatureKey names an air state of the model */
 var RW=1.12, RN=0.72, LN=0.58;
 function cw(list){ return list.map(function(p){ var v=C2W(p[0],p[1],p[2]); return [v.x,v.y,v.z,p[3]*K,p[4],p[5]]; }); }
 var TRAIN_C=[
-  [-2.6,YS,0,0.88,'m','mix'],[-2.0,YS,0,0.86,'m','mix'],[-0.9,YS,0,0.80,'m','mix'],[0.3,YS,0,0.86,'m','ph'],
+  [-2.6,YS,0,0.88,'f','t1'],[-2.0,YS,0,0.86,'f','t1'],[-0.9,YS,0,0.80,'f','t1'],[0.3,YS,0,0.86,'m','ph'],
   [1.2,YS,0,0.86,'m','ph'],[1.9,YS,0,0.78,'m','ph'],[2.9,YS,0,0.76,'m','cc'],[3.8,YS,0,0.78,'m','cc'],
   [4.8,YS,0,0.84,'m','rh'],[5.5,YS,0,RN,'m','rh'],[5.9,YS,0,0.45,'m','rh'],[6.5,YS,0,0.95,'m','sup'],
   [7.1,YS,0,0.74,'m','sup'],[8.2,YS,0,0.82,'m','sup'],[9.1,YS,0,0.95,'m','sup'],[10.0,YS,0,0.95,'m','sup'],[13.2,YS,0,0.9,'m','sup']];
@@ -1410,32 +1465,33 @@ var PATHS={
   hr:   [[HX,HY,P_HR_FRESH.z,0.6,'f','oa'],[HX,P_HR_FRESH.y,P_HR_FRESH.z,0.6,'f','oa'],[P_HR_FRESH.x,P_HR_FRESH.y,P_HR_FRESH.z,0.6,'f','oa']].concat(cw([
          [MX0+1.5,MY,MZU,LN,'f','oa'],[MXC-1.9,MY,MZU,LN,'f','oa'],[MXC-1.1,MY+0.50,MZ+0.60,0.34,'f','oa'],
          [MXC,MY+0.50,MZ,0.34,'f','oa'],[MXC+1.1,MY+0.50,MZ-0.60,0.34,'f','t1'],[MXC+1.9,MY,MZL,LN,'f','t1'],
-         [MX1-2.2,MY,MZL,LN,'f','t1'],[MX1-1.5,MY,MZL,0.42,'f','t1'],[MX1+0.6,MY,MZL,0.5,'f','t1'],
-         [MX1+1.8,MY-0.3,MZL+0.3,0.5,'f','t1'],[-6.9,MY-0.6,-6.6,0.5,'f','t1'],[-7.8,YS,-3.6,0.5,'f','t1'],
-         [-10.4,YS,-1.4,0.5,'f','t1'],[-13.2,YS,-0.1,0.9,'f','t1']])),
+         [MX1-2.2,MY,MZL,LN,'f','t1'],[MX1-1.5,MY,MZL,0.42,'f','t1']]).concat(TEMPR.map(function(p,i){
+         return [p[0],p[1],p[2],i===TEMPR.length-1?0.9:0.6,'f','t1']; }))),
   direct:[[HX,HY,P_HR_FRESH.z,0.85,'f','oa'],[HX,HY,P_AHU_OA.z,0.85,'f','oa'],[HX,P_AHU_OA.y,P_AHU_OA.z,0.8,'f','oa'],
          [P_AHU_OA.x+0.2,P_AHU_OA.y,P_AHU_OA.z,0.8,'f','oa']],
   supply: cw([[-13.2,YS,0,RW,'f','tin'],[-10.6,YS,0,RW,'f','tin'],[-9.8,YS,0,1.00,'f','tin'],[-8.7,YS,0,0.90,'f','tin'],
          [-7.1,YS,0,0.84,'f','tin'],[-5.7,YS,0,0.80,'f','tin'],[-4.3,YS,0,0.84,'f','t2'],[-3.9,YS,0,0.88,'f','t2']].concat(TRAIN_C)),
-  recirc: cw([[9.6,YE,0,RW,'r','ret'],[8.6,YE,0,0.90,'r','ret'],[7.0,YE,0,0.90,'r','ret'],[5.4,YE,0,RW,'r','ret'],
-         [3.4,YE,0,0.82,'r','ret'],[0.5,YE,0,RW,'r','ret'],[-2.4,YE,0,RW,'r','ret'],[-3.0,YE-0.2,0,0.70,'r','ret'],
-         [-3.4,0.0,0,0.62,'r','ret'],[-3.4,YS+0.55,0,0.66,'r','ret']].concat(TRAIN_C)),
-  extract: cw([[13.2,YE,0,RW,'r','ret'],[10.6,YE,0,RW,'r','ret'],[9.6,YE,0,1.00,'r','ret'],[8.6,YE,0,0.90,'r','ret'],
-         [7.0,YE,0,0.90,'r','ret'],[5.4,YE,0,RW,'r','ret'],[3.4,YE,0,0.82,'r','ret'],[0.5,YE,0,RW,'r','ret'],
-         [-2.4,YE,0,RW,'r','ret'],[-4.3,YE,0,0.84,'r','ret'],[-5.7,YE,0,0.80,'r','ret'],[-7.1,YE,0,0.84,'r','r1'],
-         [-7.9,YE,0,0.84,'r','r1'],[-8.5,YE,0,RN,'r','r1'],[-8.9,YE,0,0.45,'r','r1'],[-9.8,YE,0,0.95,'r','r1'],
-         [-10.6,YE,0,RW,'r','r1'],[-13.2,YE,-0.1,0.9,'r','r1']]),
-  stale: cw([[-13.2,YE,-0.1,0.5,'r','r1'],[-10.6,1.5,-1.6,0.5,'r','r1'],[-8.2,1.2,-4.2,0.5,'r','r1'],[-7.0,0.2,-6.6,0.5,'r','r1'],
-         [MX1+1.8,MY+0.3,MZU-0.2,0.5,'r','r1'],[MX1+0.6,MY,MZU,0.5,'r','r1'],[MX1-1.5,MY,MZU,LN,'r','r1'],
+  /* exhaust: low-level BIBO terminals → collector → PT-102 → DV-101 → Cu core (or the outer HEPA) */
+  exA: [[0.6,GRILLE[0][0],GRILLE[0][1],1.0,'r','ret'],[-1.6,GRILLE[0][0],GRILLE[0][1],1.0,'r','ret'],[-1.75,EXY,GRILLE[0][1],0.8,'r','ret'],[-1.75,EXY,EXZ,0.8,'r','ret']],
+  exB: [[0.6,GRILLE[1][0],GRILLE[1][1],1.0,'r','ret'],[-1.6,GRILLE[1][0],GRILLE[1][1],1.0,'r','ret'],[-1.75,EXY,GRILLE[1][1],0.8,'r','ret'],[-1.75,EXY,EXZ,0.8,'r','ret']],
+  exMain: [[-1.75,EXY,EXZ,0.75,'r','ret'],[-14.2,EXY,EXZ,0.75,'r','ret'],[-17,EXY,EXZ,0.75,'r','ret'],[DVX,EXY,EXZ,0.75,'r','ret']],
+  exCore: [[DVX,EXY,EXZ,0.6,'r','r1'],[-27.2,EXY,EXZ,0.6,'r','r1'],[-27.2,P_HR_EXIN.y,EXZ,0.6,'r','r1'],[P_HR_EXIN.x+0.4,P_HR_EXIN.y,EXZ,0.55,'r','r1']].concat(cw([
+         [MX1+0.6,MY,MZU,0.5,'r','r1'],[MX1-1.5,MY,MZU,LN,'r','r1'],
          [MXC+1.9,MY,MZU,LN,'r','r1'],[MXC+1.1,MY-0.50,MZ+0.60,0.34,'r','r1'],[MXC,MY-0.50,MZ,0.34,'r','r1'],
          [MXC-1.1,MY-0.50,MZ-0.60,0.34,'r','r2'],[MXC-1.9,MY,MZL,LN,'r','r2'],[-17.3,MY,MZL,0.46,'r','r2'],
-         [MX0+1.4,MY,MZL,0.42,'r','exh'],[MX0-1.2,MY,MZL,0.55,'r','exh'],[MX0-5.6,MY,MZL,0.55,'r','exh'],[MX0-9.5,MY,MZL,1.3,'r','exh']])
+         [MX0+1.4,MY,MZL,0.42,'r','exh']])).concat(EXR.map(function(p){ return [p[0],p[1],p[2],0.6,'r','exh']; }),
+         [[BYP.sx,BYP.jy,BYP.sz,0.6,'r','exh'],[BYP.sx,BYP.top,BYP.sz,0.9,'r','exh'],[BYP.sx,BYP.top+6,BYP.sz,1.6,'r','exh']]),
+  exByp: [[DVX,EXY+0.6,EXZ,0.6,'c','ret'],[DVX,BYP.y,EXZ,0.6,'c','ret'],[BYP.x1,BYP.y,BYP.z,0.6,'c','ret'],
+         [(BYP.x0+BYP.x1)/2,BYP.y,BYP.z,1.4,'r','ret'],[BYP.x0,BYP.y,BYP.z,0.8,'r','ret'],[BYP.fx-1.2,BYP.y,BYP.z,0.6,'r','ret'],[BYP.rx,BYP.y,BYP.z,0.6,'r','ret'],
+         [BYP.rx,BYP.ty,BYP.z,0.6,'r','ret'],[BYP.sx,BYP.ty,BYP.z,0.6,'r','ret'],[BYP.sx,BYP.ty,BYP.sz,0.6,'r','ret'],
+         [BYP.sx,BYP.top,BYP.sz,0.9,'r','ret'],[BYP.sx,BYP.top+6,BYP.sz,1.6,'r','ret']]
 };
 var RISER0=[[P_AHU_SUP.x-0.2,P_AHU_SUP.y,P_AHU_SUP.z,1.0,'m','sup'],[RX,P_AHU_SUP.y,4.6,1.0,'m','sup'],[RX,P_AHU_SUP.y,RZ,1.0,'m','sup'],
   [RX,P_AHU_SUP.y+2.5,RZ,1.1,'m','sup'],[RX,RY,RZ,1.1,'m','sup'],[0.5,RY,RZ,1.1,'m','sup'],[8,RY,RZ,1.1,'m','sup'],
   [8,RY,0,1.1,'m','sup'],[14,RY,0,1.0,'m','sup']];
 PATHS.riserA=RISER0.concat([[14,CEIL+1.4,0,0.9,'m','sup'],[14,CEIL+0.2,0,1.1,'m','sup']]);
-PATHS.riserB=RISER0.concat([[36,RY,0,1.0,'m','sup'],[36,CEIL+1.4,0,0.9,'m','sup'],[36,CEIL+0.2,0,1.1,'m','sup']]);
+PATHS.riserB=RISER0.concat([[30.5,RY,0,1.0,'m','sup'],[(RWP.x0+RWP.x1)/2,RY,0,1.0,'m','sup'],[(RWP.x0+RWP.x1)/2,CEIL,0,1.0,'m','sup'],[(RWP.x0+RWP.x1)/2,31,-1,1.1,'m','sup']]);
+PATHS.riserC=RISER0.concat([[30.5,RY,0,1.0,'m','sup'],[30.5,RY-1.4,-4,0.9,'m','sup'],[30.5,LAF.y1+0.4,-4,0.9,'m','sup'],[30.5,LAF.y0+0.8,-4,1.2,'m','sup']]);
 PATHS.room=[];
 DIFF.forEach(function(d){
   [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(dr){
@@ -1450,23 +1506,29 @@ DIFF.forEach(function(d){
       [Math.min(7,Math.max(x2,4)),5.0,(z2+gz)/2,2.6,'r','room'],[3.2,gy,gz,1.8,'r','ret'],[0.6,gy,gz,1.4,'r','ret']]);
   });
 });
-/* first air: straight down from diffuser 2 through the open RABS over the filling line */
-[32,40].forEach(function(x){
-  PATHS.room.push([[36,CEIL-0.6,-1,1.4,'m','sup'],[x,30,-4,2.6,'m','sup'],[x,VF.deck+8.4,VF.cz,3.0,'m','sup'],
-    [x,VF.deck+2.2,VF.cz,2.6,'m','sup'],[x-2,VF.deck-1,VF.z1+3.5,2.2,'m','room'],[16,4.2,4,2.6,'r','room'],
-    [3.2,GRILLE[0][0],GRILLE[0][1],1.8,'r','ret'],[0.6,GRILLE[0][0],GRILLE[0][1],1.4,'r','ret']]);
+/* LAF first air: straight down from the hood over the open RABS and the filling needles,
+   then off the back of the filler and out at low level */
+[27.6,33.4].forEach(function(x){ [-11,-3,4].forEach(function(z){
+  var gz=z>-5?GRILLE[0][1]:GRILLE[1][1], gy=GRILLE[0][0];
+  PATHS.room.push([[x,LAF.y0-0.4,z,1.6,'m','sup'],[x,VF.deck+8.4,z,2.4,'m','sup'],[x,VF.deck+2.2,z,2.4,'m','sup'],
+    [x-5,VF.deck-1.5,z,2.4,'m','room'],[16,4.6,(z+gz)/2,2.6,'r','room'],[3.2,gy,gz,1.8,'r','ret'],[0.6,gy,gz,1.4,'r','ret']]);
+}); });
+/* right-wall terminals: across the operator's back first, then over and past the filler, to the far wall */
+[-4,0,3].forEach(function(dz){
+  var z=-1+dz, gy=GRILLE[0][0];
+  PATHS.room.push([[RWP.x0-0.4,30,z,1.6,'m','sup'],[41,28.5,z*1.4,2.4,'m','sup'],[33,29.5,z*1.8,3.0,'m','sup'],
+    [20,22,z*2,3.4,'m','room'],[9,9,z>0?4:-9,3.2,'r','room'],[3.2,gy,z>0?3:-13,1.8,'r','ret'],[0.6,gy,z>0?3:-13,1.4,'r','ret']]);
+  PATHS.room.push([[RWP.x0-0.4,15.5,z,1.6,'m','sup'],[41.5,15,z+(z>=0?4:-4),2.4,'m','sup'],[38,13.5,z+(z>=0?9:-14),2.8,'m','sup'],
+    [24,9,z>=0?11:-19,3.2,'m','room'],[10,5.5,z>=0?6:-15,3.0,'r','room'],[3.2,gy,z>=0?3:-13,1.8,'r','ret'],[0.6,gy,z>=0?3:-13,1.4,'r','ret']]);
 });
-/* contamination: particles shed by the operator and let in when the pass box inner door opens,
-   swept down by the supply air and out through the low-level return grilles */
-PATHS.contam=[[OP.x,20,OP.z,2.2,'c','room'],[OP.x-1,14,OP.z+0.5,2.8,'c','room'],[OP.x-4,6,OP.z-1,3.2,'c','room'],
-  [16,4.2,4,2.8,'c','room'],[3.2,GRILLE[0][0],GRILLE[0][1],1.6,'c','ret'],[0.6,GRILLE[0][0],GRILLE[0][1],1.2,'c','ret']];
-PATHS.contam2=[[OP.x+1,17,OP.z+1,2.2,'c','room'],[OP.x+3,9,OP.z+3,3.0,'c','room'],[OP.x-6,4.5,OP.z+5,3.2,'c','room'],
-  [9,4.4,-6,2.6,'c','room'],[3.2,GRILLE[1][0],GRILLE[1][1],1.6,'c','ret'],[0.6,GRILLE[1][0],GRILLE[1][1],1.2,'c','ret']];
+/* contamination: particles shed by the operator are swept past the sides of the filler at low level,
+   under the LAF first air, and out through the low-level exhausts; plus what the pass box lets in */
+PATHS.contam=[[OPW.x,20,OPW.z,2.2,'c','room'],[OPW.x-2.5,14,OPW.z+4,2.8,'c','room'],[37,8,10,3.2,'c','room'],
+  [20,5,8,2.8,'c','room'],[3.2,GRILLE[0][0],GRILLE[0][1],1.6,'c','ret'],[0.6,GRILLE[0][0],GRILLE[0][1],1.2,'c','ret']];
+PATHS.contam2=[[OPW.x+0.5,17,OPW.z-1,2.2,'c','room'],[OPW.x-2,9,OPW.z-6,3.0,'c','room'],[37,5,-18,3.2,'c','room'],
+  [18,4.5,-19,2.6,'c','room'],[3.2,GRILLE[1][0],GRILLE[1][1],1.6,'c','ret'],[0.6,GRILLE[1][0],GRILLE[1][1],1.2,'c','ret']];
 PATHS.pbx=[[(PBX.x0+PBX.x1)/2,(PBX.y0+PBX.y1)/2,PBX.zi-0.5,1.6,'c','room'],[10,12,PBX.zi-5,2.4,'c','room'],
   [8,5,8,2.8,'c','room'],[3.2,GRILLE[0][0],GRILLE[0][1],1.6,'c','ret'],[0.6,GRILLE[0][0],GRILLE[0][1],1.2,'c','ret']];
-PATHS.retA=[[0.6,GRILLE[0][0],GRILLE[0][1],1.0,'r','ret'],[-3,P_AHU_RET.y,P_AHU_RET.z,1.0,'r','ret'],[P_AHU_RET.x-0.2,P_AHU_RET.y,P_AHU_RET.z,1.0,'r','ret']];
-PATHS.retB=[[0.6,GRILLE[1][0],GRILLE[1][1],0.7,'r','ret'],[-1.6,GRILLE[1][0],-13,0.7,'r','ret'],[-1.6,P_AHU_RET.y,1.0,0.7,'r','ret'],
-  [-3.4,P_AHU_RET.y,P_AHU_RET.z,1.0,'r','ret'],[P_AHU_RET.x-0.2,P_AHU_RET.y,P_AHU_RET.z,1.0,'r','ret']];
 
 /* polyline with arc-length table and a perpendicular frame per segment */
 function mkPath(pts){
@@ -1526,12 +1588,12 @@ var STREAMS=[
   stream('hr',[PATHS.hr],440,'Qhr',{size:0.42}),
   stream('direct',[PATHS.direct],240,'Qdir'),
   stream('supply',[PATHS.supply],620,'Qfa',{size:0.42}),
-  stream('recirc',[PATHS.recirc],620,'Qrec',{size:0.42}),
-  stream('riser',[PATHS.riserA,PATHS.riserB],700,'Qsup',{vk:9}),
-  stream('room',PATHS.room,1500,'Qsup',{size:0.85,vk:11}),
-  stream('ret',[PATHS.retA,PATHS.retA,PATHS.retB],420,'Qret'),
-  stream('extract',[PATHS.extract],560,'Qex',{size:0.42}),
-  stream('stale',[PATHS.stale],420,'Qex',{size:0.42,fadeOut:true}),
+  stream('riser',[PATHS.riserA,PATHS.riserB,PATHS.riserC],700,'Qsup',{vk:9}),
+  stream('room',PATHS.room,1700,'Qsup',{size:0.85,vk:11}),
+  stream('ret',[PATHS.exA,PATHS.exA,PATHS.exB],420,'Qret'),
+  stream('exmain',[PATHS.exMain],300,'Qex',{size:0.42}),
+  stream('stale',[PATHS.exCore],460,'Qcore',{size:0.42,fadeOut:true}),
+  stream('byp',[PATHS.exByp],360,'Qbyp',{size:0.42,fadeOut:true}),
   stream('contam',[PATHS.contam,PATHS.contam2],320,'Qcont',{size:0.6,vk:6,fadeIn:true}),
   stream('pbx',[PATHS.pbx],160,'Qpbx',{size:0.6,vk:8,fadeIn:true})
 ];
@@ -1579,7 +1641,7 @@ var airVisible=true, contamVisible=true;
 
 /* ---------------------------------------------- coloured air columns */
 var ribbons=new THREE.Group(); scene.add(ribbons);
-var RIBS=['comp','hr','direct','supply','recirc','riserA','riserB','retA','retB','extract','stale'];
+var RIBS=['comp','hr','direct','supply','riserA','riserB','riserC','exA','exB','exMain','exCore','exByp'];
 var ribbonMeshes=[];
 function buildRibbons(){
   while(ribbons.children.length){ var c=ribbons.children.pop(); c.geometry.dispose(); c.material.dispose();
@@ -1613,9 +1675,11 @@ buildRibbons();
 var arrows=new THREE.Group(); scene.add(arrows);
 var arrowDefs=[
   {p:[-57,22,-14], rz:-Math.PI/2, c:'fresh'},
-  {p:[-55.5,P_HR_EXH.y,P_HR_EXH.z], rz:Math.PI/2, c:'ret'},
   {p:[14,35.6,0], rz:Math.PI, c:'mix'},
-  {p:[36,35.6,0], rz:Math.PI, c:'mix'},
+  {p:[30.5,LAF.y0-3.2,-4], rz:Math.PI, c:'mix'},
+  {p:[RWP.x0-2.2,30,-1], rz:Math.PI/2, c:'mix'},
+  {p:[RWP.x0-2.2,15.5,-1], rz:Math.PI/2, c:'mix'},
+  {p:[BYP.sx,BYP.top+4.5,BYP.sz], rz:0, c:'ret'},
   {p:[3.4,GRILLE[0][0]+4.6,GRILLE[0][1]], rz:Math.PI/2, c:'ret'},
   {p:[3.4,GRILLE[1][0]+4.6,GRILLE[1][1]], rz:Math.PI/2, c:'ret'}
 ];
@@ -1658,8 +1722,7 @@ var DEV=[
   ['TT-101','in', HX-1.6,-1.2, HY-0.3],
   ['FT-101','in', HX-1.6, 1.4, HY-0.3],
   ['FAN-101','out',COMP.x+4.6,-11.2,COMP.y],
-  ['SV-101','out',aw(MIXX-0.9,0,0).x,5.6,aw(0,YS,0).y],
-  ['TT-102','in', aw(-2.3,0,0).x,5.2,aw(0,YS+0.85,0).y],
+  ['TT-109','in', aw(-9.4,0,0).x,5.2,aw(0,YS+0.85,0).y],
   ['EEV-101','out',aw(-3.2,0,0).x,5.7,aw(0,Y0-1.5,0).y],
   ['TT-103','in', aw(-0.25,0,0).x,5.2,aw(0,YS+0.85,0).y],
   ['CMP-101','out',aw(-6.2,0,0).x,4.9,aw(0,Y0-1.15,0).y],
@@ -1669,10 +1732,12 @@ var DEV=[
   ['FAN-102','out',aw(6.35,0,0).x-0.3,5.2,aw(0,YS,0).y],
   ['PDT-102','in', aw(7.0,0,0).x+0.5,5.3,aw(0,YS+0.55,0).y],
   ['TT-105','in', aw(7.2,0,0).x+1.0,5.2,aw(0,YS+0.85,0).y],
-  ['TT-107','in', aw(9.4,0,0).x,5.2,aw(0,YE+0.85,0).y],
   ['FT-102','in', RX,11.3,20],
-  ['FAN-103','out',aw(-9.35,0,0).x,5.2,aw(0,YE,0).y],
-  ['FAN-103B','out',aw(MX0+1.02,0,0).x,-4.2,aw(0,MY,0).y],
+  ['TT-107','in', -14.2,EXZ+1.0,EXY+0.6],
+  ['PT-102','in', -17,EXZ+1.6,EXY+1.6],
+  ['DV-101','out',DVX,EXZ+2.7,EXY-0.6],
+  ['FAN-103','out',aw(MX0+1.02,0,0).x,-4.2,aw(0,MY,0).y],
+  ['FAN-103B','out',BYP.fx,BYP.z+2.6,BYP.y-2.2],
   ['TT-108','in', aw(-18.3,0,0).x+0.3,-4.2,aw(0,MY+MH/2,0).y+0.4],
   ['TT-106','in', 44,-BZ+TH+0.6,20,'z'],
   ['PDT-101','in', TH/2+0.25,-17.5,28.5,'x'],
@@ -1780,23 +1845,27 @@ var DUCTAIR={
   'Compressor discharge':['Qfa',1,'f','oa'],
   'Fresh-air header':['Qfa',1,'f','oa'],
   'Header → recovery unit (fresh lane)':['Qhr',1,'f','oa'],
-  'Header → AHU outdoor-air intake':['Qdir',1,'f','oa'],
+  'Core bypass: header → AHU (baseline test)':['Qdir',1,'f','oa'],
   'Tempered-air duct: recovery unit → AHU':['Qhr',1,'f','t1'],
-  'Extract transfer duct: AHU → recovery unit':['Qex',1,'r','r1'],
-  'Exhaust duct: recovery unit → louvre':['Qex',1,'r','exh'],
+  'Exhaust: air-pump unit → roof stack':['Qcore',1,'r','exh'],
   'Supply riser':['Qsup',1,'m','sup'],
-  'Diffuser drop 1':['Qsup',0.5,'m','sup'],
-  'Return branch (grille 2)':['Qret',0.5,'r','ret']
+  'Terminal drop 1 (ceiling)':['Qsup',0.25,'m','sup'],
+  'LAF supply drop':['Qsup',0.4,'m','sup'],
+  'Exhaust collector A (behind the partition)':['Qret',0.5,'r','ret'],
+  'Exhaust collector B (behind the partition)':['Qret',0.5,'r','ret'],
+  'Exhaust main: clean room → DV-101':['Qex',1,'r','ret'],
+  'Exhaust: DV-101 → air-pump unit (Cu core)':['Qcore',1,'r','r1'],
+  'HEPA bypass: DV-101 → outer BIBO HEPA':['Qbyp',1,'c','ret'],
+  'Bypass discharge: FAN-103B → roof stack':['Qbyp',1,'r','ret']
 };
 rigDucts.children.forEach(function(d){
   var k=DUCTAIR[d.userData.part]; if(!k || !d.userData.curve) return;
-  addDuctFlow(d.userData.curve,d.userData.r*0.62,k[0],k[1],k[2],k[3]);
+  addDuctFlow(d.userData.curve,d.userData.r*0.62,k[0],k[1],k[2],k[3]);       // the rectangle's inscribed core
 });
 function line3(pts){ var cp=new THREE.CurvePath(); for(var i=0;i<pts.length-1;i++) cp.add(new THREE.LineCurve3(W(pts[i][0],pts[i][1],pts[i][2]),W(pts[i+1][0],pts[i+1][1],pts[i+1][2]))); return cp; }
 // the straight runs that are boxes or open cylinders rather than swept ducts
 addDuctFlow(line3([[-BX-1.2,COMP.y,COMP.z],[COMP.x-2.2,COMP.y,COMP.z]]),1.15,'Qfa',1,'f','oa');                         // louvre → compressor
 addDuctFlow(roundedPath([[P_AHU_SUP.x+0.2,P_AHU_SUP.y,P_AHU_SUP.z],[RX,P_AHU_SUP.y,P_AHU_SUP.z+0.6],[RX,P_AHU_SUP.y,RZ]],1.2),0.85,'Qsup',1,'m','sup');  // supply boot
-addDuctFlow(line3([[-0.4,P_AHU_RET.y,P_AHU_RET.z],[P_AHU_RET.x+0.3,P_AHU_RET.y,P_AHU_RET.z]]),0.85,'Qret',1,'r','ret');                              // return duct
 function colorDuctFlow(){
   var states=m.a;
   DUCTFLOW.forEach(function(d){
@@ -1838,22 +1907,27 @@ function makeLabelSprite(text,sub,scale){
   return sp;
 }
 var RIGLABELS=[
-  {text:'Fresh-air compressor',sub:'FAN-101 · supplies the AHU + air pump',a:W(COMP.x,COMP.y+4.2,COMP.z),o:W(-3,9,3)},
-  {text:'Fresh-air header',sub:'one branch to each unit',a:W(HX,HY+1.2,-4),o:W(-9,6,10)},
-  {text:'AHU',sub:'same unit as the earlier model',a:C2W(1,Y1,0),o:W(9,6,13)},
-  {text:'Heat-recovery air-pump unit',sub:'runs in parallel with the AHU',a:C2W(MXC,MY+MH/2,MZ),o:W(-6,13,-8)},
-  {text:'Supply riser',sub:'FT-102 airflow → clean room',a:W(RX,32,RZ),o:W(5,5,9)},
-  {text:'Ceiling supply diffusers',sub:'4-way square · ×2',a:W(36,CEIL-0.4,0),o:W(5,-6,13)},
-  {text:'Low-level return grilles',sub:'back to the AHU extract deck',a:W(0.6,GRILLE[0][0]+2,GRILLE[0][1]),o:W(9,-1,12)},
-  {text:'Clean room',sub:'ACH = supply airflow ÷ room volume',a:W(26,30,-16),o:W(-4,14,-6)},
-  {text:'HMI-101 touch screen',sub:'7-inch · every set point',a:W(-38,46.8,BZ+2),o:W(-6,6,6)},
-  {text:'Main controller PCB',sub:'ESP32-S3 · 3 × ACS712 current',a:W(-21,PCB.y1,PCB.z+0.3),o:W(3,7,3)},
-  {text:'PCB wiring harness',sub:'flat FR4 strips, no loose wires',a:W(-8,TH+0.3,-14),o:W(18,-4,-6)},
-  {text:'Exhaust outlet',sub:'after the air-pump evaporator',a:W(-50.2,P_HR_EXH.y,P_HR_EXH.z),o:W(-12,-8,4)},
+  {text:'Fresh-air compressor',sub:'FAN-101 · 100 % fresh air, once through',a:W(COMP.x,COMP.y+4.2,COMP.z),o:W(-3,9,3)},
+  {text:'Fresh-air header',sub:'→ air-pump Cu core (bypass only for the baseline test)',a:W(HX,HY+1.2,-4),o:W(-9,6,10),tier:'plant'},
+  {text:'AHU · 100 % fresh air',sub:'no mixing box, no recirculation, no exhaust inside',a:C2W(1,YT,0),o:W(9,6,13)},
+  {text:'Heat-recovery air-pump unit',sub:'Cu plate core · the only exhaust path',a:C2W(MXC,MY+MH/2,MZ),o:W(-6,13,-8)},
+  {text:'Supply riser',sub:'FT-102 airflow → 4 BIBO HEPA terminals',a:W(RX,32,RZ),o:W(5,5,9)},
+  {text:'Ceiling BIBO HEPA terminal',sub:'H14 · bag-in/bag-out from the ceiling void',a:W(14,CEIL-0.4,0),o:W(-3,-6,13)},
+  {text:'LAF hood over the filler',sub:'H14 BIBO · down-flow first air · 100 % fresh air',a:W(LAF.x1,LAF.y1,LAF.z1),o:W(4,6,10)},
+  {text:'Right-wall BIBO HEPA terminals',sub:'×2 high + low · behind the operator',a:W(RWP.x0,33.6,RWP.z1),o:W(3,5,12)},
+  {text:'Low-level exhaust terminals',sub:'H14 BIBO · straight to the air pump',a:W(0.6,GRILLE[0][0]+2,GRILLE[0][1]),o:W(9,-1,12)},
+  {text:'PT-102 exhaust particles',sub:'diverts dirty exhaust before the air pump',a:W(-17,EXY+3.2,EXZ),o:W(4,8,6),tier:'plant'},
+  {text:'DV-101 diverter',sub:'spring return · fail-safe to the HEPA',a:W(DVX,EXY+1.4,EXZ+1.6),o:W(-3,6,8),tier:'plant'},
+  {text:'Outer BIBO HEPA + FAN-103B',sub:'beside the fresh-air compressor · out through the common roof stack',a:W((BYP.x0+BYP.x1)/2,BYP.y+3,BYP.z),o:W(4,9,9),tier:'plant'},
+  {text:'Clean room',sub:'ACH = supply airflow ÷ room volume',a:W(26,30,-16),o:W(-4,14,-6),tier:'aux'},
+  {text:'HMI-101 touch screen',sub:'7-inch · every set point',a:W(-38,46.8,BZ+2),o:W(-6,6,6),tier:'plant'},
+  {text:'Main controller PCB',sub:'ESP32-S3 · 3 × ACS712 current',a:W(-21,PCB.y1,PCB.z+0.3),o:W(3,7,3),tier:'plant'},
+  {text:'PCB wiring harness',sub:'flat FR4 strips, no loose wires',a:W(-8,TH+0.3,-14),o:W(18,-4,-6),tier:'plant'},
+  {text:'Exhaust outlet: common roof stack',sub:'both exhausts · rain cap · far from the fresh-air intake',a:W(BYP.sx,BYP.top+2.3,BYP.sz),o:W(6,3,6)},
   {text:'Acrylic enclosure',sub:'1000 × 500 × 500 mm · 5 mm PMMA',a:W(BX,BY,BZ),o:W(8,2,8)},
-  {text:'Vial filling machine',sub:'fill + stopper line under an open RABS',a:W(36,VF.deck+8.4,VF.z0),o:W(6,9,-6)},
+  {text:'Vial filling machine',sub:'along the right wall · open RABS under the LAF',a:FW(44,VF.deck+8.4,VF.z0),o:W(-6,9,-6)},
   {text:'Pass box',sub:'material transfer · interlocked doors + UV',a:W((PBX.x0+PBX.x1)/2,PBX.y1+0.3,BZ),o:W(-8,7,6)},
-  {text:'Operator',sub:'Grade B gown, hands in the RABS gloves',a:W(OP.x,25.6,OP.z),o:W(7,6,8)},
+  {text:'Operator',sub:'back to the right-wall terminals · protected first air',a:W(OPW.x,25.6,OPW.z),o:W(5,6,9)},
   {text:'Air particle sensor',sub:'PT-101 · room air + fill-point probe',a:W(PT.x,PT.y+2.1,PT.z),o:W(-2,18,4)},
   {text:'24 V DC supply',sub:'feeds the PCB',a:W(-40,TH+3.2,-20),o:W(-5,-5,-4),tier:'aux'},
   {text:'Room T + RH',sub:'MT-106 · SHT31',a:W(44,24,-BZ+TH+1.2),o:W(4,6,4),tier:'aux'},
@@ -1878,6 +1952,7 @@ function buildLabels(){
   }
   RIGLABELS.forEach(function(d){
     if(d.tier==='aux' && labelMode!=='all') return;
+    if(d.tier==='plant' && labelMode==='key') return;
     put(d.a,d.a.clone().add(d.o),d.text,d.sub,0.00052);
   });
   if(labelMode==='plant'||labelMode==='all'){
@@ -1895,11 +1970,12 @@ var tagGroup=new THREE.Group(); scene.add(tagGroup);
 var TAGDEF=[
   ['TT-101',W(HX-1.8,HY+3.4,-1.6),'in'], ['FT-101',W(HX-1.8,HY-3.2,2.4),'in'],
   ['FAN-101',W(COMP.x+1,COMP.y+6.6,COMP.z+2),'out'],
-  ['TT-102',C2W(-2.3,Y1+1.4,0),'in'], ['TT-103',C2W(-0.25,Y1+3.1,0),'in'],
-  ['TT-104',C2W(3.35,Y1+1.4,0),'in'], ['TT-105',C2W(7.2,Y1+3.1,0),'in'],
-  ['TT-107',C2W(10.2,Y1+1.4,0),'in'], ['PDT-102',C2W(7.6,Y0-1.4,Z1+0.8),'in'],
-  ['SV-101',C2W(MIXX-1.2,Y0-1.6,Z1+0.9),'out'], ['FAN-102',C2W(5.0,Y0-2.9,Z1+0.9),'out'],
-  ['CMP-101',C2W(-6.6,Y0-3.3,Z1+1.2),'out'], ['FAN-103',C2W(-8.9,Y1+3.1,0),'out'],
+  ['TT-109',C2W(-9.4,YT+1.6,0.8),'in'], ['TT-103',C2W(-0.25,YT+3.3,0),'in'],
+  ['TT-104',C2W(3.35,YT+1.6,0),'in'], ['TT-105',C2W(7.2,YT+3.3,0),'in'],
+  ['TT-107',W(-12.6,EXY+3.6,EXZ+2),'in'], ['PDT-102',C2W(7.6,Y0-1.4,Z1+0.8),'in'],
+  ['PT-102',W(-18,EXY+6.4,EXZ),'in'], ['DV-101',W(DVX-3,EXY+5.2,EXZ+3),'out'],
+  ['FAN-103B',W(BYP.fx,BYP.y+4.8,BYP.z+2.5),'out'], ['FAN-102',C2W(5.0,Y0-2.9,Z1+0.9),'out'],
+  ['CMP-101',C2W(-6.6,Y0-3.3,Z1+1.2),'out'], ['FAN-103',C2W(MX0+1.4,MY+MH/2+2.4,MZL),'out'],
   ['TT-108',C2W(-18.3,MY+MH/2+2.6,MZL),'in'],
   ['FT-102',W(RX+0.5,24,RZ+3.4),'in'], ['TT-106',W(42,28,-21),'in'], ['PDT-101',W(4,35,-19),'in'],
   ['ACH',W(20,30,4),'calc'], ['CT',W(-21,PCB.y0-2.4,PCB.z+1.2),'in'], ['PT-101',W(PT.x-7,PT.y+1,PT.z+2),'in']
@@ -1964,13 +2040,6 @@ function applySeason(){
   document.getElementById('lblCoil').textContent=state.season==='winter'?'After pre-heat set point °C':'Off-coil set point °C';
   refreshLabels(); syncModePill();
 }
-function applyHrv(){
-  var plate=m.hrv==='plate';
-  plateHX.visible=plate; wheel.visible=!plate;
-  hrvLabel.text=plate?'Plate heat-recovery core':'Rotary thermal wheel';
-  hrvLabel.sub =plate?'counterflow · sensible':'sorption rotor · sensible + latent';
-  refreshLabels();
-}
 function applyCasing(){
   casingParts.forEach(function(o){
     if(state.casing==='off'){ o.visible=false; }
@@ -2021,7 +2090,7 @@ var IO=[
   ['TT-101','Fresh-air temperature',function(){return sgn(m.s.TT101)+' °C';},'SHT31 on the fresh-air header','I²C mux ch0 · 0x44','in'],
   ['MT-101','Fresh-air humidity',function(){return f0(m.s.MT101)+' %';},'SHT31','I²C mux ch0','in'],
   ['FT-101','Fresh-air flow',function(){return f2(m.s.FT101)+' m³/h';},'Omron D6F-W04A1 air velocity','ADC1_CH0 · GPIO1','in'],
-  ['TT-102','Mixed-air temperature',function(){return sgn(m.s.TT102)+' °C';},'DS18B20 probe','1-Wire A · GPIO15','in'],
+  ['TT-109','Fresh air off the Cu core (pre-cooled / pre-heated)',function(){return sgn(m.s.TT109)+' °C';},'DS18B20 probe at the AHU inlet','1-Wire A · GPIO15','in'],
   ['TT-103','Air after pre-heat',function(){return sgn(m.s.TT103)+' °C';},'DS18B20 probe','1-Wire A · GPIO15','in'],
   ['TT-104','Air off the cooling coil',function(){return sgn(m.s.TT104)+' °C';},'DS18B20 probe','1-Wire A · GPIO15','in'],
   ['TT-105','Final supply-air temperature',function(){return sgn(m.s.TT105)+' °C';},'SHT31 after the HEPA','I²C mux ch1 · 0x44','in'],
@@ -2031,18 +2100,19 @@ var IO=[
   ['PDT-102','HEPA filter ΔP',function(){return f0(m.s.PDT102)+' Pa';},'Sensirion SDP810-500Pa','I²C mux ch3 · 0x25','in'],
   ['TT-106','Clean-room temperature',function(){return sgn(m.s.TT106)+' °C';},'SHT31','I²C mux ch4 · 0x44','in'],
   ['MT-106','Clean-room humidity',function(){return f0(m.s.MT106)+' %';},'SHT31','I²C mux ch4','in'],
-  ['TT-107','Return-air temperature',function(){return sgn(m.s.TT107)+' °C';},'DS18B20 probe','1-Wire B · GPIO16','in'],
+  ['TT-107','Exhaust air to the air pump',function(){return sgn(m.s.TT107)+' °C';},'DS18B20 probe on the exhaust main','1-Wire B · GPIO16','in'],
   ['TT-108','Exhaust after the air-pump coil',function(){return sgn(m.s.TT108)+' °C';},'DS18B20 probe','1-Wire B · GPIO16','in'],
   ['CT-101','Current: air-pump compressor',function(){return f2(m.s.CT101)+' A';},'ACS712-05B on the PCB','ADC1_CH3 · GPIO4','in'],
   ['CT-102','Current: fans',function(){return f2(m.s.CT102)+' A';},'ACS712-05B on the PCB','ADC1_CH4 · GPIO5','in'],
   ['CT-103','Current: reheat + humidifier',function(){return f2(m.s.CT103)+' A';},'ACS712-05B on the PCB','ADC1_CH5 · GPIO6','in'],
   ['VT-101','DC bus voltage',function(){return f1(m.s.VT101)+' V';},'100 k / 10 k divider','ADC1_CH6 · GPIO7','in'],
   ['PT-101','Airborne particles ≥0.5 / ≥5.0 µm: room · fill point',function(){return kfmt(m.s.PT101)+' · '+kfmt(m.s.PT101A)+' /m³';},'Laser particle counter, 2.83 L/min, 2-port manifold (room air + isokinetic fill-point probe)','I²C mux ch5 · 0x69','in'],
+  ['PT-102','Exhaust particles ≥0.5 µm, before DV-101',function(){return kfmt(m.s.PT102)+' /m³ · trip '+kfmt(P.pxTrip);},'Sensirion SPS30 on the exhaust main (indicative)','I²C mux ch7 · 0x69','in'],
   ['ACH','Air changes per hour',function(){return f1(m.kpi.ach)+' /h';},'FT-102 ÷ clean-room volume','calculated','calc'],
   ['FAN-101','Fresh-air compressor speed',function(){return f0(m.act.fa*100)+' %';},'24 V BLDC centrifugal blower','PWM GPIO38 · tach GPIO10','out'],
   ['FAN-102','Supply fan speed',function(){return f0(m.act.sf*100)+' %';},'24 V EC plug fan','PWM GPIO39 · tach GPIO11','out'],
-  ['FAN-103','Exhaust fans speed',function(){return f0(m.act.ef*100)+' %';},'2 × 24 V EC fan (AHU + air-pump unit)','PWM GPIO40 · tach GPIO12','out'],
-  ['SV-101','Mixing-damper servo',function(){return f0(m.act.dmp*90)+'°';},'MG996R servo, outdoor + recirc blades linked','50 Hz PWM GPIO21','out'],
+  ['FAN-103','Exhaust fan (air-pump unit) / FAN-103B (HEPA bypass)',function(){return f0(m.act.ef*100)+' % · '+(m.act.dv>0.5?'FAN-103B':'FAN-103');},'2 × 24 V EC fan, one PWM; DV-101 end switch powers the fan of the open path','PWM GPIO40 · tach GPIO12','out'],
+  ['DV-101','Exhaust diverter: air pump ⇄ outer BIBO HEPA',function(){return m.act.dv>0.5?'HEPA bypass':(m.act.dv<0.05?'to air pump':'moving '+f0(m.act.dv*100)+' %');},'24 V spring-return on/off actuator + SPDT end switch (fail-safe: HEPA)','MOSFET · GPIO21','out'],
   ['CMP-101','Air-pump compressor',function(){return f0(m.act.cmp*100)+' %';},'24 V BLDC R32 compressor + driver','0–5 V via PWM-RC · GPIO41','out'],
   ['RV-101','Reversing valve',function(){return m.season==='winter'?'heating':'cooling';},'4-way valve coil','relay · GPIO42','out'],
   ['EEV-101','Expansion valve',function(){return f0(80+m.act.cmp*400)+' steps';},'stepper EEV','STEP/DIR · GPIO13/14','out'],
@@ -2063,13 +2133,15 @@ $('kbar').innerHTML=KPIS.map(function(k){
 
 /* Overview mimic */
 $('pane-ov').innerHTML='<svg class="mimic" viewBox="0 0 1110 252" role="img" aria-label="Rig overview mimic">'+
- /* lines: fresh */
- '<path class="ln lf" d="M50 110H76M108 110H400"/><path class="ln lf" d="M190 110V165H215"/><path class="ln lf" d="M355 165H375V110"/>'+
+ /* lines: fresh (through the air-pump Cu core; the straight line is the baseline-test bypass) */
+ '<path class="ln lf" d="M50 110H76M108 110H190"/><path class="ln lf" d="M190 110V165H215"/><path class="ln lf" d="M355 165H375V110H400"/>'+
+ '<path class="ln lf" d="M190 110H375" stroke-dasharray="4 4" opacity=".55"/><text x="282" y="104" text-anchor="middle" class="lb">bypass (baseline)</text>'+
  /* supply */
  '<path class="ln lm" d="M400 110H880"/><path class="ln lm" d="M880 110H902V40H1060V60M972 40V60"/>'+
- /* return + exhaust */
- '<path class="ln lr" d="M930 196H905V205H355"/><path class="ln lr" d="M490 205V112"/><path class="ln lr" d="M215 205H40"/>'+
- '<path class="flow" id="fl-f" d="M50 110H400"/><path class="flow" id="fl-s" d="M400 110H880H902V40H1060"/><path class="flow" id="fl-r" d="M930 196H905V205H40"/>'+
+ /* exhaust: room → PT-102 → DV-101 → air-pump unit → outdoors; DV-101 → outer HEPA → outdoors */
+ '<path class="ln lr" d="M930 196H905V205H355"/><path class="ln lr" d="M215 205H40"/>'+
+ '<path class="ln lr" d="M640 205V234H612M562 234H520" id="m-bypl"/>'+
+ '<path class="flow" id="fl-f" d="M50 110H190V165H215M355 165H375V110H400"/><path class="flow" id="fl-s" d="M400 110H880H902V40H1060"/><path class="flow" id="fl-r" d="M930 196H905V205H40"/>'+
  /* compressor */
  '<circle cx="92" cy="110" r="16" class="box"/><path d="M82 104l20 12M82 116l20-12" stroke="var(--ink-dim)" stroke-width="2"/>'+
  '<text x="92" y="146" text-anchor="middle" class="lb">FAN-101</text><text x="92" y="161" text-anchor="middle" class="val" id="m-fan101">–</text>'+
@@ -2077,37 +2149,43 @@ $('pane-ov').innerHTML='<svg class="mimic" viewBox="0 0 1110 252" role="img" ari
  '<rect class="tag" x="118" y="62" width="104" height="32" rx="4"/><text x="126" y="75" class="lb">TT-101 · MT-101</text><text x="126" y="89" class="val" id="m-tt101">–</text>'+
  '<rect class="tag" x="226" y="62" width="84" height="32" rx="4"/><text x="234" y="75" class="lb">FT-101</text><text x="234" y="89" class="val" id="m-ft101">–</text>'+
  /* recovery unit */
- '<rect class="box" x="215" y="146" width="140" height="78" rx="4"/><text x="285" y="140" text-anchor="middle" class="lb">Air-pump unit</text>'+
- '<path d="M265 160l40 40M305 160l-40 40" stroke="var(--ink-dim)" stroke-width="2"/>'+
+ '<rect class="box" x="215" y="146" width="140" height="78" rx="4"/><text x="285" y="140" text-anchor="middle" class="lb">Air-pump unit · Cu core</text>'+
+ '<path d="M265 160l40 40M305 160l-40 40" stroke="var(--copper,#b9712f)" stroke-width="3"/>'+
  '<rect x="238" y="194" width="12" height="22" fill="var(--refrig)" opacity=".55"/>'+
  '<text x="322" y="182" class="val" id="m-hr">–</text>'+
  '<text x="8" y="196" class="lb">Exhaust</text>'+
  '<rect class="tag" x="46" y="214" width="96" height="32" rx="4"/><text x="54" y="227" class="lb">TT-108</text><text x="54" y="241" class="val" id="m-tt108">–</text>'+
- /* AHU */
- '<rect class="unit" x="400" y="66" width="480" height="96" rx="6"/><text x="408" y="60" class="lb">AHU</text>'+
- '<path d="M418 98l24 24M442 98l-24 24" stroke="var(--ink-dim)" stroke-width="2"/><text x="430" y="152" text-anchor="middle" class="lb">Core</text>'+
- '<path d="M480 100l10 20M490 100l10 20M500 100l10 20" stroke="var(--ink)" stroke-width="2"/><text x="510" y="152" text-anchor="middle" class="lb">Mix</text>'+
+ /* AHU: 100 % fresh air, no mixing box, no core */
+ '<rect class="unit" x="400" y="66" width="480" height="96" rx="6"/><text x="408" y="60" class="lb">AHU · 100 % fresh air</text>'+
+ '<path d="M420 96v28M428 96v28M436 96v28" stroke="var(--ink-dim)" stroke-width="2"/><text x="428" y="152" text-anchor="middle" class="lb">Filters</text>'+
+ '<text x="500" y="106" text-anchor="middle" class="lb">no mixing</text><text x="500" y="120" text-anchor="middle" class="lb">no recirc.</text>'+
  '<rect x="550" y="96" width="16" height="28" fill="var(--return)" opacity=".7" id="m-phc"/><text x="558" y="152" text-anchor="middle" class="lb">Pre-heat</text>'+
  '<rect x="602" y="96" width="16" height="28" fill="var(--fresh)" opacity=".7" id="m-ccc"/><text x="610" y="152" text-anchor="middle" class="lb">Cool</text>'+
  '<rect x="652" y="96" width="16" height="28" fill="var(--return)" opacity=".7" id="m-rhc"/><text x="660" y="152" text-anchor="middle" class="lb">Reheat</text>'+
  '<path d="M704 98v24M712 98v24M720 98v24" stroke="var(--fresh)" stroke-width="2"/><text x="712" y="152" text-anchor="middle" class="lb">Hum</text>'+
  '<circle cx="768" cy="110" r="14" class="box"/><path d="M760 104l16 12M760 116l16-12" stroke="var(--ink-dim)" stroke-width="2"/><text x="768" y="152" text-anchor="middle" class="lb">Fan</text>'+
  '<rect x="814" y="94" width="18" height="32" class="box"/><path d="M818 98l10 4-10 4 10 4-10 4 10 4-10 4" stroke="var(--ink-dim)" fill="none"/><text x="823" y="152" text-anchor="middle" class="lb">HEPA</text>'+
- '<text x="500" y="138" text-anchor="middle" class="val" id="m-dmp">–</text><text x="558" y="138" text-anchor="middle" class="val" id="m-ph">–</text>'+
+ '<text x="558" y="138" text-anchor="middle" class="val" id="m-ph">–</text>'+
  '<text x="610" y="138" text-anchor="middle" class="val" id="m-cc">–</text><text x="660" y="138" text-anchor="middle" class="val" id="m-rh">–</text>'+
  '<text x="712" y="138" text-anchor="middle" class="val" id="m-hum">–</text><text x="768" y="138" text-anchor="middle" class="val" id="m-sf">–</text>'+
  '<text x="823" y="138" text-anchor="middle" class="val" id="m-hepa">–</text>'+
- '<rect class="tag" x="440" y="14" width="84" height="32" rx="4"/><text x="448" y="27" class="lb">TT-102 mix</text><text x="448" y="41" class="val" id="m-tt102">–</text>'+
+ '<rect class="tag" x="440" y="14" width="84" height="32" rx="4"/><text x="448" y="27" class="lb">TT-109 core</text><text x="448" y="41" class="val" id="m-tt109">–</text>'+
  '<rect class="tag" x="530" y="14" width="84" height="32" rx="4"/><text x="538" y="27" class="lb">TT-103 pre</text><text x="538" y="41" class="val" id="m-tt103">–</text>'+
  '<rect class="tag" x="620" y="14" width="84" height="32" rx="4"/><text x="628" y="27" class="lb">TT-104 coil</text><text x="628" y="41" class="val" id="m-tt104">–</text>'+
  '<rect class="tag" x="752" y="14" width="124" height="32" rx="4"/><text x="760" y="27" class="lb">TT-105 · MT-105 final</text><text x="760" y="41" class="val" id="m-tt105">–</text>'+
  '<path d="M482 46V100M572 46V100M662 46V100M840 46V100" stroke="var(--line)" stroke-dasharray="2 3"/>'+
  '<rect class="tag" x="910" y="4" width="84" height="30" rx="4"/><text x="918" y="16" class="lb">FT-102</text><text x="918" y="29" class="val" id="m-ft102">–</text>'+
- '<rect class="tag" x="800" y="214" width="96" height="32" rx="4"/><text x="808" y="227" class="lb">TT-107 return</text><text x="808" y="241" class="val" id="m-tt107">–</text>'+
+ /* exhaust safety: PT-102, DV-101, outer BIBO HEPA */
+ '<rect class="tag" x="790" y="214" width="108" height="32" rx="4" id="m-pt102b"/><text x="798" y="227" class="lb">PT-102 exhaust</text><text x="798" y="241" class="val" id="m-pt102">–</text>'+
+ '<rect class="tag" x="680" y="214" width="96" height="32" rx="4"/><text x="688" y="227" class="lb">TT-107 exhaust</text><text x="688" y="241" class="val" id="m-tt107">–</text>'+
+ '<path d="M630 197l20 16M630 213l20-16" stroke="var(--ink)" stroke-width="2.5"/><text x="640" y="190" text-anchor="middle" class="lb">DV-101</text>'+
+ '<text x="622" y="192" text-anchor="end" class="val" id="m-dv">–</text>'+
+ '<rect x="562" y="224" width="50" height="20" class="box"/><path d="M566 228l8 4-8 4 8 4M578 228l8 4-8 4 8 4M590 228l8 4-8 4 8 4" stroke="var(--ink-dim)" fill="none"/>'+
+ '<text x="516" y="232" text-anchor="end" class="lb">outer HEPA</text><text x="516" y="246" text-anchor="end" class="lb">→ outdoors</text>'+
  /* clean room */
  '<rect class="box" x="930" y="60" width="172" height="150" rx="4"/>'+
- '<rect x="962" y="60" width="20" height="5" fill="var(--mix)"/><rect x="1050" y="60" width="20" height="5" fill="var(--mix)"/>'+
- '<text x="1016" y="86" text-anchor="middle" class="lb">Clean room</text>'+
+ '<rect x="962" y="60" width="20" height="5" fill="var(--mix)"/><rect x="1050" y="60" width="20" height="5" fill="var(--mix)"/><rect x="1097" y="96" width="5" height="40" fill="var(--mix)"/>'+
+ '<text x="1016" y="86" text-anchor="middle" class="lb">Clean room · 4 BIBO HEPA</text>'+
  '<text x="1016" y="120" text-anchor="middle" class="val" style="font-size:22px" id="m-ach">–</text>'+
  '<text x="1016" y="146" text-anchor="middle" id="m-room">–</text><text x="1016" y="166" text-anchor="middle" id="m-dp">–</text>'+
  '<text x="1016" y="188" text-anchor="middle" class="lb" id="m-vol">–</text>'+
@@ -2121,17 +2199,18 @@ $('pane-sn').innerHTML='<table class="sens"><thead><tr><th>Tag</th><th>Measures 
 /* Control loops */
 var LOOPS=[
   {k:'L1',pv:function(){return f2(m.s.FT102)+' m³/h';},sp:function(){return f2(P.flow)+' m³/h';},out:'FAN-102 supply fan',sens:'FT-102'},
-  {k:'L2',pv:function(){return f2(m.s.FT101)+' m³/h';},sp:function(){return f2(m.loops.L3.out*m.s.FT102)+' m³/h';},out:'FAN-101 fresh-air compressor',sens:'FT-101'},
-  {k:'L3',pv:function(){return tC(m.s.TT102);},sp:function(){return tC(P[m.season].mix)+' · min '+P.oa+' % OA';},out:'SV-101 mixing-damper servo',sens:'TT-102'},
+  {k:'L2',pv:function(){return f2(m.s.FT101)+' m³/h';},sp:function(){return f2(m.s.FT102)+' m³/h (= FT-102, 100 % OA)';},out:'FAN-101 fresh-air compressor',sens:'FT-101'},
+  {k:'L3',pv:function(){return kfmt(m.s.PT102)+' /m³';},sp:function(){return 'trip > '+kfmt(P.pxTrip)+' · reset < '+kfmt(P.pxReset);},out:'DV-101 exhaust diverter',sens:'PT-102',
+   meta:'2-position: trip after 5 s above the trip level, back to the air pump after 60 s below the reset level. Manual: < 50 % = air pump, ≥ 50 % = HEPA bypass.'},
   {k:'L4',pv:function(){return tC(m.season==='winter'?m.s.TT103:m.s.TT104);},sp:function(){return tC(m.coilSP||P[m.season].coil);},out:'CMP-101 air-pump compressor',sens:'TT-103 / TT-104'},
   {k:'L5',pv:function(){return tC(m.s.TT105);},sp:function(){return tC(P[m.season].sup);},out:'HTR-101 reheat coil',sens:'TT-105'},
   {k:'L6',pv:function(){return f0(m.s.MT106)+' % RH';},sp:function(){return f0(P.rh)+' % RH';},out:'HUM-101 humidifier (winter) · coil reset (summer)',sens:'MT-106'},
-  {k:'L7',pv:function(){return sgn(m.s.PDT101)+' Pa';},sp:function(){return '+'+f0(P.dp)+' Pa';},out:'FAN-103 exhaust fans',sens:'PDT-101'}
+  {k:'L7',pv:function(){return sgn(m.s.PDT101)+' Pa';},sp:function(){return '+'+f0(P.dp)+' Pa';},out:'FAN-103 / FAN-103B exhaust fan',sens:'PDT-101'}
 ];
 $('pane-lp').innerHTML='<div class="loops">'+LOOPS.map(function(l){
   var L=m.loops[l.k];
   return '<div class="loop" data-k="'+l.k+'"><h4>'+l.k+' · '+esc(L.name)+'</h4>'+
-    '<div class="meta">sensor '+l.sens+' → '+esc(l.out)+' · PI Kp '+L.kp+' Ti '+L.ti+' s</div>'+
+    '<div class="meta">sensor '+l.sens+' → '+esc(l.out)+' · '+(l.meta?esc(l.meta):'PI Kp '+L.kp+' Ti '+L.ti+' s')+'</div>'+
     '<div class="pv"><span>PV <b id="lp-pv-'+l.k+'">–</b></span><span>SP <b id="lp-sp-'+l.k+'">–</b></span><span>OUT <b id="lp-out-'+l.k+'">–</b></span></div>'+
     '<div class="bar"><i id="lp-bar-'+l.k+'" style="width:0%"></i></div>'+
     '<div class="am"><div class="seg"><button data-am="auto" aria-pressed="true">Auto</button><button data-am="man" aria-pressed="false">Manual</button></div>'+
@@ -2160,7 +2239,7 @@ $('pane-en').innerHTML='<div class="energy">'+
   '<div class="card"><h4>Now vs. no heat recovery</h4><div class="big" id="e-red">–</div>'+
     '<div class="cmp"><div class="r"><span>This rig</span><span class="t"><i id="e-bar-a" style="background:var(--mix)"></i></span><b id="e-pa">–</b></div>'+
     '<div class="r"><span>Baseline</span><span class="t"><i id="e-bar-b" style="background:var(--return)"></i></span><b id="e-pb">–</b></div></div>'+
-    '<p class="note">Baseline = the same rig, same airflow and set points, with the recovery cores bypassed: electric pre-heat in winter, a plain chiller (COP <span id="e-copb">–</span>) in summer, electric reheat.</p></div>'+
+    '<p class="note">Baseline = the same rig, 100 % fresh air, same airflow and set points, with the Cu core bypassed: electric pre-heat in winter, a plain chiller (COP <span id="e-copb">–</span>) in summer, electric reheat.</p></div>'+
   '<div class="card"><h4>Energy counters</h4>'+
     '<div class="kv"><span>Measured energy</span><b id="e-wh">–</b></div>'+
     '<div class="kv"><span>Baseline energy (twin)</span><b id="e-whb">–</b></div>'+
@@ -2182,7 +2261,7 @@ $('pane-en').innerHTML='<div class="energy">'+
     '<div class="kv"><span id="e-copl">COP</span><b id="e-cop">–</b></div>'+
     '<div class="kv"><span>Coil duty</span><b id="e-qhp">–</b></div>'+
     '<div class="kv"><span>Compressor input</span><b id="e-w">–</b></div>'+
-    '<div class="kv"><span>Recovered by the two cores</span><b id="e-qrec">–</b></div>'+
+    '<div class="kv"><span>Recovered by the Cu plate core</span><b id="e-qrec">–</b></div>'+
     '<div class="kv"><span>Desuperheater reheat (free)</span><b id="e-dsh">–</b></div>'+
     '<div class="kv"><span>To outdoor condenser</span><b id="e-out">–</b></div>'+
     '<div class="kv"><span>Refrigerant</span><b>R32 · A2L · GWP 675</b></div>'+
@@ -2199,15 +2278,16 @@ $('btnEreset').addEventListener('click',function(){ RigModel.resetEnergy(m); });
 
 /* Trends: one chart per unit, never two scales on one chart */
 var CHARTS=[
-  {id:'tc',title:'Air temperatures (°C)',ser:[['TT101','TT-101 fresh','--s1'],['TT102','TT-102 mix','--s2'],['TT103','TT-103 pre-heat','--s3'],['TT105','TT-105 final','--s4'],['TT106','TT-106 room','--s5']],unit:'°C',dec:1},
+  {id:'tc',title:'Air temperatures (°C)',ser:[['TT101','TT-101 fresh','--s1'],['TT109','TT-109 off Cu core','--s2'],['TT103','TT-103 pre-heat','--s3'],['TT105','TT-105 final','--s4'],['TT106','TT-106 room','--s5']],unit:'°C',dec:1},
   {id:'rh',title:'Relative humidity (%)',ser:[['MT105','MT-105 supply','--s1'],['MT106','MT-106 room','--s2']],unit:'%',dec:0},
   {id:'pw',title:'Electrical power (W)',ser:[['P','This rig','--s3'],['Pb','Baseline (no recovery)','--s2']],unit:'W',dec:1},
   {id:'ach',title:'Clean-room ACH (1/h)',ser:[['ACH','ACH','--s1']],unit:'/h',dec:1},
   {id:'dp',title:'Clean-room pressure (Pa)',ser:[['DP','PDT-101','--s1']],unit:'Pa',dec:1,lim:[15,'set point']},
   {id:'pr',title:'Room particles ≥0.5 µm (per m³)',ser:[['PR','PT-101 room','--s1']],unit:'/m³',dec:0,lim:[352000,'Grade B in operation'],zero:true},
   {id:'pa',title:'Fill-point particles ≥0.5 µm (per m³)',ser:[['PA','PT-101 fill point','--s3']],unit:'/m³',dec:0,lim:[3520,'Grade A'],zero:true},
+  {id:'px',title:'Exhaust particles before DV-101 (per m³)',ser:[['PX','PT-102 exhaust','--s4']],unit:'/m³',dec:0,lim:[1000,'DV-101 trip'],zero:true},
   {id:'q',title:'Airflows (m³/h)',ser:[['QS','FT-102 supply','--s1'],['QF','FT-101 fresh air','--s2'],['QE','Exhaust fans','--s3']],unit:'m³/h',dec:2,zero:true},
-  {id:'act',title:'Actuator outputs (%)',ser:[['USF','FAN-102 supply','--s1'],['UFA','FAN-101 compressor','--s2'],['UDM','SV-101 damper','--s3'],['UCM','CMP-101 air pump','--s4'],['URH','HTR-101 reheat','--s5']],unit:'%',dec:0,zero:true},
+  {id:'act',title:'Actuator outputs (%)',ser:[['USF','FAN-102 supply','--s1'],['UFA','FAN-101 compressor','--s2'],['UDV','DV-101 to HEPA','--s3'],['UCM','CMP-101 air pump','--s4'],['URH','HTR-101 reheat','--s5']],unit:'%',dec:0,zero:true},
   {id:'co',title:'CO₂ emissions (g/h)',ser:[['CO','This rig','--s3'],['COB','Baseline (no recovery)','--s2']],unit:'g/h',dec:1,zero:true}
 ];
 $('pane-tr').innerHTML='<div class="trends">'+CHARTS.map(function(c){
@@ -2279,13 +2359,14 @@ function drawAlarms(){
 /* Contamination containment strategy: the barriers, each with its live state */
 var BARRIERS=[
   {t:'Pressure cascade',d:'The clean room is held above the plant room and the lab, so any leak flows outward and outside air cannot get in. PDT-101 drives the exhaust fans (L7).'},
-  {t:'HEPA filtration',d:'Panel and ePM1 bag filters, then an H13 HEPA (99.95 % at MPPS). The supply air is almost particle-free.'},
+  {t:'100 % fresh air, BIBO HEPA on every terminal',d:'Once-through fresh air only: nothing is recirculated. Panel and ePM1 bag filters and an H13 HEPA in the AHU, then an H14 bag-in/bag-out HEPA at every supply terminal (ceiling, LAF hood, 2 right-wall) and every exhaust terminal. Used filters are bagged out without being touched.'},
   {t:'Dilution and recovery',d:'A high air-change rate dilutes what people and the process shed. Recovery to 1 % of a peak takes 4.6 ÷ ACH hours.'},
-  {t:'First air at the fill point (Grade A)',d:'Filling runs under an open RABS straight below ceiling diffuser 2. Air from the HEPA reaches the needles first, then sweeps down and away.'},
-  {t:'Top-to-bottom airflow, low-level returns',d:'Supply at the ceiling, returns in the partition near the floor. Particles shed by the operator are carried down and out, away from open vials.'},
+  {t:'LAF first air at the fill point (Grade A)',d:'The filler runs under its own LAF hood (H14 BIBO, fed with 100 % fresh air). Down-flow first air reaches the needles before anything else, then sweeps down and away.'},
+  {t:'Operator protection: air from behind, low-level exhausts',d:'Two right-wall terminals blow clean air onto the operator\'s back, then over the filler, to low-level BIBO exhausts in the far wall. Dust from the product is carried away from the operator\'s breathing zone.'},
   {t:'Material transfer through the pass box',d:'Two interlocked doors that never open together, with a UV cycle between them. The clean room is never open to the lab.'},
   {t:'People: gowning and glove ports',d:'Grade B gown: hood, goggles, mask, overshoes, sterile gloves. Hands enter the RABS only through the glove ports; no open-door interventions.'},
   {t:'Heat recovery without cross-contamination',d:''},
+  {t:'Contaminated exhaust: PT-102 → DV-101 → outer HEPA',d:'PT-102 watches the exhaust before it reaches the air pump. A high count (a release in the room or a leaking exhaust filter) throws DV-101: the exhaust goes through the outer BIBO HEPA and FAN-103B to outdoors and never through the Cu core. DV-101 is spring return, so with no power it rests on the HEPA path.'},
   {t:'Monitoring, alert and action limits',d:'PT-101 counts continuously at the fill point and in the room. Alert at 70 % of a limit: investigate. Action at the limit: stop filling, clean, re-qualify.'}
 ];
 var LIMITS=[['A','3 520','29','3 520','29','ISO 5'],['B','3 520','29','352 000','2 930','ISO 7'],
@@ -2313,14 +2394,16 @@ function updateContainment(){
   var ach=k.ach, rec=ach>0.1?4.6/ach*60:Infinity; st[2]=ach>=40?'ok':(ach>=20?'warn':'bad');
   v[2]=f1(ach)+' ACH · 100:1 in '+(isFinite(rec)?f1(rec)+' min':'—');
   st[3]=worst([lvl(s.PT101A,3520),lvl(s.PT101A5,29)]); v[3]=kfmt(s.PT101A)+' /m³ · ≥5 µm '+f0(s.PT101A5);
-  st[4]='ok'; v[4]='2 grilles, centre 69 mm above the floor';
+  st[4]='ok'; v[4]='2 wall terminals · 2 low exhausts, centre 69 mm above the floor';
   st[5]='ok'; v[5]=CR.pb.state+' · '+CR.pb.transfers+' transfers';
   st[6]='ok'; v[6]='operator working through the gloves';
-  if(!m.recovery){ st[7]='ok'; v[7]='recovery bypassed: no transfer'; d[7]='In the baseline test both recovery cores are bypassed, so exhaust and fresh air cannot meet.'; }
-  else if(m.hrv==='wheel'){ st[7]='warn'; v[7]='thermal wheel: ≈3 % exhaust carry-over'; d[7]='A rotating wheel carries some exhaust air into the supply (exhaust air transfer ratio ≈2-5 %). It needs a purge sector and fans arranged so the supply side runs at higher pressure; a plate core avoids this.'; }
-  else { st[7]='ok'; v[7]='plate cores: no air contact'; d[7]='The plate cores and the air-pump coils keep exhaust and fresh air in separate channels, so nothing from the clean-room exhaust comes back in the supply.'; }
+  if(!m.recovery){ st[7]='ok'; v[7]='core bypassed: no transfer'; d[7]='In the baseline test the fresh air bypasses the Cu core, so exhaust and fresh air cannot meet.'; }
+  else { st[7]='ok'; v[7]='Cu plate core: no air contact'; d[7]='The exhaust only pre-cools (summer) or pre-heats (winter) the fresh air through sealed copper plates (Ra ≤ 0.8 µm, smooth and cleanable). The two streams never touch, there is no mixing box and no exhaust air enters the AHU.'; }
   var ids={}; m.alarms.forEach(function(x){ ids[x.id]=1; });
-  st[8]=(ids.A11||ids.A12)?'bad':(ids.A10?'warn':'ok'); v[8]=(ids.A11||ids.A12||ids.A10)?'limit exceeded: see Alarms':'within alert limits';
+  var dvx=m.act.dv;
+  st[8]=s.PT102>P_.pxTrip?'bad':(dvx>0.5||s.PT102>P_.pxReset?'warn':'ok');
+  v[8]=dvx>0.5?'diverted to the outer HEPA · PT-102 '+kfmt(s.PT102)+' /m³':(dvx>0.05?'DV-101 moving':'to the air pump · PT-102 '+kfmt(s.PT102)+' /m³');
+  st[9]=(ids.A11||ids.A12)?'bad':(ids.A10?'warn':'ok'); v[9]=(ids.A11||ids.A12||ids.A10)?'limit exceeded: see Alarms':'within alert limits';
   BARRIERS.forEach(function(b,i){ setStt('ct-s-'+i,st[i]); setText('ct-v-'+i,v[i]); if(d[i]) setText('ct-d-'+i,d[i]); });
   var all=worst(st); setStt('ct-pill',all);
   var bad=BARRIERS.filter(function(b,i){ return st[i]!=='ok'; }).map(function(b){ return b.t.charAt(0).toLowerCase()+b.t.slice(1); });
@@ -2402,13 +2485,15 @@ function updateHMI(force){
   if(hmiEl.classList.contains('collapsed') && !force) return;
   if(activePane==='ov'){
     setText('m-fan101',f0(m.act.fa*100)+' %'); setText('m-tt101',tC(s.TT101)+' · '+f0(s.MT101)+' %'); setText('m-ft101',f2(s.FT101)+' m³/h');
-    setText('m-hr',m.recovery?f0(P.e1)+' %':'bypass');
+    setText('m-hr',!m.recovery?'bypass':(m.act.dv>0.5?'no exhaust':f0(P.e1)+' %'));
     setText('m-tt108',tC(s.TT108));
-    setText('m-dmp',f0(m.act.dmp*90)+'°'); setText('m-ph',f0((m.season==='winter'?m.act.cmp:0)*100)+'%');
+    setText('m-ph',f0((m.season==='winter'?m.act.cmp:0)*100)+'%');
     setText('m-cc',f0((m.season==='summer'?m.act.cmp:0)*100)+'%'); setText('m-rh',f0(m.act.rh*100)+'%');
     setText('m-hum',f0(m.act.hum*100)+'%'); setText('m-sf',f0(m.act.sf*100)+'%'); setText('m-hepa',f0(s.PDT102)+' Pa');
-    setText('m-tt102',tC(s.TT102)); setText('m-tt103',tC(s.TT103)); setText('m-tt104',tC(s.TT104));
+    setText('m-tt109',tC(s.TT109)); setText('m-tt103',tC(s.TT103)); setText('m-tt104',tC(s.TT104));
     setText('m-tt105',tC(s.TT105)+' · '+f0(s.MT105)+' %'); setText('m-ft102',f2(s.FT102)+' m³/h'); setText('m-tt107',tC(s.TT107));
+    setText('m-pt102',kfmt(s.PT102)+' /m³'); setText('m-dv',m.act.dv>0.5?'HEPA':'air pump');
+    $('m-bypl').style.opacity=m.act.dv>0.5?'1':'.35';
     setText('m-ach',f1(k.ach)+' ACH'); setText('m-room',tC(s.TT106)+' · '+f0(s.MT106)+' % RH');
     setText('m-dp',sgn(s.PDT101)+' Pa'); var gr=gradeOf(s.PT101,s.PT101R5); setText('m-vol','PT-101 '+kfmt(s.PT101)+'/m³ · '+(gr.g==='—'?'> Grade C':'Grade '+gr.g));
     $('m-phc').setAttribute('opacity',String(0.2+0.8*(m.season==='winter'?m.act.cmp:0)));
@@ -2478,7 +2563,7 @@ function drawScreen(){
     c.fillStyle='#8ca0b3'; c.font='20px "IBM Plex Mono", monospace'; c.fillText(t[2],x+16+wv+8,y+66);
   });
   // temperature chain
-  var chain=[['OA',s.TT101],['MIX',s.TT102],['PRE',s.TT103],['COIL',s.TT104],['SUP',s.TT105],['ROOM',s.TT106]];
+  var chain=[['OA',s.TT101],['CORE',s.TT109],['PRE',s.TT103],['COIL',s.TT104],['SUP',s.TT105],['ROOM',s.TT106]];
   chain.forEach(function(t,i){
     var x=16+i*128, y=292;
     var col=new THREE.Color(); tempColor(t[1],col);
@@ -2496,12 +2581,13 @@ function updateTags(){
   var s=m.s, A=m.act, alarmIds={}; m.alarms.forEach(function(a){ alarmIds[a.id]=1; });
   var map={
     'TT-101':['TT-101 · MT-101',sgn(s.TT101)+'° '+f0(s.MT101)+'%'], 'FT-101':['FT-101 fresh',f2(s.FT101)+' m³/h'],
-    'FAN-101':['FAN-101 comp.',f0(A.fa*100)+' %'], 'TT-102':['TT-102 mix',sgn(s.TT102)+' °C'],
+    'FAN-101':['FAN-101 comp.',f0(A.fa*100)+' %'], 'TT-109':['TT-109 off Cu core',sgn(s.TT109)+' °C'],
     'TT-103':['TT-103 pre-heat',sgn(s.TT103)+' °C'], 'TT-104':['TT-104 coil',sgn(s.TT104)+' °C'],
-    'TT-105':['TT-105 final',sgn(s.TT105)+'° '+f0(s.MT105)+'%'], 'TT-107':['TT-107 return',sgn(s.TT107)+' °C'],
-    'PDT-102':['PDT-102 HEPA',f0(s.PDT102)+' Pa'], 'SV-101':['SV-101 damper',f0(A.dmp*90)+'°'],
+    'TT-105':['TT-105 final',sgn(s.TT105)+'° '+f0(s.MT105)+'%'], 'TT-107':['TT-107 exhaust',sgn(s.TT107)+' °C'],
+    'PDT-102':['PDT-102 HEPA',f0(s.PDT102)+' Pa'], 'PT-102':['PT-102 exhaust',kfmt(s.PT102)+' /m³'],
+    'DV-101':['DV-101 diverter',A.dv>0.5?'→ outer HEPA':'→ air pump'], 'FAN-103B':['FAN-103B bypass',f0((A.dv>0.5?A.ef:0)*100)+' %'],
     'FAN-102':['FAN-102 supply',f0(A.sf*100)+' %'], 'CMP-101':['CMP-101 R32',f0(A.cmp*100)+' %'],
-    'FAN-103':['FAN-103 exhaust',f0(A.ef*100)+' %'], 'TT-108':['TT-108 exhaust',sgn(s.TT108)+' °C'],
+    'FAN-103':['FAN-103 exhaust',f0((A.dv>0.5?0:A.ef)*100)+' %'], 'TT-108':['TT-108 exhaust',sgn(s.TT108)+' °C'],
     'FT-102':['FT-102 supply',f2(s.FT102)+' m³/h'], 'TT-106':['TT-106 · MT-106',sgn(s.TT106)+'° '+f0(s.MT106)+'%'],
     'PDT-101':['PDT-101 room',sgn(s.PDT101)+' Pa'], 'ACH':['ACH = Q ÷ V',f1(m.kpi.ach)+' /h'],
     'CT':['CT-101…103',f2(s.CT101+s.CT102+s.CT103)+' A'],
@@ -2509,29 +2595,19 @@ function updateTags(){
   };
   TAGS.forEach(function(t){
     var d=map[t.id]; if(!d) return;
-    var al=(t.id==='PT-101'&&(alarmIds.A11||alarmIds.A12))||(t.id==='PDT-101'&&(alarmIds.A02||alarmIds.A03))||(t.id==='TT-108'&&alarmIds.A05)||(t.id==='FT-102'&&alarmIds.A01);
+    var al=(t.id==='PT-102'&&alarmIds.A06)||(t.id==='DV-101'&&A.dv>0.5)||(t.id==='PT-101'&&(alarmIds.A11||alarmIds.A12))||(t.id==='PDT-101'&&(alarmIds.A02||alarmIds.A03))||(t.id==='TT-108'&&alarmIds.A05)||(t.id==='FT-102'&&alarmIds.A01);
     drawTag(t,d[0],d[1],al?'alarm':'');
   });
 }
 
 /* actuator visuals: fans, damper blades, coils, refrigerant, bypass */
 var _q=new THREE.Quaternion(), _up=new THREE.Vector3(0,1,0);
-var raBase=new THREE.Vector3(MIXX,0.15,Z1+0.43);
 function actuatorVisuals(){
-  var A=m.act, f=A.dmp;
-  dmpOA.forEach(function(b){ b.rotation.z=0.1+f*(Math.PI/2-0.1); });
-  dmpRA.forEach(function(b){ b.rotation.z=(1-f)*(Math.PI/2); });
-  var sv=window.__servo; if(sv){
-    var ang=-Math.PI/4+f*Math.PI/2; sv.horn.rotation.z=ang;
-    var tip=new THREE.Vector3(Math.cos(ang)*0.5,Math.sin(ang)*0.5,0).add(sv.horn.position);
-    var dv=raBase.clone().sub(tip), L=dv.length();
-    sv.rod.position.copy(tip).addScaledVector(dv,0.5); sv.rod.scale.set(1,L,1);
-    sv.rod.quaternion.copy(_q.setFromUnitVectors(_up,dv.normalize()));
-  }
-  if(bypassGroup){ for(var i=0;i<5;i++) bypassGroup.children[i].rotation.z=m.recovery?0.06:1.5; }
+  var A=m.act;
+  if(DVBLADE) DVBLADE.rotation.z=A.dv*Math.PI/4;           // DV-101 blade: flat = to the air pump, tilted = up to the HEPA
   var roles=coilRoles();
   var out={preheat:m.season==='winter'?A.cmp:0,cooling:m.season==='summer'?A.cmp:0,reheat:A.rh,
-           extract:m.recovery?A.cmp:0};
+           extract:m.recovery&&A.dv<0.5?A.cmp:0};
   Object.keys(COILS).forEach(function(k){
     var mt=coilMat[k][roles[k]]; if(roles[k]==='idle') return;
     var o=Math.max(0,Math.min(1,out[k]));
@@ -2543,7 +2619,7 @@ function actuatorVisuals(){
     leds[1].visible=anyMan; leds[2].visible=m.alarms.length>0;
   }
 }
-var SPIN={'Supply fan':'sf','Extract transfer fan':'ef','Tempered-air fan':'fa','Exhaust fan':'ef'};
+var SPIN={'Supply fan':'sf','Tempered-air fan':'fa','FAN-103 exhaust fan':'efc'};
 
 /* ============================================================= controls */
 function seg(id,fn){
@@ -2558,7 +2634,9 @@ function clearSeg(id){ Array.prototype.forEach.call(document.querySelectorAll('#
 seg('segSeason',function(v){ state.season=v; applySeason(); });
 seg('segRec',function(v){ m.recovery=v==='on'; applySeason(); });
 seg('segColor',function(v){ colorMode=v; $('keysStream').hidden=v==='temp'; $('keysTemp').hidden=v!=='temp'; refreshPathColors(m.a); colorRibbons(); colorDuctFlow(); });
-seg('segHrv',function(v){ m.hrv=v; applyHrv(); });
+/* hazard tests: a powder release at the filler (60 s), or a leaking exhaust-terminal HEPA */
+$('btnRelease').addEventListener('click',function(){ m.release=60; });
+$('btnLeak').addEventListener('click',function(){ m.hepaLeak=!m.hepaLeak; this.setAttribute('aria-pressed',String(m.hepaLeak)); });
 seg('segCase',function(v){ state.casing=v; applyCasing(); applyExplode(); });
 seg('segBox',function(v){ applyBox(v); });
 seg('segLabels',function(v){ labelMode=v; refreshLabels(); });
@@ -2643,11 +2721,11 @@ railToggle.addEventListener('click',function(){
 
 /* ------------------------------------------------- editable design values */
 var FIELDS=[
-  ['inFlow','flow',false,0.5,20],['inOa','oa',false,0,100],['inSplit','split',false,0,100],
-  ['inE1','e1',false,0,90],['inE2','e2',false,0,90],['inRh','rh',false,20,70],['inDp','dp',false,0,50],
+  ['inFlow','flow',false,0.5,20],['inE1','e1',false,0,90],['inTrip','pxTrip',false,10,1e6],['inReset','pxReset',false,1,1e6],
+  ['inRh','rh',false,20,70],['inDp','dp',false,0,50],
   ['inGain','gain',false,0,40],['inGen','gen',false,0,200000],['inAmb','amb',false,0,45],['inUa','ua',false,0,20],['inVolt','volt',false,5,60],
   ['inEf','ef',false,0,1.5],['inCop','cop',false,1,8],['inHours','hours',false,100,8760],
-  ['inOat','oat',true,-30,55],['inOrh','orh',true,0,100],['inMix','mix',true,0,40],['inCoil','coil',true,4,40],['inSup','sup',true,8,40]
+  ['inOat','oat',true,-30,55],['inOrh','orh',true,0,100],['inCoil','coil',true,4,40],['inSup','sup',true,8,40]
 ];
 function loadFields(){
   FIELDS.forEach(function(f){ $(f[0]).value=f[2]?P[state.season][f[1]]:P[f[1]]; });
@@ -2763,7 +2841,7 @@ window.__rigExportCAD=function(){
   function visible(o){ for(var p=o;p;p=p.parent){ if(!p.visible || p.userData.noExport) return false; } return true; }
   function partOf(o){ for(var p=o;p;p=p.parent){ if(p.userData && p.userData.part) return p.userData.part; } return 'Misc'; }
   function asmOf(o){ for(var p=o;p;p=p.parent){ if(p.userData && p.userData.asm) return p.userData.asm; } return 'Rig'; }
-  function matOf(mm){ var mt=Array.isArray(mm)?mm[4]||mm[0]:mm; var c=(mt.map&&!mt.isMeshBasicMaterial)?T.pcb:(mt.color||new THREE.Color(1,1,1));
+  function matOf(mm){ var mt=Array.isArray(mm)?mm[4]||mm[0]:mm; var c=mt.userData&&mt.userData.cadColor?mt.userData.cadColor:((mt.map&&!mt.isMeshBasicMaterial)?T.pcb:(mt.color||new THREE.Color(1,1,1)));
     return {c:[+c.r.toFixed(3),+c.g.toFixed(3),+c.b.toFixed(3)],o:mt.transparent?+mt.opacity.toFixed(2):1}; }
   function push(o,geo,matrix){
     matrix.decompose(pos,quat,scl);
@@ -2810,8 +2888,8 @@ if(window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').mat
 }
 function flows(){
   var a=m.a;
-  return {ref:Math.max(P.flow,0.5),Qfa:a.Qfa||0,Qhr:(a.Qhr||0)*1.6,Qdir:(a.Qdir||0)*1.6,Qrec:a.Qrec||0,
-    Qsup:a.Qsup||0,Qret:Math.max(0,(a.Qsup||0)-(a.Qleak||0)),Qex:a.Qex||0,
+  return {ref:Math.max(P.flow,0.5),Qfa:a.Qfa||0,Qhr:a.Qhr||0,Qdir:a.Qdir||0,Qrec:0,
+    Qsup:a.Qsup||0,Qret:Math.max(0,(a.Qsup||0)-(a.Qleak||0)),Qex:a.Qex||0,Qcore:a.Qcore||0,Qbyp:a.Qbyp||0,
     // operator contamination rides the room air; how much of it shows follows the room count.
     // The pass box sheds only while its inner door is open.
     Qcont:m.on?(a.Qsup||0):0, contamFrac:Math.max(0.15,Math.min(1,(a.Cp||0)/200000)),
@@ -2843,7 +2921,7 @@ function frame(){
     if(state.spin){
       spinners.forEach(function(s){
         if(s.obj.visible===false) return;
-        var u=s.id==='wheel'?(m.recovery?1:0):(SPIN[s.id]?m.act[SPIN[s.id]]:1);
+        var k=SPIN[s.id], u=k==='efc'?m.act.ef*(1-m.act.dv):(k?m.act[k]:1);
         s.obj.rotation[s.axis]+=dt*s.rate*state.speed*u*1.6;
       });
       compRotor.rotation.x+=dt*14*m.act.fa*state.speed;
@@ -2855,7 +2933,8 @@ function frame(){
     actuatorVisuals();
   }
   uiT+=dt; scrT+=dt; colT+=dt;
-  if(uiT>0.25){ uiT=0; updateHMI(); if(tagGroup.visible) updateTags(); }
+  if(uiT>0.25){ uiT=0; updateHMI(); if(tagGroup.visible) updateTags();
+    setText('valHaz',(m.release>0?'release '+Math.ceil(m.release)+' s · ':'')+(m.act.dv>0.5?'exhaust → outer HEPA':'exhaust → air pump')); }
   if(scrT>0.5){ scrT=0; drawScreen(); }
   if(colorMode==='temp' && colT>0.4){ colT=0; refreshPathColors(m.a); colorRibbons(); colorDuctFlow(); }
   renderer.render(scene,camera);
@@ -2864,7 +2943,7 @@ function frame(){
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ refreshLabels(); buildZones(); TAGS.forEach(function(t){ t.last=''; }); });
 for(var w0=0;w0<1800;w0++) RigModel.step(m,0.05);              // 90 s: let the loops and the room particle count settle before the first frame
 refreshPathColors(m.a); colorRibbons(); colorDuctFlow();
-applySeason(); applyHrv(); applyCasing(); applyExplode(); applyBox('clear'); buildZones(); setZones($('cbZones').checked);
+applySeason(); applyCasing(); applyExplode(); applyBox('clear'); buildZones(); setZones($('cbZones').checked);
 if(window.innerHeight<700 || window.innerWidth<760) setHmiOpen(false);
 resize();
 var fl0=flows(); for(var s0=0;s0<STREAMS.length;s0++) updateStream(STREAMS[s0],0,0,fl0);

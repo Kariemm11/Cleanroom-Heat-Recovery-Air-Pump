@@ -130,6 +130,7 @@ void sensorTask(void*) {
   sdpStart(MUX_SDP_HEPA);
   spsStart(MUX_SPS_ROOM);
   spsStart(MUX_SPS_FILL);
+  spsStart(MUX_SPS_EXH);
   xSemaphoreGive(i2c);
   dsA.requestTemperatures();
   dsB.requestTemperatures();
@@ -137,7 +138,7 @@ void sensorTask(void*) {
   uint32_t dsT = millis();
   for (;;) {
     rig::Measured n;
-    float t, rh, dp, a = NAN, b = NAN, a2 = NAN, b2 = NAN;
+    float t, rh, dp, a = NAN, b = NAN, a2 = NAN, b2 = NAN, a3 = NAN, b3 = NAN;
     xSemaphoreTake(i2c, portMAX_DELAY);
     if (sht31Read(MUX_SHT_FRESH, t, rh)) { n.TT101 = t; n.MT101 = rh; }
     if (sht31Read(MUX_SHT_SUPPLY, t, rh)) { n.TT105 = t; n.MT105 = rh; }
@@ -146,21 +147,23 @@ void sensorTask(void*) {
     if (sdpRead(MUX_SDP_HEPA, dp)) n.PDT102 = dp;
     // 1-Wire: conversions take 750 ms at 12 bit; read the last result, then start the next one
     if (millis() - dsT >= 800) {
-      n.TT102 = dsTemp(dsA, ROM_TT102, 0); n.TT103 = dsTemp(dsA, ROM_TT103, 1); n.TT104 = dsTemp(dsA, ROM_TT104, 2);
+      n.TT109 = dsTemp(dsA, ROM_TT109, 0); n.TT103 = dsTemp(dsA, ROM_TT103, 1); n.TT104 = dsTemp(dsA, ROM_TT104, 2);
       n.TT107 = dsTemp(dsB, ROM_TT107, 0); n.TT108 = dsTemp(dsB, ROM_TT108, 1);
       dsA.requestTemperatures(); dsB.requestTemperatures(); dsT = millis();
     }
     bool room = spsRead(MUX_SPS_ROOM, a, b);
     bool fill = spsRead(MUX_SPS_FILL, a2, b2);
+    bool exh = spsRead(MUX_SPS_EXH, a3, b3);
     xSemaphoreGive(i2c);
     xSemaphoreTake(lock, portMAX_DELAY);
     // keep the previous value where this pass had nothing new (1-Wire every other pass, SPS30 once a second)
     auto upd = [](float& dst, float src) { if (!isnan(src)) dst = src; };
     upd(slow.TT101, n.TT101); upd(slow.MT101, n.MT101); upd(slow.TT105, n.TT105); upd(slow.MT105, n.MT105);
     upd(slow.TT106, n.TT106); upd(slow.MT106, n.MT106); upd(slow.PDT101, n.PDT101); upd(slow.PDT102, n.PDT102);
-    upd(slow.TT102, n.TT102); upd(slow.TT103, n.TT103); upd(slow.TT104, n.TT104); upd(slow.TT107, n.TT107); upd(slow.TT108, n.TT108);
+    upd(slow.TT109, n.TT109); upd(slow.TT103, n.TT103); upd(slow.TT104, n.TT104); upd(slow.TT107, n.TT107); upd(slow.TT108, n.TT108);
     if (room) { slow.PT101 = a; slow.PT101R5 = b; }
     if (fill) { slow.PT101A = a2; slow.PT101A5 = b2; }
+    if (exh) slow.PT102 = a3;
     xSemaphoreGive(lock);
     vTaskDelayUntil(&last, pdMS_TO_TICKS(SENSOR_MS));
   }
@@ -224,10 +227,11 @@ void readFast(rig::Measured& m) {
 
 void copySlow(rig::Measured& m) {
   xSemaphoreTake(lock, portMAX_DELAY);
-  m.TT101 = slow.TT101; m.MT101 = slow.MT101; m.TT102 = slow.TT102; m.TT103 = slow.TT103; m.TT104 = slow.TT104;
+  m.TT101 = slow.TT101; m.MT101 = slow.MT101; m.TT109 = slow.TT109; m.TT103 = slow.TT103; m.TT104 = slow.TT104;
   m.TT105 = slow.TT105; m.MT105 = slow.MT105; m.PDT101 = slow.PDT101; m.PDT102 = slow.PDT102;
   m.TT106 = slow.TT106; m.MT106 = slow.MT106; m.TT107 = slow.TT107; m.TT108 = slow.TT108;
   m.PT101 = slow.PT101; m.PT101R5 = slow.PT101R5; m.PT101A = slow.PT101A; m.PT101A5 = slow.PT101A5;
+  m.PT102 = slow.PT102;
   xSemaphoreGive(lock);
 }
 

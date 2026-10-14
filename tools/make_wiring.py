@@ -95,12 +95,12 @@ def sheet_power():
     s.text(102, 223.5, "0 V star point (PSU −): one return wire per branch", 2.2, DIM)
 
     branches = [
-        (70, "F2 3 A T", "CT-101", "ACS712-05B · GPIO4", [("J6 CMP-101 compressor driver", ["24 V, 0 V, SPEED 0–5 V (from LM358)", "≈25 W; driver limits the start current"])]),
+        (70, "F2 3 A T", "CT-101", "ACS712-05B · GPIO4", [("J6 CMP-101 compressor driver", ["24 V, 0 V, SPEED 0–5 V (from LM358)", "≈35 W; driver limits the start current"])]),
         (110, "F3 3.15 A", "CT-103", "ACS712-05B · GPIO6", [("J9 HTR-101 PTC 30 W", ["24 V → thermal fuse 130 °C → PTC → MOSFET (GPIO47)"]),
-                                                          ("J10 HUM-101 steam humidifier 22.5 W", ["24 V → heater → MOSFET (GPIO48)"])]),
-        (160, "F4 2 A", "CT-102", "ACS712-05B · GPIO5", [("J2 FAN-101 · J3 FAN-102 · J4 FAN-103 (×2)", ["24 V, 0 V, PWM (open drain), TACH", "≈ 30 W total at full speed"])]),
+                                                          ("J10 HUM-101 steam humidifier 34 W", ["24 V → heater → MOSFET (GPIO48)"])]),
+        (160, "F4 2 A", "CT-102", "ACS712-05B · GPIO5", [("J2 FAN-101 · J3 FAN-102 · J4 FAN-103/103B", ["J4 24 V via DV-101 end switch (NO FAN-103, NC FAN-103B)", "J5 DV-101 actuator 24 V (MOSFET GPIO21 + SS34)"])]),
         (205, "F5 2 A", None, "controls branch (not on a CT)", [
-            ("Buck 24 → 5 V, 3 A", ["5 V: ESP32-S3 5V pin, J5 servo (2.5 A stall),", "J21 HMI 7\", ACS712 ×3, J20 SPS30 ×2"]),
+            ("Buck 24 → 5 V, 3 A", ["5 V: ESP32-S3 5V pin, J21 HMI 7\",", "ACS712 ×3, J20 SPS30 ×2, J24 SPS30 (PT-102)"]),
             ("24 V small loads", ["J11/J12 D6F flow ×2 · J8 DRV8825 VMOT (EEV)", "J7 RV-101 4-way valve coil (MOSFET GPIO42 + SS34)"]),
             ("3.3 V from the ESP32-S3 regulator", ["TCA9548A, SHT31 ×3, SDP810 ×2, DS18B20 ×5,", "pull-ups (≈ 60 mA)"])]),
     ]
@@ -158,11 +158,11 @@ def sheet_io():
     for y, pin, fn in [(40, "GPIO8", "SDA"), (47, "GPIO9", "SCL")]:
         lpin(y, pin, fn, C_BUS)
         s.wire([(ex0, y), (156, y)], C_BUS, 0.5)
-    s.box(126, 29, 30, 52, "TCA9548A", ["I²C mux 0x70", "2.2 k pull-ups", "on SDA/SCL", "and on every", "channel (3.3 V)"], "#ecfdf5", C_BUS)
+    s.box(126, 29, 30, 57, "TCA9548A", ["I²C mux 0x70", "2.2 k pull-ups", "on SDA/SCL", "and on every", "channel (3.3 V)"], "#ecfdf5", C_BUS)
     chans = [("ch0", "SHT31 0x44 · TT-101 / MT-101 fresh air", "J15"), ("ch1", "SHT31 0x44 · TT-105 / MT-105 supply", "J16"),
              ("ch2", "SDP810-125Pa 0x25 · PDT-101 room ΔP", "J17"), ("ch3", "SDP810-500Pa 0x25 · PDT-102 HEPA ΔP", "J18"),
              ("ch4", "SHT31 0x44 · TT-106 / MT-106 room", "J19"), ("ch5", "SPS30 0x69 (5 V) · PT-101 room particles", "J20"),
-             ("ch6", "SPS30 0x69 (5 V) · PT-101A fill-point particles", "J20")]
+             ("ch6", "SPS30 0x69 (5 V) · PT-101A fill-point particles", "J20"), ("ch7", "SPS30 0x69 (5 V) · PT-102 exhaust particles", "J24")]
     for i, (ch, dev, j) in enumerate(chans):
         y = 32 + i * 7
         s.wire([(126, y), (112, y)], C_BUS, 0.4)
@@ -170,11 +170,11 @@ def sheet_io():
         s.box(12, y - 2.8, 100, 5.6, None, (), "#ffffff", LINE, sw=0.25)
         s.text(13.5, y + 0.8, f"{dev}", 2.0, INK)
         s.text(110.5, y + 0.8, j, 2.0, C_BUS, anchor="end", weight="bold")
-    s.text(12, 84, "Each channel: 3.3 V (5 V for SPS30), 0 V, SDAx, SCLx. SPS30 SEL pin → 0 V (I²C mode).", 2.0, DIM, italic=True)
+    s.text(12, 89.5, "Each channel: 3.3 V (5 V for SPS30), 0 V, SDAx, SCLx. SPS30 SEL pin → 0 V (I²C mode).", 2.0, DIM, italic=True)
 
     left = [
-        (95, "GPIO15", "1-Wire A", C_BUS, "4.7 k to 3.3 V", "TT-102 mix, TT-103 pre-heat, TT-104 coil · DS18B20 ×3", "J13"),
-        (107, "GPIO16", "1-Wire B", C_BUS, "4.7 k to 3.3 V", "TT-107 return, TT-108 exhaust · DS18B20 ×2", "J14"),
+        (95, "GPIO15", "1-Wire A", C_BUS, "4.7 k to 3.3 V", "TT-109 off Cu core, TT-103 pre-heat, TT-104 coil · DS18B20 ×3", "J13"),
+        (107, "GPIO16", "1-Wire B", C_BUS, "4.7 k to 3.3 V", "TT-107 exhaust in, TT-108 exhaust out · DS18B20 ×2", "J14"),
         (119, "GPIO1", "ADC1_CH0", C_IN, "direct 0.5–2.5 V", "FT-101 fresh-air flow · Omron D6F-W04A1 (24 V supply)", "J11"),
         (131, "GPIO2", "ADC1_CH1", C_IN, "direct 0.5–2.5 V", "FT-102 supply flow · Omron D6F-W04A1 (24 V supply)", "J12"),
         (143, "GPIO4", "ADC1_CH3", C_IN, "10 k / 20 k", "CT-101 compressor current · ACS712-05B (5 V)", "PCB"),
@@ -183,7 +183,7 @@ def sheet_io():
         (179, "GPIO7", "ADC1_CH6", C_IN, "100 k / 10 k", "VT-101 24 V bus voltage", "PCB"),
         (191, "GPIO10", "tach", C_IN, "10 k to 3.3 V", "FAN-101 tach (open collector, 2 pulses/rev)", "J2.4"),
         (203, "GPIO11", "tach", C_IN, "10 k to 3.3 V", "FAN-102 tach", "J3.4"),
-        (215, "GPIO12", "tach", C_IN, "10 k to 3.3 V", "FAN-103 tach (fan A)", "J4.4"),
+        (215, "GPIO12", "tach", C_IN, "10 k to 3.3 V", "FAN-103 / 103B tach (running fan)", "J4.4"),
     ]
     for y, pin, fn, col, iface, dev, j in left:
         lpin(y, pin, fn, col)
@@ -198,21 +198,21 @@ def sheet_io():
         y = 232 + i * 8
         lpin(y, pin, fn, col)
         s.wire([(ex0, y), (150, y)], col, 0.5)
-    s.text(12, 234, "5 V → servo, HMI, ACS712 ×3, SPS30 ×2", 2.0, DIM)
+    s.text(12, 234, "5 V → HMI, ACS712 ×3, SPS30 ×3", 2.0, DIM)
     s.text(12, 242, "3.3 V → TCA9548A, SHT31 ×3, SDP810 ×2, DS18B20 ×5, pull-ups", 2.0, DIM)
     s.text(12, 250, "0 V → common; ADC reference ground at the board", 2.0, DIM)
 
     right = [
         (40, "GPIO38", "PWM 25 kHz", C_OUT, "AO3400 open drain", "FAN-101 fresh-air compressor (24 V blower, PWM in)", "J2"),
         (56, "GPIO39", "PWM 25 kHz", C_OUT, "AO3400 open drain", "FAN-102 supply fan", "J3"),
-        (72, "GPIO40", "PWM 25 kHz", C_OUT, "AO3400 open drain", "FAN-103 exhaust fans ×2 (PWM in parallel)", "J4"),
-        (88, "GPIO21", "50 Hz servo", C_OUT, "330 Ω series", "SV-101 mixing-damper servo MG996R (5 V)", "J5"),
+        (72, "GPIO40", "PWM 25 kHz", C_OUT, "AO3400 open drain", "FAN-103 / FAN-103B exhaust (PWM in parallel)", "J4"),
+        (88, "GPIO21", "digital", C_OUT, "MOSFET + SS34 flyback", "DV-101 diverter, 24 V spring return (high = air pump)", "J5"),
         (104, "GPIO41", "PWM 20 kHz", C_OUT, "RC 10 k/1 µF → LM358 ×1.5", "CMP-101 compressor driver SPEED 0–5 V", "J6"),
         (120, "GPIO42", "digital", C_OUT, "MOSFET + SS34 flyback", "RV-101 4-way valve coil 24 V (high = cooling)", "J7"),
         (136, "GPIO13", "STEP", C_OUT, "DRV8825 (VMOT 24 V)", "EEV-101 bipolar stepper: A1 A2 B1 B2", "J8"),
         (152, "GPIO14", "DIR", C_OUT, "DRV8825 EN→0V, SLP/RST→3V3", "(Vref = I_coil × 0.5 Ω)", ""),
         (168, "GPIO47", "PWM 1 kHz", C_OUT, "AOD4184 low side", "HTR-101 PTC reheat 30 W + 130 °C thermal fuse", "J9"),
-        (184, "GPIO48", "PWM 1 kHz", C_OUT, "AOD4184 low side", "HUM-101 steam humidifier heater 22.5 W", "J10"),
+        (184, "GPIO48", "PWM 1 kHz", C_OUT, "AOD4184 low side", "HUM-101 steam humidifier heater 34 W", "J10"),
         (200, "GPIO17", "UART1 TX", C_BUS, "direct (3.3 V)", "HMI-101 RX · 7\" serial HMI, 115200 8N1 (5 V)", "J21"),
         (216, "GPIO18", "UART1 RX", C_BUS, "1 k series", "HMI-101 TX", "J21"),
     ]

@@ -4,12 +4,14 @@ These are the steps to turn the CAD, the wiring and the firmware into a working 
 
 ## 1. Mechanical build
 
-1. **Enclosure.** Cut the 5 mm cast acrylic panels from `cad/drawings/enclosure-GA.pdf`: panel views, cut-outs and the cut list. Bond them with acrylic cement (dichloromethane-based) on the aluminium 20×20 base frame. Fit the partition at x = 0 with its two sleeves: supply at the top, return low.
-2. **Units.** 3D-print or laser-cut the AHU and air-pump unit casings from the STEP sub-assemblies (`cad/step/AHU.step`, `cad/step/Heat-recovery_air-pump_unit.step`). Seal the joints with silicone; every leak spoils the pressure and energy figures.
-3. **Ducts.** Make them from clear PVC/PETG tube at the diameters in calculations §11: header Ø23, riser Ø28, air-pump lanes Ø13.6–15, return branch Ø20 mm. Use the bend radius from the CAD (1.6 × r). Fit the **balancing orifice** (≈ Ø6 mm, §11) in the direct fresh-air branch.
-4. **Filters.** Cut the filter media to the CAD faces. Bond the H13 media into its frame with polyurethane, then **leak-scan** the frame with a particle counter before use.
-5. **Clean room.** Fit the false ceiling at 400 mm, the two ceiling diffusers, the two low-level return grilles, the hinged door with an EPDM seal, the pass box (two doors with a mechanical interlock, UV lamp) and the vial filling machine under diffuser 2.
-6. **Sensors.** Fit DS18B20 probes in the air stream (not touching a coil), the SHT31s in a shaded spot of the stream, and the D6F flow sensors on straight runs (≥ 5 D upstream, 2 D downstream). Run the SDP810 tubes to the room and to a lab reference port, and the HEPA ΔP tubes across the filter.
+1. **Enclosure.** Cut the 5 mm cast acrylic panels from `cad/drawings/enclosure-GA.pdf`: panel views, cut-outs and the cut list. Bond them with acrylic cement (dichloromethane-based) on the aluminium 20×20 base frame. Fit the partition at x = 0 with the supply sleeve at the top and the two low-level exhaust-terminal openings; cut the roof opening for the common exhaust stack (front-right of the plant room, away from the fresh-air intake). The fresh-air louvre is the only opening in the outdoor wall.
+2. **Units.** 3D-print or laser-cut the AHU and air-pump unit casings from the STEP sub-assemblies (`cad/step/AHU.step`, `cad/step/Heat-recovery_air-pump_unit.step`). The AHU is a single-deck 100 % fresh-air unit: no mixing box, no extract deck, no core. Seal the joints with silicone; every leak spoils the pressure and energy figures.
+3. **Cu plate core.** Make the core from 0.3 mm copper (Cu-ETP) plates with a 2 mm gap (calculations §4: about a 66 mm cube). Polish both faces to **Ra ≤ 0.8 µm** and check with a profilometer; fold and seal the edges so the two streams cannot touch. Leak-test the core: pressurise one side to 200 Pa and check that the other side stays at 0 Pa.
+4. **Ducts.** All ducts are **rectangular**: make them from 2 mm clear PETG or acrylic sheet, solvent-welded, at the sections in calculations §11 (e.g. riser 31 × 22 mm, air-pump lanes and exhaust 16 × 22 mm), with mitred elbows. Fit a slide gate in the core-bypass branch (shut in service, open only for the baseline test).
+5. **Filters.** Cut the filter media to the CAD faces. Bond the H13 (AHU) and H14 (terminals, LAF, outer housing) media into their frames with polyurethane, then **leak-scan** every frame with a particle counter before use. Every terminal is **bag-in/bag-out**: fit the change ring and a PVC change bag to each housing, so a used filter is bagged out without being touched.
+6. **Clean room.** Fit the false ceiling at 400 mm with the BIBO ceiling terminal, the right-wall supply plenum with its two BIBO terminals (high and low), the two low-level BIBO exhaust terminals in the partition, the hinged door with an EPDM seal, the pass box (two doors with a mechanical interlock, UV lamp) and the staging bench beside it. Set the vial filling machine and the operator position along the right wall, the operator's back to the wall terminals, and hang the **LAF hood** over the filler with its PVC skirts down to the RABS.
+7. **Exhaust safety.** Fit PT-102 (SPS30 with a short sample probe) and TT-107 on the exhaust main, then DV-101 (spring-return actuator, SPDT end switch wired into the J4 fan feed), the outer BIBO HEPA and FAN-103B on a shelf beside the fresh-air compressor, and the common roof stack with its rain cap. Run the air-pump unit's exhaust up the back-left corner and along the top of the plant room to the same stack, with a backdraft damper on each branch.
+8. **Sensors.** Fit DS18B20 probes in the air stream (not touching a coil; TT-109 at the AHU inlet), the SHT31s in a shaded spot of the stream, and the D6F flow sensors on straight runs (≥ 5 D upstream, 2 D downstream). Run the SDP810 tubes to the room and to a lab reference port, and the HEPA ΔP tubes across the filter.
 
 ## 2. Refrigerant circuit (certified technician only)
 
@@ -47,7 +49,7 @@ Bring the loops in one at a time. Put the others in `MAN` at a fixed output.
 
 1. **L1 airflow** (FAN-102): step the set point 5 → 6 m³/h. FT-102 should settle within 10 s without oscillating.
 2. **L7 room pressure** (FAN-103): the room should hold +15 Pa ±2 Pa. Open the door: A02 is raised, and it should recover within 30 s after the door closes.
-3. **L2 fresh air**, then **L3 damper**: the mixed air (TT-102) should settle at its set point. The damper never goes below the minimum fresh air.
+3. **L2 fresh-air header**: FT-101 should follow FT-102 within 0.2 m³/h. **L3 diverter**: `SET trip 10` makes the clean exhaust count as dirty: DV-101 must throw to the HEPA within 5 s + its stroke, FAN-103B must start, A06 must show, and in winter the compressor must stop. `SET trip 1000` again: DV-101 returns after 60 s. Pull the J5 plug (or `RUN off`): DV-101 must spring to the HEPA.
 4. **L4 compressor**, **L5 PTC**, **L6 humidifier**: these are slow loops. Give each 30 min and log with the live monitor. Retune K_p/T_i only if a loop oscillates: halve K_p first.
 5. **Interlocks:** stop the supply fan with `MAN L1 0`. The PTC, humidifier and compressor must drop out within 1 s.
 
@@ -55,11 +57,11 @@ Bring the loops in one at a time. Put the others in `MAN` at a fixed output.
 
 1. **ACH.** ACH = FT-102 / 0.0953 m³. Cross-check with a tracer decay: fill the room with smoke or CO₂, then log the decay. ACH = ln(C₀/C)/t.
 2. **Recovery time 100:1.** Raise the particle count with a smoke puff and time the drop to 1 % on PT-101. Expect about 4.6/ACH h, ≈ 4.4 min at 62.9 ACH.
-3. **Energy A/B test** (calculations §10): put **L3 in manual at the same damper position** in both runs, e.g. `MAN L3 30`.
+3. **Energy A/B test** (calculations §10): with 100 % fresh air both runs have the same ventilation. Keep DV-101 on the air pump (`MAN L3 0`) in run A.
    - Run A: `REC on`, 60 min after 30 min to settle, then `RESET energy` and log 60 min.
-   - Run B: bypass the cores by hand: open the AHU core bypass slide and close the air-pump fresh lane slide gate. Then send `REC off`. Settle 30 min, `RESET energy`, and log 60 min under the same outdoor conditions.
-   - Saving = 1 − E_A / E_B. Compare it with the live twin's figure. The model predicts 35 % (winter, 30 % fresh air), 44 % (winter, 50 %) and 40 % (summer, 30 %).
-4. **Containment.** Check that the room holds Grade B in operation (PT-101 < 352 000 /m³) and the fill point Grade A (PT-101A < 3 520 /m³) with the filler running and the operator present. Opening the pass box door should give only a short, small rise.
+   - Run B: open the core-bypass slide gate and close the air-pump fresh-lane gate, then send `REC off`. Settle 30 min, `RESET energy`, and log 60 min under the same outdoor conditions.
+   - Saving = 1 − E_A / E_B. Compare it with the live twin's figure. The model predicts 50 % (winter design) and 34 % (summer design).
+4. **Containment.** Check that the room holds Grade B in operation (PT-101 < 352 000 /m³) and the fill point Grade A under the LAF (PT-101A < 3 520 /m³) with the filler running and the operator present. Opening the pass box door should give only a short, small rise. Smoke test: smoke released at the filler must move away from the operator, towards the low-level exhausts. Release test: a puff of test dust at the filler must throw DV-101 (PT-102 above the trip level) and the exhaust must return to the air pump a few minutes later.
 
 ## 8. Safety checklist
 
@@ -68,4 +70,6 @@ Bring the loops in one at a time. Put the others in `MAN` at a fixed output.
 - [ ] Refrigerant charge recorded and labelled (R32, A2L, GWP 675, mass); leak test passed.
 - [ ] Steam humidifier hot surfaces guarded; water topped up with demineralised water.
 - [ ] UV lamp in the pass box only runs with both doors closed.
+- [ ] DV-101 springs to the HEPA bypass with the power off; the bypass stack is away from the fresh-air intake.
+- [ ] Every BIBO housing has a change bag fitted; used filters are bagged out, never handled.
 - [ ] Emergency stop: the PSU mains switch, within reach.

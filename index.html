@@ -300,22 +300,22 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 </style>
 </head>
 <body>
-<div id="app" data-build="2026-10-13e">
+<div id="app" data-build="2026-10-14c">
   <div id="stage">
     <canvas id="scene" aria-label="3D model of the clean-room test rig"></canvas>
 
     <div class="legend" id="legend">
       <button class="legTab" id="legTab" type="button" aria-expanded="true" aria-controls="legend" title="Hide the legend"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5 4 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Hide</span></button>
       <h1>Clean-room test rig</h1>
-      <p class="sub">Acrylic box 1.0 × 0.5 × 0.5 m · plant room: AHU + heat-recovery air pump in parallel · clean room: ceiling diffusers, low-level returns</p>
+      <p class="sub">Acrylic box 1.0 × 0.5 × 0.5 m · 100 % fresh air, once through · plant room: AHU + heat-recovery air pump (Cu plate core, the only exhaust path) · clean room: BIBO HEPA terminals, LAF over the filler, low-level exhausts</p>
       <div class="keys" id="keysStream">
         <div class="key"><span class="sw" style="background:var(--fresh)"></span><b>Outdoor / fresh air</b></div>
-        <div class="key"><span class="sw" style="background:var(--return)"></span><b>Return / exhaust air</b></div>
-        <div class="key"><span class="sw" style="background:var(--mix)"></span><b>Mixed / supply air</b></div>
+        <div class="key"><span class="sw" style="background:var(--return)"></span><b>Exhaust air</b></div>
+        <div class="key"><span class="sw" style="background:var(--mix)"></span><b>Supply air (100 % fresh)</b></div>
         <div class="key"><span class="sw" style="background:var(--refrig)"></span><b>Refrigerant</b></div>
         <div class="key"><span class="sw" style="background:var(--sig-in)"></span><b>PCB: sensor signal</b></div>
         <div class="key"><span class="sw" style="background:var(--sig-out)"></span><b>PCB: drive signal</b></div>
-        <div class="key"><span class="sw" style="background:var(--contam)"></span><b>Contamination: operator / pass box</b></div>
+        <div class="key"><span class="sw" style="background:var(--contam)"></span><b>Contamination: operator / pass box / dirty exhaust</b></div>
       </div>
       <div class="tscale" id="keysTemp" hidden>
         <div class="key"><b>Air temperature</b></div>
@@ -350,11 +350,12 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
         </div>
       </div>
       <div class="grp">
-        <span class="lbl">AHU heat recovery device</span>
-        <div class="seg" id="segHrv">
-          <button data-v="plate" aria-pressed="true">Plate core</button>
-          <button data-v="wheel" aria-pressed="false">Thermal wheel</button>
+        <span class="lbl">Hazard tests (PT-102 → DV-101)</span>
+        <div class="btns">
+          <button class="btn" id="btnRelease" type="button">Powder release at the filler</button>
+          <button class="btn" id="btnLeak" type="button" aria-pressed="false">Exhaust HEPA leak</button>
         </div>
+        <span class="val" id="valHaz">exhaust → air pump</span>
       </div>
       <div class="grp">
         <span class="lbl">AHU casing</span>
@@ -399,10 +400,9 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
         <div class="nums">
           <div class="sub2">Air &amp; clean room</div>
           <div class="num"><label for="inFlow">Supply airflow m³/h</label><input id="inFlow" type="number" step="0.5"></div>
-          <div class="num"><label for="inOa">Minimum fresh air %</label><input id="inOa" type="number" step="5"></div>
-          <div class="num"><label for="inSplit">Fresh air via air pump %</label><input id="inSplit" type="number" step="5"></div>
-          <div class="num"><label for="inE1">Recovery unit core %</label><input id="inE1" type="number" step="1"></div>
-          <div class="num"><label for="inE2">AHU core %</label><input id="inE2" type="number" step="1"></div>
+          <div class="num"><label for="inE1">Cu plate core effectiveness %</label><input id="inE1" type="number" step="1"></div>
+          <div class="num"><label for="inTrip">PT-102 trip ≥0.5 µm /m³</label><input id="inTrip" type="number" step="100"></div>
+          <div class="num"><label for="inReset">PT-102 reset /m³</label><input id="inReset" type="number" step="50"></div>
           <div class="num"><label for="inRh">Room RH set point %</label><input id="inRh" type="number" step="1"></div>
           <div class="num"><label for="inDp">Room pressure Pa</label><input id="inDp" type="number" step="1"></div>
           <div class="num"><label for="inGain">Room heat gain W</label><input id="inGain" type="number" step="0.5"></div>
@@ -410,7 +410,6 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
           <div class="sub2">This season</div>
           <div class="num"><label for="inOat">Outdoor °C</label><input id="inOat" type="number" step="0.5"></div>
           <div class="num"><label for="inOrh">Outdoor RH %</label><input id="inOrh" type="number" step="1"></div>
-          <div class="num"><label for="inMix">Mixed-air set point °C</label><input id="inMix" type="number" step="0.5"></div>
           <div class="num"><label for="inCoil" id="lblCoil">After pre-heat set point °C</label><input id="inCoil" type="number" step="0.5"></div>
           <div class="num"><label for="inSup">Final supply set point °C</label><input id="inSup" type="number" step="0.5"></div>
           <div class="sub2">Box &amp; energy</div>
@@ -441,7 +440,7 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
           <label class="chk"><input type="checkbox" id="cbDoors" checked> Access doors</label>
           <label class="chk"><input type="checkbox" id="cbRefrig" checked> Refrigerant circuit</label>
           <label class="chk"><input type="checkbox" id="cbDucts" checked> Ductwork</label>
-          <label class="chk"><input type="checkbox" id="cbSpin" checked> Fans &amp; wheel turning</label>
+          <label class="chk"><input type="checkbox" id="cbSpin" checked> Fans turning</label>
         </div>
       </div>
 
@@ -524,9 +523,9 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 </div>
 
 <script src="assets/vendor/three.min.js"></script>
-<script src="assets/js/rig-model.js?b=2026-10-13e"></script>
-<script src="assets/js/rig.js?b=2026-10-13e"></script>
+<script src="assets/js/rig-model.js?b=2026-10-14c"></script>
+<script src="assets/js/rig.js?b=2026-10-14c"></script>
 <script src="assets/vendor/qrcode.js"></script>
-<script src="assets/js/share.js?b=2026-10-13e"></script>
+<script src="assets/js/share.js?b=2026-10-14c"></script>
 </body>
 </html>

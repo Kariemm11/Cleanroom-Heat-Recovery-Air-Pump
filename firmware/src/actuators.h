@@ -1,4 +1,4 @@
-// Actuator drivers: PWM fans, damper servo, compressor speed (0–5 V), 4-way valve, EEV stepper,
+// Actuator drivers: PWM fans, DV-101 diverter, compressor speed (0–5 V), 4-way valve, EEV stepper,
 // PTC reheat and steam humidifier.
 #pragma once
 #include "control.h"

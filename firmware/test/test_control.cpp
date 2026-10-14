@@ -18,25 +18,25 @@ static int fails = 0, checks = 0;
 struct Plant {
   float Qsup = 0, Qfa = 0, Qex = 0, Troom = 22, Toa = -2, RHoa = 80, wroom = 0.0075f, Tph = 22, Tcc = 22, Trh = 22;
   bool flowSensorStuck = false;
+  float px = 6;                                          // exhaust particles after the BIBO exhaust terminals, /m³
   void step(const rig::Outputs& u, rig::Measured& m, float dt, bool winter) {
     auto lag = [dt](float x, float t, float tau) { return x + (t - x) * (1 - expf(-dt / tau)); };
     Qsup = lag(Qsup, 18 * u.sf, 1.2f); Qfa = lag(Qfa, 12 * u.fa, 1.2f); Qex = lag(Qex, 12 * u.ef, 1.2f);
-    float qfa = fminf(Qfa, Qsup), f = Qsup > 0.01f ? qfa / Qsup : 0;
-    float imb = qfa - Qex, dp = (imb > 0 ? 1 : -1) * powf(imb / 0.13f, 2);
+    float imb = Qsup - Qex, dp = (imb > 0 ? 1 : -1) * powf(imb / 0.13f, 2);   // 100 % fresh air: supply in, exhaust out
     dp = rig::clampf(dp, -150, 150);
-    float T2 = Toa + 0.5f * (Troom - Toa);               // recovery cores, ε ≈ 0.5 overall
-    float Tmix = f * T2 + (1 - f) * Troom, Cs = fmaxf(rig::capRate(Qsup), 1e-3f);
-    Tph = lag(Tph, Tmix + (winter ? 45 * u.cmp : 0) / Cs, 3);
-    Tcc = lag(Tcc, Tph - (winter ? 0 : 60 * u.cmp) / Cs, 3);
+    float T1 = u.dv < 0.5f ? Toa + 0.6f * (Troom - Toa) : Toa;           // Cu plate core, ε ≈ 0.6, only with exhaust air on it
+    float Cs = fmaxf(rig::capRate(Qsup), 1e-3f);
+    Tph = lag(Tph, T1 + (winter ? 45 * u.cmp : 0) / Cs, 3);
+    Tcc = lag(Tcc, Tph - (winter ? 0 : 90 * u.cmp) / Cs, 3);
     Trh = lag(Trh, Tcc + 30 * u.rh / Cs + 0.15f, 3);
     Troom += dt * (Cs * (Trh - Troom) + 3 + 3 * (24 - Troom)) / 3000;
-    float wsup = f * rig::wFromRH(Toa, RHoa) + (1 - f) * wroom + (Qsup > 0.05f ? 30 * u.hum / 1000 / (Qsup * 1.2f) : 0);
+    float wsup = rig::wFromRH(Toa, RHoa) + (Qsup > 0.05f ? 45 * u.hum / 1000 / (Qsup * 1.2f) : 0);
     wroom += dt * (Qsup * 1.2f / 3600 * (wsup - wroom) + 1.0f / 1000 / 3600) / 0.35f;
-    m.FT102 = flowSensorStuck ? 0.2f : Qsup; m.FT101 = qfa; m.PDT101 = dp; m.PDT102 = 140 * powf(Qsup / 6, 1.6f) + 5;
-    m.TT101 = Toa; m.MT101 = RHoa; m.TT102 = Tmix; m.TT103 = Tph; m.TT104 = Tcc; m.TT105 = Trh; m.MT105 = rig::rhFromW(Trh, wsup);
+    m.FT102 = flowSensorStuck ? 0.2f : Qsup; m.FT101 = Qfa; m.PDT101 = dp; m.PDT102 = 140 * powf(Qsup / 6, 1.6f) + 5;
+    m.TT101 = Toa; m.MT101 = RHoa; m.TT109 = T1; m.TT103 = Tph; m.TT104 = Tcc; m.TT105 = Trh; m.MT105 = rig::rhFromW(Trh, wsup);
     m.TT106 = Troom; m.MT106 = rig::rhFromW(Troom, wroom); m.TT107 = Troom; m.TT108 = 2;
     m.VT101 = 24; m.CT101 = u.cmp * 0.5f; m.CT102 = 0.05f + u.sf * 0.3f + u.fa * 0.5f + u.ef * 0.2f; m.CT103 = u.rh * 1.25f + u.hum * 0.94f;
-    m.PT101 = 120000; m.PT101R5 = 2400; m.PT101A = 1600; m.PT101A5 = 7;
+    m.PT101 = 120000; m.PT101R5 = 2400; m.PT101A = 1600; m.PT101A5 = 7; m.PT102 = px;
     m.rpm101 = u.fa * 4000; m.rpm102 = u.sf * 4000; m.rpm103 = u.ef * 4000;
   }
 };
@@ -61,13 +61,36 @@ int main() {
     CHECK(fabsf(m.FT102 - 6) < 0.15f, "L1 supply flow %.2f m3/h, expected 6", m.FT102);
     CHECK(fabsf(m.PDT101 - 15) < 1.5f, "L7 room pressure %.1f Pa, expected 15", m.PDT101);
     CHECK(fabsf(m.TT105 - 22) < 0.6f, "L5 supply temp %.2f, expected 22", m.TT105);
-    CHECK(fabsf(m.TT102 - 18) < 0.8f || c.u.dmp <= 0.301f, "L3 mixed air %.2f (damper %.2f)", m.TT102, c.u.dmp);
-    CHECK(c.u.dmp >= 0.299f, "damper never below minimum fresh air: %.3f", c.u.dmp);
+    CHECK(c.u.dv < 0.01f && !c.diverted, "L3: clean exhaust goes to the air pump (dv %.2f)", c.u.dv);
+    CHECK(fabsf(m.FT101 - m.FT102) < 0.2f, "L2: fresh-air header balanced (FT-101 %.2f, FT-102 %.2f)", m.FT101, m.FT102);
     CHECK(c.activeAlarms() == 0, "no alarms at steady state (%d active)", c.activeAlarms());
     CHECK(c.k.Pbase >= c.k.P * 0.5f && c.k.P > 0, "power %.1f W, baseline twin %.1f W", c.k.P, c.k.Pbase);
     CHECK(fabsf(c.k.ach - 6 / 0.0953f) < 2, "ACH %.1f", c.k.ach);
-    printf("winter: Q %.2f, dP %.1f, Tsup %.2f, Tmix %.2f, dmp %.2f, cmp %.2f, rh %.2f, hum %.2f, P %.1f W, Pb %.1f W\n",
-           m.FT102, m.PDT101, m.TT105, m.TT102, c.u.dmp, c.u.cmp, c.u.rh, c.u.hum, c.k.P, c.k.Pbase);
+    printf("winter: Q %.2f, dP %.1f, Tsup %.2f, T off core %.2f, dv %.2f, cmp %.2f, rh %.2f, hum %.2f, P %.1f W, Pb %.1f W\n",
+           m.FT102, m.PDT101, m.TT105, m.TT109, c.u.dv, c.u.cmp, c.u.rh, c.u.hum, c.k.P, c.k.Pbase);
+  }
+
+  // --- contaminated exhaust: PT-102 high → DV-101 to the outer HEPA within 5 s + stroke, A06, the
+  //     compressor stops in winter; back to the air pump only after 60 s clean
+  {
+    rig::Controller c; Plant p; rig::Measured m;
+    runFor(c, p, m, 600, true);
+    p.px = 5000;
+    runFor(c, p, m, 20, true);
+    CHECK(c.diverted && c.u.dv > 0.99f, "DV-101 on the HEPA bypass (dv %.2f)", c.u.dv);
+    CHECK(c.alarm[rig::A06], "A06 contaminated exhaust raised");
+    runFor(c, p, m, 30, true);
+    CHECK(c.u.cmp == 0, "winter: compressor off while the exhaust bypasses the air pump (cmp %.2f)", c.u.cmp);
+    p.px = 6;
+    runFor(c, p, m, 40, true);
+    CHECK(c.diverted, "still on the HEPA after 40 s clean (needs 60 s)");
+    runFor(c, p, m, 40, true);
+    CHECK(!c.diverted && c.u.dv < 0.01f, "back to the air pump after 60 s clean (dv %.2f)", c.u.dv);
+    p.px = NAN;
+    runFor(c, p, m, 20, true);
+    CHECK(c.diverted, "a missing PT-102 reading diverts (fail-safe)");
+    c.on = false; runFor(c, p, m, 1, true);
+    CHECK(c.u.dv > 0.99f, "RUN off: DV-101 de-energised, rests on the HEPA bypass");
   }
 
   // --- no airflow proven: compressor, PTC and humidifier stay off; alarm A01 after 20 s
@@ -110,9 +133,9 @@ int main() {
            m.FT102, m.TT104, m.TT105, c.u.cmp, c.u.rh, c.k.P, c.k.Pbase, c.k.saving * 100);
   }
 
-  // --- compressor protection while it cycles at minimum speed (winter: the duty is below the minimum)
+  // --- compressor protection while it cycles at minimum speed (a mild winter day: the duty is below the minimum)
   {
-    rig::Controller c; Plant p; rig::Measured m;
+    rig::Controller c; Plant p; rig::Measured m; p.Toa = 14;
     float lastChange = -1, minOff = 1e9f, minOn = 1e9f; bool was = false; int changes = 0;
     for (float t = 0; t < 7200; t += 0.1f) {
       p.step(c.u, m, 0.1f, true); c.step(m, 0.1f);

@@ -36,28 +36,28 @@ canvas{width:100%;height:140px}
     <section><h2>Outputs and status</h2><table id="outs"></table><p id="alarms" class="ok">no alarms</p></section>
     <section><h2>Trends (last 10 min)</h2><canvas id="chT" width="760" height="280"></canvas><canvas id="chP" width="760" height="280"></canvas></section>
     <section><h2>Commands</h2>
-      <form id="cmdf"><input id="cmd" placeholder="e.g. SET flow 6.0 · MODE summer · MAN L3 30 · RESET energy · HELP" autocomplete="off"><button class="pri">Send</button></form>
+      <form id="cmdf"><input id="cmd" placeholder="e.g. SET flow 6.0 · MODE summer · MAN L3 0 · SET trip 1000 · RESET energy · HELP" autocomplete="off"><button class="pri">Send</button></form>
       <div id="log"></div></section>
   </div>
 </main>
 <script>
 "use strict";
 var port=null, writer=null, last=null, hist=[], rec=null, $=function(s){return document.getElementById(s);};
-var LABEL={TT101:"Fresh air °C",MT101:"Fresh air %RH",FT101:"Fresh-air flow m³/h",TT102:"Mixed air °C",TT103:"After pre-heat °C",TT104:"Off cooling coil °C",
+var LABEL={TT101:"Fresh air °C",MT101:"Fresh air %RH",FT101:"Fresh-air flow m³/h",TT109:"Off the Cu core °C",TT103:"After pre-heat °C",TT104:"Off cooling coil °C",
  TT105:"Supply °C",MT105:"Supply %RH",FT102:"Supply flow m³/h",PDT101:"Room pressure Pa",PDT102:"HEPA ΔP Pa",TT106:"Room °C",MT106:"Room %RH",
- TT107:"Return °C",TT108:"Exhaust °C",CT101:"Compressor A",CT102:"Fans A",CT103:"PTC + humidifier A",VT101:"Bus V",PT101:"Room ≥0.5 µm /m³",
- PT101R5:"Room ≥5 µm /m³",PT101A:"Fill point ≥0.5 µm /m³",PT101A5:"Fill point ≥5 µm /m³",RPM101:"FAN-101 rpm",RPM102:"FAN-102 rpm",RPM103:"FAN-103 rpm"};
-var OUT={fa:"FAN-101 fresh air",sf:"FAN-102 supply",ef:"FAN-103 exhaust",dmp:"SV-101 damper",cmp:"CMP-101 compressor",rh:"HTR-101 PTC",hum:"HUM-101 humidifier"};
+ TT107:"Exhaust to the air pump °C",TT108:"Exhaust °C",CT101:"Compressor A",CT102:"Fans A",CT103:"PTC + humidifier A",VT101:"Bus V",PT101:"Room ≥0.5 µm /m³",
+ PT101R5:"Room ≥5 µm /m³",PT101A:"Fill point ≥0.5 µm /m³",PT101A5:"Fill point ≥5 µm /m³",PT102:"Exhaust ≥0.5 µm /m³ (before DV-101)",RPM101:"FAN-101 rpm",RPM102:"FAN-102 rpm",RPM103:"FAN-103 rpm"};
+var OUT={fa:"FAN-101 fresh air",sf:"FAN-102 supply",ef:"FAN-103/103B exhaust",dv:"DV-101 to outer HEPA",cmp:"CMP-101 compressor",rh:"HTR-101 PTC",hum:"HUM-101 humidifier"};
 function fmt(v,d){return v==null||isNaN(v)?"—":Number(v).toFixed(d);}
 function log(s){var l=$("log");l.textContent+=s+"\n";l.scrollTop=l.scrollHeight;}
 function render(j){
   var k=j.k||{}, s=j.s||{}, u=j.u||{};
   var tiles=[["ACH",fmt(k.ach,1)+" /h"],["Room pressure",fmt(s.PDT101,1)+" Pa"],["Supply",fmt(s.FT102,2)+" m³/h"],["Room",fmt(s.TT106,1)+" °C · "+fmt(s.MT106,0)+" %"],
     ["Power",fmt(k.P,1)+" W"],["Baseline twin",fmt(k.Pb,1)+" W"],["Saving",fmt((k.sav||0)*100,0)+" %"],["CO₂",fmt(k.co2h,1)+" g/h"],
-    ["Energy",fmt(k.Ewh,1)+" / "+fmt(k.Ewhb,1)+" Wh"],["Particles",(k.room||"-")+" room · "+(k.fill||"-")+" fill"],["Mode",(j.mode||"")+(j.rec?" · recovery":" · baseline")+(j.on?"":" · OFF")]];
+    ["Energy",fmt(k.Ewh,1)+" / "+fmt(k.Ewhb,1)+" Wh"],["Particles",(k.room||"-")+" room · "+(k.fill||"-")+" fill"],["Exhaust",(u.dv>0.5?"→ outer HEPA":"→ air pump")+" · PT-102 "+fmt(s.PT102,0)],["Mode",(j.mode||"")+(j.rec?" · recovery":" · baseline")+(j.on?"":" · OFF")]];
   $("kpis").innerHTML=tiles.map(function(t){return '<div class="t"><div class="n">'+t[0]+'</div><div class="v">'+t[1]+'</div></div>';}).join("");
   $("sens").innerHTML=Object.keys(LABEL).map(function(key){var d=/^PT/.test(key)||/^RPM/.test(key)?0:(/^CT/.test(key)?3:(/^MT/.test(key)?0:2));return "<tr><td>"+key+"</td><td>"+LABEL[key]+'</td><td class="v">'+fmt(s[key],d)+"</td></tr>";}).join("");
-  $("outs").innerHTML=Object.keys(OUT).map(function(key,i){return "<tr><td>"+OUT[key]+'</td><td class="v">'+fmt((u[key]||0)*100,0)+" %"+(j.man&&j.man[["sf","fa","dmp","cmp","rh","hum","ef"].indexOf(key)]?" (manual)":"")+"</td></tr>";}).join("")+
+  $("outs").innerHTML=Object.keys(OUT).map(function(key,i){return "<tr><td>"+OUT[key]+'</td><td class="v">'+fmt((u[key]||0)*100,0)+" %"+(j.man&&j.man[["sf","fa","dv","cmp","rh","hum","ef"].indexOf(key)]?" (manual)":"")+"</td></tr>";}).join("")+
     "<tr><td>EEV-101</td><td class=\"v\">"+fmt(u.eev,0)+" steps</td></tr><tr><td>RV-101</td><td class=\"v\">"+(u.rv?"cooling":"heating")+"</td></tr>";
   var al=j.al||[]; $("alarms").className=al.length?"al":"ok"; $("alarms").textContent=al.length?"Alarms: "+al.join(", "):"no alarms";
 }
@@ -78,7 +78,7 @@ async function connect(){
   for(;;){ var r=await rd.read(); if(r.done) break; buf+=r.value; var lines=buf.split("\n"); buf=lines.pop();
     lines.forEach(function(l){ l=l.trim(); if(!l) return;
       if(l[0]==="{"){ try{ last=JSON.parse(l); hist.push(last); if(hist.length>600) hist.shift(); render(last);
-          chart("chT",[["Supply °C",function(h){return h.s.TT105;},"#e11d48"],["Room °C",function(h){return h.s.TT106;},"#2563eb"],["Mixed °C",function(h){return h.s.TT102;},"#16a34a"]],"°C");
+          chart("chT",[["Supply °C",function(h){return h.s.TT105;},"#e11d48"],["Room °C",function(h){return h.s.TT106;},"#2563eb"],["Off Cu core °C",function(h){return h.s.TT109;},"#16a34a"]],"°C");
           chart("chP",[["Power W",function(h){return h.k.P;},"#0f9c86"],["Baseline W",function(h){return h.k.Pb;},"#dd6a14"]],"W");
           if(rec) rec.push(csvRow(last)); }catch(e){ log(l); } }
       else log(l); }); }

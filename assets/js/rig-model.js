@@ -1,20 +1,26 @@
 /* Clean-room test rig: dynamic plant model + control loops.
 
-   A lumped model of the 1.0 × 0.5 × 0.5 m acrylic rig. The air side follows the
-   AHU + heat-recovery air-pump layout of the earlier 3D model:
+   A lumped model of the 1.0 × 0.5 × 0.5 m acrylic rig. The rig handles hazardous material, so the
+   air is 100 % fresh air, once through. There is no mixing box and no recirculation, and no exhaust
+   air ever enters the AHU:
 
-     fresh-air compressor → header ─┬─ recovery air-pump unit core ─┐
-                                    └─ direct branch ───────────────┴→ AHU core → mixing box (servo damper)
-     → pre-heat coil → cooling coil → reheat coil → steam humidifier → supply fan → HEPA → clean room
-     clean room → AHU extract deck ─┬─ recirculated → mixing box
-                                    └─ AHU core → recovery unit core → exhaust-air coil → exhaust fan → outdoors
+     fresh-air compressor → header → air-pump unit Cu plate core (fresh lane) → AHU: filters
+     → pre-heat coil → cooling coil → reheat coil → steam humidifier → supply fan → HEPA
+     → bag-in/bag-out HEPA terminals (2 ceiling + 2 right wall) → clean room
+     clean room → BIBO HEPA exhaust terminals → PT-102 → DV-101 diverter ─┬─ Cu plate core (exhaust lane) → exhaust-air coil → FAN-103 → outdoors
+                                                                          └─ outer BIBO HEPA → FAN-103B → outdoors
+
+   The copper plate core (Ra ≤ 0.8 µm) keeps the two streams apart: the exhaust only pre-cools
+   (summer) or pre-heats (winter) the fresh air through the plates. If PT-102 sees particles in the
+   exhaust (contamination, or a leaking terminal filter), L3 throws DV-101 and the exhaust bypasses
+   the air pump through the outer HEPA. DV-101 is spring return: power off = HEPA bypass (fail-safe).
 
    One R32 air pump: in winter the pre-heat coil is its condenser and the exhaust-air
    coil its evaporator; in summer the reversing valve swaps them, the cooling coil is
    the evaporator and the reheat coil a desuperheater.
 
    Seven PI loops run on the simulated sensors, exactly as the rig controller would.
-   "Baseline" runs the same rig with recovery bypassed and electric / plain-chiller
+   "Baseline" runs the same rig with the core bypassed (fresh air through the direct branch) and electric / plain-chiller
    duty, which is what the current sensors are compared against. Works in the
    browser (window.RigModel) and in Node (module.exports) for testing. */
 (function (root) {
@@ -42,9 +48,9 @@
   /* rig hardware ratings (12/24 V DC components) */
   var HW = {
     sfQ: 18, faQ: 12, efQ: 12,          // m³/h at 100 % speed
-    sfP: 8, faP: 14, efP: 3,            // W at 100 % speed (two exhaust fans of efP each)
-    phQ: 45, ccQ: 60, rhQ: 30,          // coil capacities, W thermal
-    humG: 30,                           // steam humidifier, g/h
+    sfP: 8, faP: 14, efP: 6,            // W at 100 % speed (one exhaust fan runs: FAN-103, or FAN-103B on the HEPA bypass)
+    phQ: 45, ccQ: 90, rhQ: 30,          // coil capacities, W thermal (100 % fresh air: sized for the summer latent load)
+    humG: 45,                           // steam humidifier, g/h (100 % fresh air in winter needs ≈ 41 g/h)
     humWh: 0.75,                        // Wh per g of steam
     ctrlW: 3.5,                         // ESP32 board + 7" HMI + sensors
     leakK: 0.13,                        // m³/h per √Pa of room leakage (≈0.5 m³/h at 15 Pa)
@@ -54,10 +60,10 @@
 
   function defaults() {
     return {
-      flow: 6.0,      // supply airflow set point, m³/h
-      oa: 30,         // minimum fresh air, %
-      split: 75,      // share of the fresh air sent through the recovery air-pump unit, %
-      e1: 50, e2: 50, // recovery-unit core / AHU core effectiveness, %
+      flow: 6.0,      // supply airflow set point, m³/h (100 % fresh air)
+      e1: 60,         // Cu plate core effectiveness, %
+      pxTrip: 1000,   // PT-102 exhaust particles ≥0.5 µm that divert the exhaust to the outer HEPA, /m³
+      pxReset: 300,   // … and the level it must stay below for 60 s before it goes back to the air pump
       rh: 45,         // clean-room RH set point, %
       dp: 15,         // clean-room pressure set point, Pa
       gain: 3,        // clean-room internal heat gain, W
@@ -70,8 +76,8 @@
       gen: 12000,     // particles ≥0.5 µm shed in the clean room per minute (operator + filling line), rig scale
       coa: 2.0e7,     // outdoor particles ≥0.5 µm per m³
       volt: 24,       // DC bus voltage
-      winter: { oat: -2, orh: 80, mix: 18, coil: 21, sup: 22 },
-      summer: { oat: 35, orh: 40, mix: 18, coil: 12, sup: 16 }
+      winter: { oat: -2, orh: 80, coil: 21, sup: 22 },
+      summer: { oat: 35, orh: 40, coil: 12, sup: 16 }
     };
   }
 
@@ -95,24 +101,27 @@
     var m = {
       P: P, ROOM: ROOM, HW: HW,
       season: opts.season || "winter",
-      recovery: true,            // false = baseline test (recovery bypassed, electric / plain chiller)
-      hrv: "plate",              // AHU core type: plate (sensible) or wheel (sensible + latent)
+      recovery: true,            // false = baseline test (core bypassed, electric / plain chiller)
       on: true, t: 0,
-      // actuators (0..1) as driven by the loops, after slew limits
-      act: { fa: 0, sf: 0, ef: 0, dmp: 0, cmp: 0, rh: 0, hum: 0 },
+      // actuators (0..1) as driven by the loops, after slew limits; dv: 0 = exhaust to the air pump, 1 = to the outer HEPA
+      act: { fa: 0, sf: 0, ef: 0, dv: 1, cmp: 0, rh: 0, hum: 0 },
       // plant states
       x: { Qsup: 0, Qfa: 0, Qex: 0, Qph: 0, Qcc: 0, Qrh: 0, mh: 0, Troom: amb, wroom: w0, R1: amb, Cp: c0 },
       extGen: 0,                 // extra particles/min from outside the model (e.g. the pass box inner door is open)
+      release: 0,                // s left of a test powder release at the filler (1e7 particles/min)
+      hepaLeak: false,           // test: an exhaust-terminal HEPA leaks (2 % penetration)
+      _tripT: 0, _holdT: 0,
       // air states (true values)
       a: {},
       // sensors (measured, lagged + noise)
-      s: { TT101: amb, MT101: 50, FT101: 0, TT102: amb, TT103: amb, TT104: amb, TT105: amb, MT105: 50,
+      s: { TT101: amb, MT101: 50, FT101: 0, TT109: amb, TT103: amb, TT104: amb, TT105: amb, MT105: 50,
            FT102: 0, PDT101: 0, PDT102: 0, TT106: amb, MT106: 50, TT107: amb, TT108: amb,
-           CT101: 0, CT102: 0, CT103: 0, VT101: P.volt, PT101: c0, PT101A: 0.01 * c0 + 250, PT101R5: 0.02 * c0, PT101A5: 6e-5 * c0 },
+           CT101: 0, CT102: 0, CT103: 0, VT101: P.volt, PT101: c0, PT101A: 0.01 * c0 + 250, PT101R5: 0.02 * c0, PT101A5: 6e-5 * c0,
+           PT102: 5e-5 * c0 },
       loops: {
         L1: PI("Supply airflow → supply fan", 0.8, 1.5, 0, 1),
-        L2: PI("Fresh-air flow → fresh-air compressor", 1.0, 1.5, 0, 1),
-        L3: PI("Mixed-air temp → mixing damper servo", 3.0, 6, 0, 1),
+        L2: PI("Fresh-air header balance → fresh-air compressor", 1.0, 1.5, 0, 1),
+        L3: PI("Exhaust particles → DV-101 diverter (2-position)", 1, 1, 0, 1),
         L4: PI("Coil leaving temp → air-pump compressor", 1.4, 18, 0, 1),
         L5: PI("Final supply temp → reheat coil", 1.6, 14, 0, 1),
         L6: PI("Clean-room RH → humidifier / dehumidify", 2.0, 120, 0, 1),
@@ -123,7 +132,7 @@
       alarms: [], alarmLog: [], _alarmT: {},
       trend: [], _trendT: 0
     };
-    m.loops.L3.i = P.oa / 100;
+    m.loops.L3.out = 1;          // starts on the HEPA bypass until the exhaust is proven clean
     return m;
   }
 
@@ -136,16 +145,10 @@
     /* ---- controller (uses the measured values, like the real board) ---- */
     var on = m.on;
     var proving = s.FT102 > 0.25 * P.flow && s.FT102 > 0.5;      // airflow proven → coils allowed
-    var fd = 0;                                                    // damper fresh-air fraction
     if (on) {
       runPI(L.L1, (P.flow - s.FT102) / 20, dt);
-      // L3 economiser-style mixed-air control; action flips when outdoor air is warmer than return
-      var colderOA = s.TT101 < s.TT107;
-      var e3 = (s.TT102 - S.mix) / 50 * (colderOA ? 1 : -1);
-      L.L3.lo = P.oa / 100;
-      runPI(L.L3, e3, dt);
-      fd = L.L3.out;
-      runPI(L.L2, (fd * s.FT102 - s.FT101) / 20, dt);
+      // L2: the fresh-air compressor keeps the header balanced: FT-101 follows FT-102 (100 % fresh air)
+      runPI(L.L2, (s.FT102 - s.FT101) / 20, dt);
       // L6 humidity: winter → steam humidifier, summer → lower the cooling-coil set point
       var e6 = (P.rh - s.MT106) / 100;
       runPI(L.L6, winter ? e6 : -e6, dt);
@@ -156,28 +159,40 @@
       runPI(L.L5, (S.sup - s.TT105) / 50, dt);
       runPI(L.L7, (s.PDT101 - P.dp) / 100, dt);
       if (!proving) { L.L4.i = Math.min(L.L4.i, 0); L.L5.i = Math.min(L.L5.i, 0); }
+      if (winter && rec && A.dv > 0.5) L.L4.i = Math.min(L.L4.i, 0);   // compressor locked out: no wind-up
     }
+    // L3: two-position exhaust diverter. PT-102 above the trip level for 5 s → DV-101 to the outer HEPA;
+    // back to the air pump only after 60 s below the reset level. Manual: MAN L3 0 (air pump) / 1 (HEPA).
+    var L3 = L.L3;
+    L3.e = (s.PT102 - P.pxTrip) / P.pxTrip;
+    m._tripT = s.PT102 > P.pxTrip ? m._tripT + dt : 0;
+    m._holdT = s.PT102 < P.pxReset ? m._holdT + dt : 0;
+    if (L3.man) L3.out = L3.mv >= 0.5 ? 1 : 0;
+    else if (L3.out < 0.5 && m._tripT >= 5) L3.out = 1;
+    else if (L3.out >= 0.5 && m._holdT >= 60) L3.out = 0;
+    var div = A.dv > 0.5;                                         // exhaust is on the HEPA bypass
+    var hpOk = !(winter && rec && div);                           // winter: the evaporator needs the exhaust air
     var tgt = on ? {
-      sf: L.L1.out, fa: L.L2.out, dmp: L.L3.out, ef: L.L7.out,
-      cmp: proving ? L.L4.out : 0, rh: proving ? L.L5.out : 0,
+      sf: L.L1.out, fa: L.L2.out, dv: L3.out, ef: L.L7.out,
+      cmp: proving && hpOk ? L.L4.out : 0, rh: proving ? L.L5.out : 0,
       hum: proving && winter ? L.L6.out : 0
-    } : { sf: 0, fa: 0, dmp: 0, ef: 0, cmp: 0, rh: 0, hum: 0 };
-    // actuator slew limits (servo 0→90° in ~0.6 s, compressor ramps 10 %/s)
-    var slew = { sf: 0.5, fa: 0.5, ef: 0.5, dmp: 1.6, cmp: 0.1, rh: 0.5, hum: 0.5 };
+    } : { sf: 0, fa: 0, dv: 1, ef: 0, cmp: 0, rh: 0, hum: 0 };    // power off: DV-101 springs to the HEPA bypass
+    // actuator slew limits (DV-101 strokes in 10 s, compressor ramps 10 %/s)
+    var slew = { sf: 0.5, fa: 0.5, ef: 0.5, dv: 0.1, cmp: 0.1, rh: 0.5, hum: 0.5 };
     Object.keys(A).forEach(function (k) {
       var d = tgt[k] - A[k], lim = slew[k] * dt;
       A[k] += d > lim ? lim : (d < -lim ? -lim : d);
     });
+    div = A.dv > 0.5;
+    var recx = rec && !div;                                       // the Cu core and the exhaust coil see exhaust air
 
-    /* ---- air flows ---- */
+    /* ---- air flows (100 % fresh air: the supply is all fresh air, nothing is recirculated) ---- */
     x.Qsup = lag(x.Qsup, HW.sfQ * A.sf, dt, 1.2);
     x.Qfa  = lag(x.Qfa,  HW.faQ * A.fa, dt, 1.2);
-    x.Qex  = lag(x.Qex,  HW.efQ * A.ef, dt, 1.2);
-    var Qsup = x.Qsup, Qfa = Math.min(x.Qfa, Qsup), spill = Math.max(0, x.Qfa - Qsup);
-    var Qrec = Math.max(0, Qsup - Qfa), Qexr = Math.max(0, x.Qex - spill);
-    var f = Qsup > 1e-3 ? Qfa / Qsup : 0;
-    // room pressure: supply in, recirculated + exhaust + leakage out (quasi-static)
-    var imb = Qfa - Qexr, dp = Math.sign(imb) * Math.pow(imb / HW.leakK, 2);
+    x.Qex  = lag(x.Qex,  HW.efQ * A.ef * (div ? 0.85 : 1), dt, 1.2);   // the outer HEPA adds resistance
+    var Qsup = x.Qsup, Qfa = Qsup, Qexr = x.Qex, f = 1;
+    // room pressure: supply in, exhaust + leakage out (quasi-static)
+    var imb = Qsup - Qexr, dp = Math.sign(imb) * Math.pow(imb / HW.leakK, 2);
     dp = clamp(dp, -150, 150);
     var Qleak = Math.sign(dp) * HW.leakK * Math.sqrt(Math.abs(dp));
 
@@ -185,27 +200,20 @@
     var C = function (q) { return q * RHO * CP / 3600; };
     var Cs = Math.max(C(Qsup), 1e-3), Cfa = C(Qfa), Cex = C(Qexr);
     var Toa = S.oat, woa = wFromRH(Toa, S.orh), Troom = x.Troom, wroom = x.wroom;
-    var sp = P.split / 100, Chr = sp * Cfa, e1 = P.e1 / 100, e2 = P.e2 / 100;
-    var T1 = Toa, Tin = Toa, T2 = Toa, R1 = Troom, R2 = Troom, Q1 = 0, Q2 = 0, w2 = woa;
-    if (rec && Cfa > 1e-4 && Cex > 1e-4) {
-      R1 = x.R1;
-      for (var it = 0; it < 4; it++) {
-        Q1 = e1 * Math.min(Chr, Cex) * (R1 - Toa);
-        T1 = Chr > 1e-5 ? Toa + Q1 / Chr : Toa;
-        R2 = R1 - Q1 / Cex;
-        Tin = sp * T1 + (1 - sp) * Toa;
-        Q2 = e2 * Math.min(Cfa, Cex) * (Troom - Tin);
-        T2 = Tin + Q2 / Cfa;
-        R1 = Troom - Q2 / Cex;
-      }
-      x.R1 = R1;
-      if (m.hrv === "wheel") w2 = woa + e2 * Math.min(Cfa, Cex) / Cfa * (wroom - woa);
-    } else { x.R1 = Troom; }
-    var Tmix = f * T2 + (1 - f) * Troom, wmix = f * w2 + (1 - f) * wroom;
+    var e1 = P.e1 / 100;
+    // Cu plate core: sensible only, the plates keep the streams apart (no moisture, no particle transfer)
+    var T1 = Toa, R1 = Troom, R2 = Troom, Q1 = 0;
+    if (recx && Cfa > 1e-4 && Cex > 1e-4) {
+      Q1 = e1 * Math.min(Cfa, Cex) * (R1 - Toa);
+      T1 = Toa + Q1 / Cfa;
+      R2 = R1 - Q1 / Cex;
+    }
+    x.R1 = R1;
+    var Tin = T1, T2 = T1, wmix = woa;                           // the coils see fresh air only
 
     // pre-heat coil (winter): air-pump condenser, or electric in baseline
     x.Qph = lag(x.Qph, winter ? A.cmp * HW.phQ : 0, dt, 8);
-    var Tph = Tmix + Math.min(x.Qph / Cs, 45);
+    var Tph = T1 + Math.min(x.Qph / Cs, 45);
     // cooling coil (summer): air-pump evaporator with dehumidification (bypass factor 0.15)
     x.Qcc = lag(x.Qcc, winter ? 0 : A.cmp * HW.ccQ, dt, 8);
     var Tcc = Tph, wcc = wmix, Qlat = 0, msup = Qsup * RHO / 3600, Tsurf = Tph;
@@ -229,15 +237,18 @@
     var Qhp = winter ? x.Qph : x.Qcc;
     var Cx = Math.max(Cex, 0.02);
     if (rec) {
-      if (winter) {
+      if (winter && !div) {
         // the evaporator may not pull the exhaust below −3 °C (frost limit): cap the condenser duty
         var Tc = Tph + 6, Te = R2 - 8;
         cop = clamp(0.5 * (Tc + 273.15) / Math.max(Tc - Te, 8), 1.5, 7);
         var qevMax = Math.max(0, Cx * (R2 + 3)), qMax = qevMax * cop / (cop - 1);
         if (x.Qph > qMax) { x.Qph = qMax; Qhp = qMax; frost = true; }
+      } else if (winter) {
+        cop = 3;                                     // run-down only: the compressor is locked out while diverted
       } else {
-        // the exhaust takes the rejected heat up to 45 °C; the rest goes to the outdoor condenser
-        var Te2 = Tsurf - 4, Tc2 = Math.min(45, R2 + 10) + 8;
+        // the exhaust takes the rejected heat up to 45 °C; the rest goes to the outdoor condenser.
+        // Diverted: no exhaust air on the coil, so the outdoor condenser takes it all.
+        var Te2 = Tsurf - 4, Tc2 = div ? Toa + 18 : Math.min(45, R2 + 10) + 8;
         cop = clamp(0.5 * (Te2 + 273.15) / Math.max(Tc2 - Te2, 8), 1.5, 7);
       }
       W = Qhp > 0.01 ? Qhp / cop : 0;
@@ -260,7 +271,9 @@
 
     // exhaust-air coil in the recovery unit
     var Texh = R2;
-    if (rec && Qhp > 0.01) {
+    if (rec && div && Qhp > 0.01) {
+      if (!winter) Qout = Math.max(0, x.Qcc + W - Math.min(Qdsh, x.Qrh));
+    } else if (rec && Qhp > 0.01) {
       if (winter) Texh = R2 - (Qhp - W) / Cx;
       else {
         var Qrej = Math.max(0, x.Qcc + W - Math.min(Qdsh, x.Qrh)), Qair = Math.max(0, Cx * (45 - R2));
@@ -277,23 +290,27 @@
     x.wroom = Math.max(x.wroom, 0.0005);
 
     /* ---- airborne particles ≥0.5 µm (well-mixed room + first-air zone at the fill point) ---- */
-    // fresh air: outdoor count through the outdoor-air pre-filter; mixed air through the panel + bag
-    // filters, then H13 HEPA (99.95 % at MPPS, ≈99.995 % at 0.5 µm). Ingress happens only when the room is
-    // not over-pressured.
-    var Cfa = P.coa * 0.9, Cmix = f * Cfa + (1 - f) * x.Cp;
-    var Csup = Cmix * (1 - 0.64) * (1 - 0.99995);
+    // fresh air only: outdoor count through the pre-filter, the panel + bag filters, the AHU's H13 HEPA
+    // (≈99.995 % at 0.5 µm) and then the H14 bag-in/bag-out terminal HEPA (≈99.995 %). Ingress happens
+    // only when the room is not over-pressured.
+    var Coa = P.coa * 0.9;
+    var Csup = Coa * (1 - 0.64) * (1 - 0.99995) * (1 - 0.99995);
     var Qing = Math.max(0, -Qleak) + 0.08 * Math.exp(-Math.max(dp, 0) / 3);     // m³/h of lab air leaking in
-    var Clab = 1.0e7, G = (P.gen + m.extGen) * 60;                              // particles per hour
-    var V = ROOM.V, Qout = Math.max(Qsup + Qing, 1e-3);
-    x.Cp += dt / 3600 * (Qsup * Csup + Qing * Clab + G - Qout * x.Cp) / V;
+    if (m.release > 0) m.release = Math.max(0, m.release - dt);
+    var Clab = 1.0e7, G = (P.gen + m.extGen + (m.release > 0 ? 1e7 : 0)) * 60;  // particles per hour
+    var V = ROOM.V, Qoutp = Math.max(Qsup + Qing, 1e-3);
+    x.Cp += dt / 3600 * (Qsup * Csup + Qing * Clab + G - Qoutp * x.Cp) / V;
     x.Cp = Math.max(x.Cp, 0);
     var capture = 0.99 * clamp(Qsup / Math.max(0.6 * P.flow, 0.1), 0, 1);      // first-air sweep over the needles
     var CA = Csup + (1 - capture) * x.Cp + 250;                                // + a little from vial handling
     var r5 = 0.02;                                                             // ≥5 µm share of particles shed by people
+    // exhaust: through the H14 BIBO exhaust terminals (a leaking one lets 2 % through), then PT-102.
+    // On the bypass the outer BIBO HEPA cleans it again before it leaves the building.
+    var Cexh = x.Cp * (m.hepaLeak ? 0.02 : 5e-5), Cdis = div ? Cexh * 5e-5 : Cexh;
 
     /* ---- electrical power ---- */
     var fan = function (u, pmax, idle) { return u > 0.001 ? idle + pmax * Math.pow(u, 3) : 0; };
-    var Pfa = fan(A.fa, HW.faP, 0.5), Pef = 2 * fan(A.ef, HW.efP, 0.2);
+    var Pfa = fan(A.fa, HW.faP, 0.5), Pef = fan(A.ef, HW.efP, 0.3);
     var Pfans = Pfa + Psf + Pef;
     var elecPre = !rec && winter;                  // baseline winter: the pre-heat coil is an electric element
     var Pcmp = elecPre ? 0 : (W > 0.005 ? W + (rec ? 0.8 : 0) : 0);
@@ -302,8 +319,8 @@
     var Pctl = on ? HW.ctrlW : 0.6;
     var Pact = Pfans + Pcmp + Pheat + Pctl;
 
-    // baseline twin: same flows and leaving temperatures, no recovery
-    var Tmb = f * Toa + (1 - f) * Troom, wmb = f * woa + (1 - f) * wroom, Pb_hc = 0;
+    // baseline twin: same flows and leaving temperatures, no recovery (100 % fresh air straight from outdoors)
+    var Tmb = Toa, wmb = woa, Pb_hc = 0;
     if (winter) Pb_hc = Cs * Math.max(0, Tph - Tmb);
     else Pb_hc = (Cs * Math.max(0, Tmb - Tcc) + msup * HFG * Math.max(0, wmb - wcc)) / P.cop;
     var Pbase = Pb_hc + x.Qrh + Phum + Pfans + Pctl;               // same fans: the rig hardware is the same
@@ -312,8 +329,8 @@
     var n = function (v) { return noise() * v; };
     s.TT101 = lag(s.TT101, Toa, dt, 5) + n(0.01);
     s.MT101 = lag(s.MT101, S.orh, dt, 8);
-    s.FT101 = lag(s.FT101, Qfa, dt, 0.5);
-    s.TT102 = lag(s.TT102, Tmix, dt, 3) + n(0.01);
+    s.FT101 = lag(s.FT101, x.Qfa, dt, 0.5);                       // what FAN-101 delivers into the header
+    s.TT109 = lag(s.TT109, T1, dt, 3) + n(0.01);
     s.TT103 = lag(s.TT103, Tph, dt, 3) + n(0.01);
     s.TT104 = lag(s.TT104, Tcc, dt, 3) + n(0.01);
     s.TT105 = lag(s.TT105, Tsup, dt, 5) + n(0.01);
@@ -336,18 +353,20 @@
     s.PT101R5 = Math.max(0, lag(s.PT101R5, pn(x.Cp * r5), dt, 15));
     // big particles settle out and are swept away by the first air more readily than 0.5 µm ones
     s.PT101A5 = Math.max(0, lag(s.PT101A5, pn((1 - capture) * x.Cp * r5 * 0.3), dt, 15));
+    s.PT102 = Math.max(0, lag(s.PT102, pn(Cexh), dt, 4));
 
     /* ---- bookkeeping ---- */
     Object.assign(a, {
-      oa: Toa, woa: woa, t1: T1, tin: Tin, t2: T2, mix: Tmix, ph: Tph, cc: Tcc, rh: Trh, sup: Tsup,
+      oa: Toa, woa: woa, t1: T1, tin: Tin, t2: T2, ph: Tph, cc: Tcc, rh: Trh, sup: Tsup,
       room: x.Troom, ret: x.Troom, r1: R1, r2: R2, exh: Texh, tsurf: Tsurf,
-      wmix: wmix, wsup: wsup, wroom: x.wroom, f: f, Qsup: Qsup, Qfa: Qfa, Qrec: Qrec, Qex: x.Qex,
-      Qhr: sp * Qfa, Qdir: (1 - sp) * Qfa, Qleak: Qleak, dp: dp, Q1: Q1, Q2: Q2, Qlat: Qlat,
-      dewRoom: dewPoint(x.wroom), Cp: x.Cp, Csup: Csup, CA: CA, Qing: Qing, capture: capture
+      wsup: wsup, wroom: x.wroom, f: f, Qsup: Qsup, Qfa: Qfa, Qrec: 0, Qex: x.Qex,
+      Qhr: rec ? Qfa : 0, Qdir: rec ? 0 : Qfa, Qcore: div ? 0 : Qexr, Qbyp: div ? Qexr : 0, div: A.dv,
+      Qleak: Qleak, dp: dp, Q1: Q1, Qlat: Qlat,
+      dewRoom: dewPoint(x.wroom), Cp: x.Cp, Csup: Csup, CA: CA, Qing: Qing, capture: capture, Cexh: Cexh, Cdis: Cdis
     });
     m.pw = { fa: Pfa, sf: Psf, ef: Pef, fans: Pfans, cmp: Pcmp, ptc: Qptc, hum: Phum, heat: Pheat,
              ctl: Pctl, total: Pact, base: Pbase, W: W, cop: cop, Qhp: Qhp, Qdsh: Math.min(Qdsh, x.Qrh),
-             Qrec: Math.abs(Q1) + Math.abs(Q2), Qout: Qout, frost: frost };
+             Qrec: Math.abs(Q1), Qout: Qout, frost: frost };
     var hrs = dt / 3600;
     m.E.act += Pact * hrs; m.E.base += Pbase * hrs; m.E.t += dt;
     m.E.co2 += Pact * hrs * P.ef; m.E.co2base += Pbase * hrs * P.ef;      // grams (W·h × kg/kWh = g)
@@ -372,6 +391,7 @@
       ["A03", "Clean-room pressure high", on && s.PDT101 > 40, 15, "warning"],
       ["A04", "Clean-room RH out of band", on && Math.abs(s.MT106 - P.rh) > 10, 120, "warning"],
       ["A05", "Evaporator at frost limit — air pump capped", on && m.recovery && m.season === "winter" && m.pw.frost, 30, "warning"],
+      ["A06", "Exhaust contaminated (PT-102) — diverted to the outer BIBO HEPA, recovery suspended", s.PT102 > P.pxTrip, 5, "serious"],
       ["A07", "Supply temperature off set point", on && Math.abs(s.TT105 - S.sup) > 2, 90, "warning"],
       ["A08", "ACH below 20 /h (ISO 8 minimum)", on && s.FT102 / ROOM.V < 20, 30, "warning"],
       ["A09", "HEPA ΔP high — check filter", on && s.PDT102 > 450, 10, "warning"],
@@ -395,10 +415,10 @@
 
   function pushTrend(m) {
     var s = m.s;
-    m.trend.push({ t: m.t, TT101: s.TT101, TT102: s.TT102, TT103: s.TT103, TT105: s.TT105, TT106: s.TT106,
+    m.trend.push({ t: m.t, TT101: s.TT101, TT109: s.TT109, TT103: s.TT103, TT105: s.TT105, TT106: s.TT106,
       MT105: s.MT105, MT106: s.MT106, P: m.pw.total, Pb: m.pw.base, ACH: m.kpi.ach, DP: s.PDT101,
-      PR: s.PT101, PA: s.PT101A, QS: s.FT102, QF: s.FT101, QE: m.a.Qex,
-      USF: m.act.sf * 100, UFA: m.act.fa * 100, UDM: m.act.dmp * 100, UCM: m.act.cmp * 100, URH: m.act.rh * 100,
+      PR: s.PT101, PA: s.PT101A, PX: s.PT102, QS: s.FT102, QF: s.FT101, QE: m.a.Qex,
+      USF: m.act.sf * 100, UFA: m.act.fa * 100, UDV: m.act.dv * 100, UCM: m.act.cmp * 100, URH: m.act.rh * 100,
       CO: m.kpi.co2h, COB: m.kpi.co2hBase });
     if (m.trend.length > 450) m.trend.shift();
   }

@@ -33,6 +33,7 @@ ASM_ORDER = [
     "Fresh-air compressor",
     "Ductwork",
     "Clean room",
+    "Exhaust safety: PT-102 + DV-101 + outer HEPA",
     "Controls and HMI",
     "PCB wiring harness",
 ]
@@ -111,6 +112,16 @@ def primitive(rec):
     if t == "SphereGeometry":
         return cq.Solid.makeSphere(p["radius"] * sx * MM, cq.Vector(0, 0, 0), cq.Vector(0, 1, 0), -90, 90, 360)
     return None
+
+
+def rect_section(rec):
+    """a rectangular duct section: a hollow box (2 mm wall at rig scale) in its local frame"""
+    p, (sx, sy, sz) = rec["geo"]["p"], rec["scl"]
+    w, h, d = p["width"] * sx * MM, p["height"] * sy * MM, p["depth"] * sz * MM
+    t = rec["geo"]["cad"].get("wall", 0.15) * MM
+    o = cq.Solid.makeBox(w, h, d, cq.Vector(-w / 2, -h / 2, -d / 2))
+    i = cq.Solid.makeBox(max(w - 2 * t, 0.2), max(h - 2 * t, 0.2), d + 0.4, cq.Vector(-(w - 2 * t) / 2, -(h - 2 * t) / 2, -d / 2 - 0.2))
+    return o.cut(i)
 
 
 def swept(rec):
@@ -202,7 +213,9 @@ def main(src, outdir="cad"):
                 col = tuple(round(c, 2) for c in rec["mat"]["c"]) + (max(0.25, rec["mat"]["o"]),)
                 tree[asm].setdefault(part, OrderedDict()).setdefault(col, []).extend(duct_solids(rec))
                 continue
-            if rec["geo"].get("cad"):
+            if rec["geo"].get("cad", {}).get("type") == "rseg":
+                solid = rect_section(rec).moved(location(rec))
+            elif rec["geo"].get("cad"):
                 solid = swept(rec)
             else:
                 prim = primitive(rec)
@@ -271,6 +284,11 @@ def material(part, col):
         (("sample",), "Conductive PU sample tubing, 4 mm OD"),
         (("particle",), "Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"),
         (("operator",), "Operator figure (e.g. PLA print), cleanroom gown colours"),
+        (("cu",) if "core" in words else (), "Copper Cu-ETP (C11000) plates 0.3 mm, both faces Ra <= 0.8 um, edges folded + sealed"),
+        (("bibo", "laf"), "Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"),
+        (("dv",), "24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee"),
+        (("pt",) if "102" in words else (), "Particle sensor SPS30 (indicative) with sample probe"),
+        (("plenum", "skirts", "stack", "cap"), "Stainless steel 304 / clear PVC"),
         (("peristaltic",), "Peristaltic dosing pump, stainless housing"),
         (("vial",), "Glass vial with product and rubber stopper"),
         (("needle",), "Stainless steel 316L needles on aluminium carriage"),

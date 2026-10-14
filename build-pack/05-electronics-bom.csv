@@ -1,35 +1,37 @@
 Item,Qty,Description,Example part / type,Where,Notes
 1,1,Controller board,ESP32-S3-DevKitC-1 (N8R8),main PCB (back wall),native USB for flashing + telemetry
-2,1,I2C multiplexer,TCA9548A breakout (0x70),main PCB,7 channels used; 2.2 k pull-ups per channel
+2,1,I2C multiplexer,TCA9548A breakout (0x70),main PCB,8 channels used; 2.2 k pull-ups per channel
 3,3,Temperature + humidity sensor,Sensirion SHT31-D breakout,TT/MT-101 header; TT/MT-105 after HEPA; TT/MT-106 room,I2C 0x44 (one per mux channel)
 4,1,Differential pressure sensor ±125 Pa,Sensirion SDP810-125Pa,PDT-101 room vs. lab,tube ports: room and lab reference
 5,1,Differential pressure sensor ±500 Pa,Sensirion SDP810-500Pa,PDT-102 across the HEPA,
-6,5,Temperature probe,DS18B20 in Ø4 mm stainless probe,TT-102/103/104 (bus A); TT-107/108 (bus B),12-bit; paste ROM codes into config.h
+6,5,Temperature probe,DS18B20 in Ø4 mm stainless probe,TT-109/103/104 (bus A); TT-107/108 (bus B),12-bit; paste ROM codes into config.h
 7,2,Air-velocity sensor,Omron D6F-W04A1,FT-101 header (Ø23 mm); FT-102 riser (Ø28 mm),10.8–26.4 V supply; 0.5–2.5 V out; calibrate in place
 8,3,Hall current sensor ±5 A,ACS712-05B module (5 V),main PCB in the F2 / F3 / F4 branches,output through 10 k / 20 k divider
-9,2,Particle sensor,Sensirion SPS30 (5 V; I2C 0x69),PT-101 room (ch5); PT-101A fill point (ch6),SEL pin to 0 V for I2C; indicative only (not ISO 21501-4)
+9,3,Particle sensor,Sensirion SPS30 (5 V; I2C 0x69),PT-101 room (ch5); PT-101A fill point (ch6); PT-102 exhaust main (ch7),SEL pin to 0 V for I2C; indicative only (not ISO 21501-4)
 10,1,Supply fan,24 V DC high-pressure centrifugal blower; PWM + tach,in line with the supply boot,≥ 18 m³/h free air; shut-off ≥ 1.4 kPa (see calc §12)
 11,1,Fresh-air compressor,24 V DC centrifugal blower; PWM + tach,plant-room wall bracket,≥ 12 m³/h; shut-off ≥ 0.35 kPa
-12,2,Exhaust fans,24 V DC blowers; PWM + tach,extract transfer + air-pump exhaust,≥ 0.45 kPa shut-off each (2 in series)
-13,1,Damper servo,MG996R (5 V; metal gear),SV-101 on the mixing box,≈ 0.94 N·m; needed ≈ 0.03 N·m
-14,1,Refrigerant compressor + driver,24 V DC miniature rotary compressor with inverter driver (0–5 V speed input),plant-room floor beside the AHU,≥ 60 W cooling at Te 5 °C / Tc 50 °C; confirm refrigerant (R32) with supplier
+12,2,Exhaust fans,24 V DC blowers; PWM + tach,FAN-103 air-pump unit exhaust; FAN-103B after the outer BIBO HEPA,"≥ 0.9 / 1.2 kPa shut-off (calc §12); one PWM, DV-101 end switch picks the fan"
+13,1,Exhaust diverter actuator,24 V spring-return on/off damper actuator with SPDT aux switch (Belimo TF24-S class),DV-101 on the exhaust main,needed ≈ 0.03 N·m; spring return ≤ 20 s; fail-safe = HEPA bypass
+14,1,Refrigerant compressor + driver,24 V DC miniature rotary compressor with inverter driver (0–5 V speed input),plant-room floor beside the AHU,≥ 90 W cooling at Te 5 °C / Tc 50 °C; confirm refrigerant (R32) with supplier
 15,1,4-way reversing valve,miniature 4-way valve; 24 V DC coil,refrigerant circuit,switch only with the compressor stopped
 16,1,Electronic expansion valve,miniature bipolar stepper EEV (≈ 500 steps),liquid line,capillary + EEV trim recommended (calc §13)
 17,1,Stepper driver,DRV8825 module (VMOT 24 V),main PCB,set current limit: Vref = I_coil × 0.5 Ω
 18,1,Reheat heater,24 V 30 W finned PTC element (Curie ≈ 120 °C),AHU reheat position,with 130 °C thermal fuse in series
-19,1,Steam humidifier,24 V ≈ 25 W mini steam generator + lance,boiler outside the AHU; lance inside,steam (not ultrasonic) for a clean room
+19,1,Steam humidifier,24 V ≈ 35 W mini steam generator + lance (45 g/h),boiler outside the AHU; lance inside,steam (not ultrasonic) for a clean room
 20,1,Operator display,7-inch serial touch HMI (Nextion-style; 5 V; UART),front face (HMI-101),115200 8N1
 21,1,Power supply,24 V DC 150 W (6.25 A) enclosed / DIN,plant room floor or outside the box,PE to the rig frame
-22,1,DC-DC converter,buck 24 → 5 V 3 A,main PCB,servo stall peak 2.5 A
+22,1,DC-DC converter,buck 24 → 5 V 3 A,main PCB,HMI + ACS712 ×3 + SPS30 ×3
 23,1,Op-amp,LM358 (DIP-8 or SO-8),main PCB,compressor 0–5 V: gain 1 + 5.1 k/10 k = 1.51; supply from 24 V
 24,3,Fan PWM switch,AO3400 N-MOSFET (SOT-23),main PCB,open drain to the fan PWM inputs
-25,3,Load switch,AOD4184 or IRLZ44N logic-level N-MOSFET,main PCB,RV-101; HTR-101; HUM-101 (low side)
-26,1,Flyback diode,SS34 Schottky,across the RV-101 coil,
+25,4,Load switch,AOD4184 or IRLZ44N logic-level N-MOSFET,RV-101; HTR-101; HUM-101; DV-101 (low side),RV-101; HTR-101; HUM-101 (low side)
+26,2,Flyback diode,SS34 Schottky,across the RV-101 and DV-101 coils,
 27,1,TVS diode,SMBJ28A,24 V input,
 28,1,Bulk capacitor,470 µF 35 V low-ESR,24 V input,
 29,5,Fuses + holders,F1 8 A; F2 3 A T; F3 3.15 A; F4 2 A; F5 2 A,main PCB,
-30,1,Resistor set,"4.7 k ×2 (1-Wire); 10 k ×3 (tach); 10 k + 20 k ×3 (ACS712 dividers); 100 k + 10 k (VT-101); 330 Ω (servo); 1 k (UART RX); 100 Ω ×6 (gates); 100 k ×6 (gate pull-downs); 10 k + 1 µF (RC); 5.1 k + 10 k (op-amp)",main PCB,0603 or through-hole
-31,21,Connectors,JST-XH 2…7 pin (J2–J21) + 2-pole screw terminal (J1),main PCB,mate with the FR4 strip ends
+30,1,Resistor set,4.7 k ×2 (1-Wire); 10 k ×3 (tach); 10 k + 20 k ×3 (ACS712 dividers); 100 k + 10 k (VT-101); 1 k (UART RX); 100 Ω ×6 (gates); 100 k ×6 (gate pull-downs); 10 k + 1 µF (RC); 5.1 k + 10 k (op-amp),main PCB,0603 or through-hole
+31,22,Connectors,"JST-XH 2…7 pin (J2–J21, J24) + 2-pole screw terminal (J1)",main PCB,mate with the FR4 strip ends
 32,1,Harness,FR4 flex/rigid strips 1 mm with copper tracks (one per device),as drawn in the 3D model / STEP,see build-pack/04-pcb-and-harness.md
 33,1,Main PCB,2-layer FR4 1.6 mm 1 oz; ≈ 180 × 120 mm,back wall of the plant room,traces per calc §15
 34,1,R32 mechanical set (no PCB connection),liquid receiver ≥ 15 cm³; suction accumulator ≥ 20 cm³; bi-flow filter-drier; sight glass with moisture indicator; 2 Schrader charging valves; 1/8 in + 3/16 in copper tube,plant-room floor,charged by a certified technician (≈ 40 g; weigh in)
+35,7,HEPA filter media + BIBO change bags,H14 glass-fibre media in 3D-printed frames; PVC change bags on Ø20–40 mm rings,"ceiling terminal, LAF hood, 2 right-wall terminals, 2 exhaust terminals, outer HEPA","mechanical, no PCB connection; leak-scan every frame"
+36,1,Cu plate core,"copper Cu-ETP plates 0.3 mm, gap 2 mm, ≈ 66 mm cube; both faces Ra ≤ 0.8 µm; edges folded + sealed",air-pump unit,mechanical; check Ra with a profilometer (calc §4)

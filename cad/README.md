@@ -2,7 +2,7 @@
 
 | File | Contents |
 |---|---|
-| `cleanroom-rig-assembly.step` | The whole rig: AP214 STEP, millimetres, 8 sub-assemblies, 266 named and coloured parts, 1 507 solids |
+| `cleanroom-rig-assembly.step` | The whole rig: AP214 STEP, millimetres, 9 sub-assemblies, 289 named and coloured parts, 1 431 solids |
 | `step/*.step` | One file per sub-assembly, for working on a unit on its own |
 | `BOM.csv` | Every part: sub-assembly, body count, bounding size (mm), material / finish |
 | `drawings/enclosure-GA.pdf` / `.svg` | Acrylic enclosure fabrication drawing, A3 at 1:6: panel views, cut-out positions and cut list |
@@ -15,7 +15,7 @@ Overall size: **1028 × 532 × 539 mm**. That is the 1000 × 500 × 500 mm acryl
 1. **File → Open**, set the file type to *STEP AP203/214/242 (\*.step; \*.stp)*, and choose `cleanroom-rig-assembly.step`.
 2. Under **Options…**, keep the default *Import multiple bodies as parts* setting, so that each STEP part becomes a SolidWorks part. Then click **Open**.
 3. If SolidWorks offers *Import Diagnostics*, you can answer **No**. All bodies are closed, valid solids.
-4. The tree shows `Cleanroom_HR_AirPump_Rig`, then the 8 sub-assemblies, then the parts, e.g. *AHU → Coil preheat*, *PCB wiring harness → PCB strip TT-102 copper*.
+4. The tree shows `Cleanroom_HR_AirPump_Rig`, then the 9 sub-assemblies, then the parts, e.g. *AHU → Coil preheat*, *PCB wiring harness → PCB strip TT-109 copper*.
 5. To keep native files, use **File → Save As → Assembly (\*.sldasm)** and let it save the parts as external `.sldprt` files. *Pack and Go* also works.
 
 Orientation matches SolidWorks: **Y is up**, and the rig's **front face points to +Z**, so the *Front* view shows the HMI side. The plant room is at −X and the clean room at +X, with the partition at X = 0.
@@ -42,4 +42,4 @@ python tools/build_cad.py cad/rig-geometry.json cad
 python tools/make_drawings.py
 ```
 
-`build_cad.py` turns each primitive into an exact B-rep solid: boxes, cylinders, cones and tori. Ducts become straight tubes joined by tangent bends with a 1.5 mm wall. Refrigerant lines become splines swept with a circle. It then groups the solids by part and colour, and writes the assembly and sub-assembly STEP files and `BOM.csv`.
+`build_cad.py` turns each primitive into an exact B-rep solid: boxes, cylinders, cones and tori. Ducts are rectangular: each straight section becomes a hollow box with a 1.5 mm wall, overlapping at the corners like mitred elbows. Refrigerant lines become splines swept with a circle. It then groups the solids by part and colour, and writes the assembly and sub-assembly STEP files and `BOM.csv`.

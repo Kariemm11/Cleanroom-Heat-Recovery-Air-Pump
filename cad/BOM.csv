@@ -9,10 +9,9 @@ Acrylic enclosure,Acrylic partition wall,1,5.0,490.0,490.0,"PMMA (cast acrylic),
 Acrylic enclosure,Clean-room false ceiling,1,492.5,5.0,490.0,"PMMA (cast acrylic), 5 mm, clear"
 Acrylic enclosure,Aluminium base frame,5,1000.0,20.0,500.0,"Aluminium 20x20 extrusion, black anodised"
 Acrylic enclosure,Aluminium base frame -2,4,998.0,12.0,498.0,"Aluminium 20x20 extrusion, black anodised"
-Acrylic enclosure,Clean-room access door,5,199.5,280.0,15.5,See model colour
-AHU,AHU frame,34,221.5,52.1,38.9,See model colour
-AHU,AHU casing panel,4,220.0,51.3,38.1,Clear PETG panel (3D model: galvanised steel)
-AHU,AHU deck divider,2,218.4,1.0,34.1,See model colour
+Acrylic enclosure,Clean-room access door,5,159.5,280.0,15.5,See model colour
+AHU,AHU frame,32,221.5,26.8,38.9,See model colour
+AHU,AHU casing panel,4,220.0,26.0,38.1,Clear PETG panel (3D model: galvanised steel)
 AHU,Base machine compartment and R32 compressor,12,220.0,25.9,37.4,See model colour
 AHU,Base machine compartment and R32 compressor -2,1,9.9,2.9,2.9,See model colour
 AHU,Outdoor-air pre-filter,2,4.1,22.5,32.5,Filter media in aluminium frame
@@ -23,16 +22,7 @@ AHU,Bag filter,2,11.6,22.0,31.9,Filter media in aluminium frame
 AHU,Bag filter -2,9,9.0,22.8,30.8,Filter media in aluminium frame
 AHU,HEPA final filter,7,6.6,23.1,33.0,Filter media in aluminium frame
 AHU,HEPA final filter -2,26,4.4,20.5,28.9,Filter media in aluminium frame
-AHU,Extract pre-filter,2,4.1,22.6,32.5,Filter media in aluminium frame
-AHU,Extract pre-filter -2,13,3.0,23.9,30.8,Filter media in aluminium frame
-AHU,Extract bag filter,2,11.5,22.0,31.9,Filter media in aluminium frame
-AHU,Extract bag filter -2,9,9.0,22.8,30.8,Filter media in aluminium frame
-AHU,Plate heat-recovery core,1,30.8,44.0,30.8,See model colour
-AHU,Plate heat-recovery core -2,17,29.7,41.1,29.7,See model colour
-AHU,Plate heat-recovery core -3,3,31.9,61.1,30.8,See model colour
-AHU,Plate heat-recovery core -4,1,35.2,1.3,30.8,See model colour
-AHU,Mixing section plus servo dampers,14,19.8,24.6,37.4,See model colour
-AHU,Mixing section plus servo dampers -2,2,4.5,22.0,28.6,See model colour
+AHU,Fresh-air plenum plus turning vanes,8,26.3,20.0,28.6,Stainless steel 304 / clear PVC
 AHU,Coil preheat,26,8.8,19.2,27.7,Copper tube + aluminium fins
 AHU,Coil preheat -2,16,6.9,20.9,31.6,Copper tube + aluminium fins
 AHU,Coil preheat -3,1,12.1,21.5,31.9,Copper tube + aluminium fins
@@ -48,19 +38,12 @@ AHU,Coil reheat -4,1,13.2,0.9,31.9,Copper tube + aluminium fins
 AHU,Supply fan,4,20.9,24.9,24.9,See model colour
 AHU,Supply fan -2,9,2.8,21.0,21.2,See model colour
 AHU,Supply fan -3,1,5.5,23.8,23.8,See model colour
-AHU,Extract transfer fan,4,20.9,24.9,24.9,See model colour
-AHU,Extract transfer fan -2,9,2.8,20.9,20.7,See model colour
-AHU,Extract transfer fan -3,1,5.5,23.8,23.8,See model colour
-AHU,Outdoor air intake,8,2.3,23.1,30.8,See model colour
-AHU,Exhaust air outlet,8,2.3,23.1,30.8,See model colour
-AHU,Supply air to building,8,2.3,23.1,30.8,See model colour
-AHU,Return air from building,8,2.3,23.1,30.8,See model colour
-AHU,AHU duct connections,4,294.8,47.7,33.0,"Clear PVC / PETG duct, 2 mm wall"
-AHU,AHU duct connections -2,12,231.3,50.2,35.2,"Clear PVC / PETG duct, 2 mm wall"
+AHU,Fresh-air inlet,8,2.3,23.1,30.8,See model colour
+AHU,Supply air to the clean room,8,2.3,23.1,30.8,See model colour
+AHU,AHU duct connections,2,294.8,23.1,33.0,"Clear PVC / PETG duct, 2 mm wall"
+AHU,AHU duct connections -2,6,231.3,25.5,35.2,"Clear PVC / PETG duct, 2 mm wall"
 AHU,Fresh-air louvre plus bird mesh,6,2.8,14.9,15.9,See model colour
 AHU,Fresh-air louvre plus bird mesh -2,1,0.5,15.9,16.5,See model colour
-AHU,Exhaust louvre plus bird mesh,6,2.8,14.9,16.0,See model colour
-AHU,Exhaust louvre plus bird mesh -2,1,0.5,16.0,16.5,See model colour
 AHU,Droplet eliminator,12,3.1,19.8,31.2,See model colour
 AHU,Droplet eliminator -2,1,4.8,0.8,31.9,See model colour
 AHU,Steam humidifier,4,1.5,19.4,29.7,See model colour
@@ -68,20 +51,14 @@ AHU,Steam humidifier -2,1,5.7,10.1,5.1,See model colour
 AHU,Steam humidifier -3,1,6.2,0.8,31.9,See model colour
 AHU,Supply attenuator,4,14.3,20.5,25.5,See model colour
 AHU,Supply attenuator -2,1,14.7,0.8,31.9,See model colour
-AHU,Extract attenuator,4,14.3,20.5,25.5,See model colour
-AHU,Extract attenuator -2,1,14.7,0.8,31.9,See model colour
-AHU,Recovery bypass damper,8,3.3,22.0,37.4,See model colour
 AHU,Sensor Supply T plus RH,2,1.9,11.4,1.9,See model colour
-AHU,Sensor Return T plus RH plus CO2,2,1.9,11.4,1.9,See model colour
-AHU,Sensor AHU intake T plus RH,2,1.9,11.4,1.9,See model colour
-AHU,Sensor Mixed-air sensor,2,1.9,11.4,1.9,See model colour
-AHU,Sensor Frost thermostat,2,1.9,11.4,1.9,See model colour
+AHU,Sensor TT-109 off the Cu core,2,1.9,11.4,1.9,"Copper Cu-ETP (C11000) plates 0.3 mm, both faces Ra <= 0.8 um, edges folded + sealed"
 AHU,Sensor TT-103 after pre-heat,2,1.9,11.4,1.9,See model colour
 AHU,Sensor TT-104 off cooling coil,2,1.9,11.4,1.9,Copper tube + aluminium fins
-AHU,Filter dP gauge,5,194.0,28.4,0.9,Filter media in aluminium frame
-AHU,AHU control panel,2,18.7,25.3,3.2,See model colour
+AHU,Filter dP gauge,4,176.4,3.7,0.9,Filter media in aluminium frame
+AHU,AHU control panel,2,18.7,20.9,3.2,See model colour
 AHU,AHU control panel -2,1,1.1,4.4,1.1,See model colour
-AHU,Misc,16,196.3,25.7,2.9,See model colour
+AHU,Misc,8,196.3,1.1,2.9,See model colour
 AHU,R32 refrigerant pipework,4,261.2,43.9,124.6,Copper refrigerant tube (R32)
 AHU,R32 refrigerant pipework -2,1,3.7,3.7,3.7,Copper refrigerant tube (R32)
 AHU,R32 liquid receiver,3,6.6,15.4,6.6,"Steel liquid receiver, painted, rotalock valve + level sight glass (R32)"
@@ -95,8 +72,6 @@ AHU,R32 charging port (liquid side),1,1.3,3.7,1.3,Brass service valve with Schra
 AHU,R32 charging port (liquid side) -2,1,1.9,1.3,1.9,Brass service valve with Schrader charging port and cap
 AHU,R32 charging port (suction side),1,1.3,3.7,1.3,Brass service valve with Schrader charging port and cap
 AHU,R32 charging port (suction side) -2,1,1.9,1.3,1.9,Brass service valve with Schrader charging port and cap
-AHU,SV-101 servo linkage,1,6.8,1.0,0.5,See model colour
-AHU,SV-101 servo linkage -2,2,10.9,14.8,0.9,See model colour
 Heat-recovery air-pump unit,Coil extract,26,8.8,19.2,14.5,Copper tube + aluminium fins
 Heat-recovery air-pump unit,Coil extract -2,16,6.9,20.9,16.9,Copper tube + aluminium fins
 Heat-recovery air-pump unit,Coil extract -3,1,12.1,21.5,16.6,Copper tube + aluminium fins
@@ -104,49 +79,79 @@ Heat-recovery air-pump unit,Coil extract -4,1,13.2,0.9,16.6,Copper tube + alumin
 Heat-recovery air-pump unit,Misc,4,126.5,29.3,35.9,See model colour
 Heat-recovery air-pump unit,Misc -2,13,127.8,40.3,36.5,See model colour
 Heat-recovery air-pump unit,Misc -3,2,126.5,26.4,0.5,See model colour
-Heat-recovery air-pump unit,Crossflow recovery core,11,34.2,21.3,34.2,See model colour
-Heat-recovery air-pump unit,Crossflow recovery core -2,1,34.2,23.1,34.2,See model colour
+Heat-recovery air-pump unit,Cu plate core (Ra 0.8 m),11,34.2,21.3,34.2,"Copper Cu-ETP (C11000) plates 0.3 mm, both faces Ra <= 0.8 um, edges folded + sealed"
+Heat-recovery air-pump unit,Cu plate core (Ra 0.8 m) -2,1,34.2,23.1,34.2,"Copper Cu-ETP (C11000) plates 0.3 mm, both faces Ra <= 0.8 um, edges folded + sealed"
 Heat-recovery air-pump unit,Fresh-air filter,2,4.0,23.1,16.0,Filter media in aluminium frame
 Heat-recovery air-pump unit,Fresh-air filter -2,9,2.9,16.2,14.9,Filter media in aluminium frame
 Heat-recovery air-pump unit,Exhaust filter,2,4.0,23.1,16.0,Filter media in aluminium frame
 Heat-recovery air-pump unit,Exhaust filter -2,9,2.9,16.2,14.9,Filter media in aluminium frame
 Heat-recovery air-pump unit,Tempered-air fan,3,10.9,17.3,17.3,See model colour
-Heat-recovery air-pump unit,Tempered-air fan -2,9,2.0,13.5,13.4,See model colour
-Heat-recovery air-pump unit,Exhaust fan,3,10.9,17.3,17.3,See model colour
-Heat-recovery air-pump unit,Exhaust fan -2,9,2.0,14.5,14.3,See model colour
+Heat-recovery air-pump unit,Tempered-air fan -2,9,2.0,16.3,16.4,See model colour
+Heat-recovery air-pump unit,FAN-103 exhaust fan,3,10.9,17.3,17.3,See model colour
+Heat-recovery air-pump unit,FAN-103 exhaust fan -2,9,2.0,16.0,16.1,See model colour
 Heat-recovery air-pump unit,Recovery unit control box,1,12.1,6.1,8.8,See model colour
 Heat-recovery air-pump unit,Recovery unit spigot,4,148.5,22.0,35.2,See model colour
 Heat-recovery air-pump unit,Recovery unit support posts,4,124.9,30.5,33.6,See model colour
 Fresh-air compressor,FAN-101 fresh-air compressor,2,36.0,100.0,84.5,See model colour
-Fresh-air compressor,FAN-101 fresh-air compressor -2,14,116.0,97.5,69.6,See model colour
-Fresh-air compressor,FAN-101 fresh-air compressor -3,1,50.0,38.0,38.0,See model colour
+Fresh-air compressor,FAN-101 fresh-air compressor -2,14,116.0,97.5,69.5,See model colour
+Fresh-air compressor,FAN-101 fresh-air compressor -3,1,50.0,34.0,34.0,See model colour
 Fresh-air compressor,FAN-101 fresh-air compressor -4,11,144.0,139.4,69.2,See model colour
 Fresh-air compressor,FAN-101 fresh-air compressor -5,2,44.0,54.0,44.0,See model colour
 Fresh-air compressor,FAN-101 fresh-air compressor -6,1,3.0,46.0,46.0,See model colour
-Ductwork,Compressor discharge,5,49.0,77.0,22.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Fresh-air header,1,23.0,23.0,158.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Header to recovery unit (fresh lane),3,26.6,67.7,15.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Header to AHU outdoor-air intake,3,123.2,75.9,20.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Tempered-air duct recovery unit to AHU,9,72.1,19.8,114.3,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Extract transfer duct AHU to recovery unit,9,71.8,36.0,96.7,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Exhaust duct recovery unit to louvre,1,47.3,13.2,13.2,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Compressor discharge,3,55.2,80.6,24.2,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Fresh-air header,1,25.3,17.8,158.0,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Header to recovery unit (fresh lane),2,30.1,71.2,16.0,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Core bypass header to AHU (baseline test),2,124.2,76.9,22.0,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Tempered-air duct recovery unit to AHU,4,120.0,29.2,111.6,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Exhaust air-pump unit to roof stack,5,431.0,422.2,313.0,Stainless steel 304 / clear PVC
 Ductwork,Supply boot,1,30.0,23.2,87.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Supply riser,9,433.0,403.9,113.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Diffuser drop 1,1,25.0,31.0,25.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Partition sleeve supply,1,4.4,37.4,37.4,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Return duct,1,57.5,23.1,33.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Return branch (grille 2),3,23.0,20.0,153.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Partition sleeve return 2,1,4.4,29.4,29.4,"Clear PVC / PETG duct, 2 mm wall"
-Clean room,Ceiling diffuser 1,2,90.0,18.0,90.0,"PMMA (cast acrylic), 5 mm, clear"
-Clean room,Ceiling diffuser 1 -2,13,75.5,13.8,75.5,"PMMA (cast acrylic), 5 mm, clear"
-Clean room,Ceiling diffuser 2,2,90.0,18.0,90.0,"PMMA (cast acrylic), 5 mm, clear"
-Clean room,Ceiling diffuser 2 -2,13,75.5,13.8,75.5,"PMMA (cast acrylic), 5 mm, clear"
-Clean room,Low-level return grille 1,4,4.0,56.0,70.0,Stainless steel 304 / white powder-coat
-Clean room,Low-level return grille 1 -2,6,8.1,46.1,64.0,Stainless steel 304 / white powder-coat
-Clean room,Low-level return grille 2,4,4.0,56.0,70.0,Stainless steel 304 / white powder-coat
-Clean room,Low-level return grille 2 -2,6,8.1,46.1,64.0,Stainless steel 304 / white powder-coat
+Ductwork,Supply riser,6,553.3,405.3,115.8,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Terminal drop 1 (ceiling),1,15.5,31.0,22.0,"PMMA (cast acrylic), 5 mm, clear"
+Ductwork,LAF supply drop,2,24.2,175.0,57.1,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Ductwork,Partition sleeve supply,4,4.0,34.7,43.8,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Exhaust collector A (behind the partition),2,18.7,23.4,102.5,See model colour
+Ductwork,Exhaust collector B (behind the partition),2,18.7,23.4,94.2,See model colour
+Ductwork,Exhaust main clean room to DV-101,1,203.5,22.0,16.0,24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee
+Ductwork,Exhaust DV-101 to air-pump unit (Cu core),3,47.4,82.2,16.0,"Copper Cu-ETP (C11000) plates 0.3 mm, both faces Ra <= 0.8 um, edges folded + sealed"
+Ductwork,HEPA bypass DV-101 to outer BIBO HEPA,2,136.0,107.0,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Ductwork,Bypass discharge FAN-103B to roof stack,5,411.0,361.0,176.2,Stainless steel 304 / clear PVC
+Ductwork,Roof sleeve common exhaust stack,4,24.6,4.0,29.5,Stainless steel 304 / clear PVC
+Ductwork,Exhaust BIBO HEPA terminal 1 (H14),1,26.0,54.0,70.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Ductwork,Exhaust BIBO HEPA terminal 1 (H14) -2,2,26.6,21.0,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Ductwork,Exhaust BIBO HEPA terminal 1 (H14) -3,1,15.8,15.8,23.2,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Ductwork,Exhaust BIBO HEPA terminal 2 (H14),1,26.0,54.0,70.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Ductwork,Exhaust BIBO HEPA terminal 2 (H14) -2,2,26.6,21.0,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Ductwork,Exhaust BIBO HEPA terminal 2 (H14) -3,1,15.8,15.8,23.2,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Ceiling BIBO HEPA terminal 1 (H14),1,86.0,36.0,86.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Ceiling BIBO HEPA terminal 1 (H14) -2,2,33.0,27.4,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Ceiling BIBO HEPA terminal 1 (H14) -3,1,21.9,21.9,32.3,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Ceiling terminal 1 face screen,1,86.0,3.0,86.0,"PMMA (cast acrylic), 5 mm, clear"
+Clean room,Ceiling terminal 1 face screen -2,4,91.0,4.0,91.0,"PMMA (cast acrylic), 5 mm, clear"
+Clean room,LAF hood H14 BIBO filter housing,1,98.0,36.0,228.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,LAF hood H14 BIBO filter housing -2,2,33.0,27.4,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,LAF hood H14 BIBO filter housing -3,1,21.9,21.9,32.1,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,LAF hood perforated outlet screen,1,92.0,3.0,222.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,LAF hood perforated outlet screen -2,4,97.0,4.0,227.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,LAF hood PVC skirts plus hangers,4,99.5,44.0,229.5,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,LAF hood PVC skirts plus hangers -2,4,81.6,124.0,211.6,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Right-wall supply plenum,3,35.0,321.5,113.0,Stainless steel 304 / clear PVC
+Clean room,Right-wall supply plenum -2,1,3.0,320.0,110.0,Stainless steel 304 / clear PVC
+Clean room,Right-wall BIBO HEPA terminal 2 (high H14),1,29.0,72.0,76.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Right-wall BIBO HEPA terminal 2 (high H14) -2,2,7.0,42.8,42.8,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Right-wall BIBO HEPA terminal 2 (high H14) -3,1,53.8,36.5,36.5,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Right-wall terminal 2 face,1,3.0,72.0,76.0,See model colour
+Clean room,Right-wall terminal 2 face -2,4,4.0,77.0,81.0,See model colour
+Clean room,Right-wall BIBO HEPA terminal 3 (low H14),1,29.0,72.0,76.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Right-wall BIBO HEPA terminal 3 (low H14) -2,2,7.0,42.8,42.8,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Right-wall BIBO HEPA terminal 3 (low H14) -3,1,53.8,36.5,36.5,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Right-wall terminal 3 face,1,3.0,72.0,76.0,See model colour
+Clean room,Right-wall terminal 3 face -2,4,4.0,77.0,81.0,See model colour
+Clean room,Low-level exhaust terminal 1 face screen,1,3.0,54.0,70.0,See model colour
+Clean room,Low-level exhaust terminal 1 face screen -2,4,4.0,59.0,75.0,See model colour
+Clean room,Low-level exhaust terminal 2 face screen,1,3.0,54.0,70.0,See model colour
+Clean room,Low-level exhaust terminal 2 face screen -2,4,4.0,59.0,75.0,See model colour
 Clean room,LED clean-room luminaire,1,220.0,3.0,60.0,See model colour
-Clean room,Staging bench plus vial tray,6,140.0,128.0,80.0,Glass vial with product and rubber stopper
+Clean room,Staging bench plus vial tray,6,120.0,128.0,80.0,Glass vial with product and rubber stopper
 Clean room,Staging bench plus vial tray -2,1,70.0,5.0,44.0,Glass vial with product and rubber stopper
 Clean room,Staging bench plus vial tray -3,8,55.0,16.0,30.0,Glass vial with product and rubber stopper
 Clean room,Pass box,14,120.0,230.0,100.0,Stainless steel 304 with glass vision panels
@@ -159,38 +164,57 @@ Clean room,Pass box outer door -3,1,5.0,26.0,5.0,Stainless steel 304 with glass 
 Clean room,Pass box inner door,1,96.0,96.0,3.0,Stainless steel 304 with glass vision panels
 Clean room,Pass box inner door -2,1,56.0,54.0,3.6,Stainless steel 304 with glass vision panels
 Clean room,Pass box inner door -3,1,5.0,26.0,5.0,Stainless steel 304 with glass vision panels
-Clean room,Vial filling machine,5,222.0,107.0,84.0,Glass vial with product and rubber stopper
-Clean room,Vial filling machine -2,23,244.0,186.0,114.5,Glass vial with product and rubber stopper
-Clean room,Vial filling machine -3,3,172.0,64.0,1.5,Glass vial with product and rubber stopper
-Clean room,Vial filling machine -4,4,240.0,82.0,110.0,Glass vial with product and rubber stopper
-Clean room,Vial filling machine -5,4,115.0,15.0,26.0,Glass vial with product and rubber stopper
+Clean room,Vial filling machine,5,84.0,107.0,222.0,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -2,23,114.5,186.0,244.0,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -3,3,1.5,64.0,172.0,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -4,4,110.0,82.0,240.0,Glass vial with product and rubber stopper
+Clean room,Vial filling machine -5,4,26.0,15.0,115.0,Glass vial with product and rubber stopper
 Clean room,Vial filling machine -6,1,8.4,8.0,8.4,Glass vial with product and rubber stopper
 Clean room,Vial filling machine -7,1,8.4,8.0,8.4,Glass vial with product and rubber stopper
 Clean room,Vial filling machine -8,1,8.4,8.0,8.4,Glass vial with product and rubber stopper
 Clean room,Infeed turntable,2,56.4,8.0,56.4,Stainless steel 316L / polycarbonate RABS
-Clean room,Vial,25,221.9,15.0,44.8,Glass vial with product and rubber stopper
-Clean room,Vial -2,13,118.6,8.0,34.7,Glass vial with product and rubber stopper
-Clean room,Vial -3,9,69.0,4.5,37.1,Glass vial with product and rubber stopper
+Clean room,Vial,25,44.8,15.0,221.9,Glass vial with product and rubber stopper
+Clean room,Vial -2,13,34.7,8.0,118.6,Glass vial with product and rubber stopper
+Clean room,Vial -3,9,37.1,4.5,69.0,Glass vial with product and rubber stopper
 Clean room,Outfeed accumulation table,2,46.4,8.0,46.4,Stainless steel 316L / polycarbonate RABS
-Clean room,Filling needle carriage,1,10.0,10.0,24.0,Stainless steel 316L needles on aluminium carriage
-Clean room,Filling needle carriage -2,4,1.4,20.0,19.4,Stainless steel 316L needles on aluminium carriage
+Clean room,Filling needle carriage,1,24.0,10.0,10.0,Stainless steel 316L needles on aluminium carriage
+Clean room,Filling needle carriage -2,4,19.4,20.0,1.4,Stainless steel 316L needles on aluminium carriage
 Clean room,Product holding tank,3,28.0,60.0,28.0,Stainless steel 316L / polycarbonate RABS
-Clean room,Peristaltic dosing pump,1,22.0,20.0,16.0,"Peristaltic dosing pump, stainless housing"
-Clean room,Peristaltic dosing pump -2,1,5.5,15.0,15.3,"Peristaltic dosing pump, stainless housing"
-Clean room,Product hose,1,46.3,57.2,20.0,Platinum-cured silicone tubing
+Clean room,Peristaltic dosing pump,1,16.0,20.0,22.0,"Peristaltic dosing pump, stainless housing"
+Clean room,Peristaltic dosing pump -2,1,15.3,15.0,5.5,"Peristaltic dosing pump, stainless housing"
+Clean room,Product hose,1,20.0,57.2,46.3,Platinum-cured silicone tubing
 Clean room,Stopper vibratory bowl,1,18.0,24.0,18.0,Stainless steel 316L / polycarbonate RABS
 Clean room,Stopper vibratory bowl -2,1,36.0,14.0,36.0,Stainless steel 316L / polycarbonate RABS
-Clean room,Stopper chute,1,18.5,21.5,23.6,Stainless steel 316L / polycarbonate RABS
-Clean room,Stopper press head,1,12.0,10.0,14.0,Stainless steel 316L / polycarbonate RABS
-Clean room,Filler operator panel,1,36.0,24.1,7.2,Filler HMI panel
-Clean room,Operator (Grade B gown),2,41.0,13.0,30.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
-Clean room,Operator (Grade B gown) -2,13,76.3,238.5,96.1,"Operator figure (e.g. PLA print), cleanroom gown colours"
-Clean room,Operator (Grade B gown) -3,1,1.8,72.0,1.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
-Clean room,Operator (Grade B gown) -4,1,12.0,8.0,1.2,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Stopper chute,1,23.6,21.5,18.5,Stainless steel 316L / polycarbonate RABS
+Clean room,Stopper press head,1,14.0,10.0,12.0,Stainless steel 316L / polycarbonate RABS
+Clean room,Filler operator panel,1,7.2,24.1,36.0,Filler HMI panel
+Clean room,Operator (Grade B gown),2,30.0,13.0,41.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -2,13,96.1,238.5,76.3,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -3,1,1.0,72.0,1.8,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -4,1,1.2,8.0,12.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
 Clean room,Operator (Grade B gown) -5,1,13.0,12.0,13.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
-Clean room,Operator (Grade B gown) -6,1,25.0,8.5,5.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
-Clean room,Operator (Grade B gown) -7,1,20.0,10.5,4.5,"Operator figure (e.g. PLA print), cleanroom gown colours"
-Clean room,Operator (Grade B gown) -8,2,42.1,13.0,12.4,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -6,1,5.0,8.5,25.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -7,1,4.5,10.5,20.0,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Clean room,Operator (Grade B gown) -8,2,12.4,13.0,42.1,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,PT-102 exhaust particle sensor,1,30.0,26.0,22.0,"Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,PT-102 exhaust particle sensor -2,1,20.0,10.0,1.2,"Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,PT-102 exhaust particle sensor -3,1,3.6,16.0,3.6,"Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,TT-107 exhaust air T (DS18B20),1,9.0,9.0,9.0,See model colour
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,DV-101 diverter damper plus spring-return actuator,1,28.0,28.0,24.0,24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,DV-101 diverter damper plus spring-return actuator -2,1,18.0,18.0,13.0,24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,DV-101 diverter damper plus spring-return actuator -3,1,5.0,5.0,4.0,24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,DV-101 diverter damper plus spring-return actuator -4,1,24.0,1.2,19.0,24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,Outer BIBO HEPA housing (H14 police filter),1,64.0,60.0,60.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,Outer BIBO HEPA housing (H14 police filter) -2,2,48.4,42.8,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,Outer BIBO HEPA housing (H14 police filter) -3,1,36.5,36.5,53.8,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,FAN-103B HEPA-bypass exhaust fan,1,24.0,44.0,44.0,Filter media in aluminium frame
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,FAN-103B HEPA-bypass exhaust fan -2,1,24.0,24.0,16.0,Filter media in aluminium frame
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,Outer HEPA wall shelf,3,143.0,67.7,66.0,Filter media in aluminium frame
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,Backdraft damper normal exhaust,1,20.0,26.0,5.0,See model colour
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,Backdraft damper normal exhaust -2,1,16.0,17.2,10.0,See model colour
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,Backdraft damper HEPA bypass,1,5.0,26.0,20.0,Filter media in aluminium frame
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,Backdraft damper HEPA bypass -2,1,10.0,17.2,16.0,Filter media in aluminium frame
+Exhaust safety PT-102 plus DV-101 plus outer HEPA,Exhaust stack rain cap,1,44.0,14.0,44.0,Stainless steel 304 / clear PVC
 Controls and HMI,Main controller PCB,1,180.0,120.0,1.6,FR4 2-layer PCB 1.6 mm + components
 Controls and HMI,Main controller PCB -2,9,173.0,113.0,23.3,FR4 2-layer PCB 1.6 mm + components
 Controls and HMI,Main controller PCB -3,9,151.0,38.0,3.6,FR4 2-layer PCB 1.6 mm + components
@@ -216,52 +240,54 @@ Controls and HMI,PT-101 air particle sensor -3,1,4.0,2.5,1.2,"Laser particle cou
 Controls and HMI,PT-101 air particle sensor -4,1,24.0,7.0,10.0,"Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"
 Controls and HMI,PT-101 air particle sensor -5,4,22.0,21.5,12.0,"Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"
 Controls and HMI,PT-101 isokinetic probe,2,9.0,23.0,9.0,Stainless steel 316L isokinetic sampling probe
-Controls and HMI,PT-101 sample tube,1,51.6,81.5,159.3,"Conductive PU sample tubing, 4 mm OD"
+Controls and HMI,PT-101 sample tube,1,72.5,81.4,203.2,"Conductive PU sample tubing, 4 mm OD"
 PCB wiring harness,PCB strip TT-101,5,195.5,273.8,220.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip TT-101 copper,15,194.5,272.8,219.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip FT-101,5,203.3,273.6,246.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip FT-101 copper,15,202.3,272.6,245.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip FAN-101,5,109.1,273.4,120.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip FAN-101 copper,15,108.1,272.4,119.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip SV-101,5,18.4,273.1,288.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip SV-101 copper,15,17.4,272.1,287.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-102,5,32.6,272.9,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-102 copper,15,31.6,271.9,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip EEV-101,5,14.9,272.7,289.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip EEV-101 copper,15,13.9,271.7,288.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-103,5,39.6,272.5,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-103 copper,15,38.6,271.5,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip CMP-101,5,44.7,272.3,281.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip CMP-101 copper,15,43.7,271.3,280.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-104,5,63.6,272.0,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-104 copper,15,62.6,271.0,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip HTR-101,5,66.7,271.8,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip HTR-101 copper,15,65.7,270.8,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip HUM-101,5,65.9,271.6,291.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip HUM-101 copper,15,64.9,270.6,290.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip FAN-102,5,70.2,271.4,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip FAN-102 copper,15,69.2,270.4,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip PDT-102,5,77.5,271.2,285.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip PDT-102 copper,15,76.5,270.2,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-105,5,76.9,270.9,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-105 copper,15,75.9,269.9,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-107,5,83.3,270.7,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-107 copper,15,82.3,269.7,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip FT-102,5,134.5,270.5,345.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip FT-102 copper,15,133.5,269.5,344.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip FAN-103,5,149.6,270.3,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip FAN-103 copper,15,148.5,269.3,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip FAN-103B,5,268.8,270.1,190.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip FAN-103B copper,15,267.8,269.1,189.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-108,5,260.6,269.8,190.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-108 copper,15,259.6,268.8,189.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-106,5,588.3,269.6,138.5,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip TT-106 copper,15,587.3,268.6,137.5,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip PDT-101,5,145.5,280.4,132.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip PDT-101 copper,15,144.5,279.4,131.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip PSU,5,250.3,269.2,138.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip PSU copper,15,249.3,268.2,137.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip PT-101,5,432.9,269.0,156.5,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
-PCB wiring harness,PCB strip PT-101 copper,15,431.9,268.0,155.5,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-109,5,48.7,273.1,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-109 copper,15,47.7,272.1,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip EEV-101,5,22.7,272.9,289.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip EEV-101 copper,15,21.7,271.9,288.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-103,5,47.4,272.7,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-103 copper,15,46.4,271.7,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip CMP-101,5,36.9,272.5,281.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip CMP-101 copper,15,35.9,271.5,280.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-104,5,71.4,272.3,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-104 copper,15,70.4,271.3,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip HTR-101,5,74.5,272.0,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip HTR-101 copper,15,73.5,271.0,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip HUM-101,5,73.7,271.8,291.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip HUM-101 copper,15,72.7,270.8,290.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip FAN-102,5,78.0,271.6,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip FAN-102 copper,15,77.0,270.6,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PDT-102,5,85.3,271.4,285.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PDT-102 copper,15,84.3,270.4,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-105,5,84.7,271.2,284.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-105 copper,15,83.7,270.2,283.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip FT-102,5,150.1,270.9,345.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip FT-102 copper,15,149.1,269.9,344.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-107,5,45.3,270.7,187.8,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-107 copper,15,44.3,269.7,186.8,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PT-102,5,9.5,270.5,193.8,Particle sensor SPS30 (indicative) with sample probe
+PCB wiring harness,PCB strip PT-102 copper,15,8.5,269.5,192.8,Particle sensor SPS30 (indicative) with sample probe
+PCB wiring harness,PCB strip DV-101,5,74.3,270.3,204.8,24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee
+PCB wiring harness,PCB strip DV-101 copper,15,73.3,269.3,203.8,24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee
+PCB wiring harness,PCB strip FAN-103,5,268.8,270.1,190.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip FAN-103 copper,15,267.8,269.1,189.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip FAN-103B,5,290.9,269.8,203.9,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip FAN-103B copper,15,289.9,268.8,202.9,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-108,5,268.4,269.6,190.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-108 copper,15,267.4,268.6,189.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-106,5,580.5,269.4,144.5,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip TT-106 copper,15,579.5,268.4,143.5,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PDT-101,5,137.7,280.2,138.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PDT-101 copper,15,136.7,279.2,137.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PSU,5,258.1,269.0,144.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PSU copper,15,257.1,268.0,143.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PT-101,5,425.1,268.7,162.5,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
+PCB wiring harness,PCB strip PT-101 copper,15,424.1,267.7,161.5,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip HMI-101,5,250.5,108.5,494.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"
 PCB wiring harness,PCB strip HMI-101 copper,15,249.5,107.5,493.0,"FR4 flex/rigid strip, 1 mm, ENIG copper tracks"

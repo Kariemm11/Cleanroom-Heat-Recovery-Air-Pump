@@ -15,7 +15,6 @@ struct Pwm { int pin, ch; uint32_t hz; uint8_t bits; };
 const Pwm FAN101{PIN_FAN101_PWM, 0, FAN_PWM_HZ, FAN_PWM_BITS};
 const Pwm FAN102{PIN_FAN102_PWM, 1, FAN_PWM_HZ, FAN_PWM_BITS};
 const Pwm FAN103{PIN_FAN103_PWM, 2, FAN_PWM_HZ, FAN_PWM_BITS};
-const Pwm SERVO{PIN_SV101, 3, SERVO_HZ, SERVO_BITS};
 const Pwm CMP{PIN_CMP101, 4, CMP_PWM_HZ, CMP_PWM_BITS};
 const Pwm HTR{PIN_HTR101, 5, HEAT_PWM_HZ, HEAT_PWM_BITS};
 const Pwm HUM{PIN_HUM101, 6, HEAT_PWM_HZ, HEAT_PWM_BITS};
@@ -37,11 +36,8 @@ void pwmWrite(const Pwm& p, float duty01) {
 #endif
 }
 void fanWrite(const Pwm& p, float u) { pwmWrite(p, FAN_PWM_INVERTED ? 1.0f - u : u); }
-void servoWrite(float u) {                          // u: 0 = recirculation, 1 = full fresh air
-  float deg = rig::clampf(u, 0, 1) * DAMPER_DEG_FULL;
-  float us = SERVO_US_0 + (SERVO_US_180 - SERVO_US_0) * deg / 180.0f;
-  pwmWrite(SERVO, us / (1e6f / SERVO_HZ));
-}
+// DV-101: energise to send the exhaust to the air pump; de-energised it springs to the outer HEPA
+void diverterWrite(float dv) { digitalWrite(PIN_DV101, dv < 0.5f ? HIGH : LOW); }
 
 // EEV: non-blocking stepping toward a target position
 volatile int eevPos = 0;
@@ -54,7 +50,8 @@ bool eevHomed = false;
 namespace actuators {
 
 void begin() {
-  for (const Pwm* p : {&FAN101, &FAN102, &FAN103, &SERVO, &CMP, &HTR, &HUM}) pwmSetup(*p);
+  for (const Pwm* p : {&FAN101, &FAN102, &FAN103, &CMP, &HTR, &HUM}) pwmSetup(*p);
+  pinMode(PIN_DV101, OUTPUT);
   pinMode(PIN_RV101, OUTPUT);
   pinMode(PIN_EEV_STEP, OUTPUT);
   pinMode(PIN_EEV_DIR, OUTPUT);
@@ -70,7 +67,7 @@ void begin() {
 
 void allOff() {
   fanWrite(FAN101, 0); fanWrite(FAN102, 0); fanWrite(FAN103, 0);
-  servoWrite(0);
+  diverterWrite(1);                                 // fail-safe: exhaust through the outer HEPA
   pwmWrite(CMP, 0); pwmWrite(HTR, 0); pwmWrite(HUM, 0);
   digitalWrite(PIN_RV101, LOW);
   eevTarget = 0;
@@ -80,7 +77,7 @@ void apply(const rig::Outputs& u) {
   fanWrite(FAN101, u.fa);
   fanWrite(FAN102, u.sf);
   fanWrite(FAN103, u.ef);
-  servoWrite(u.dmp);
+  diverterWrite(u.dv);
   // 0–3.3 V PWM → RC filter → LM358 gain 1.5 → 0–5 V speed input; 0 = compressor off
   pwmWrite(CMP, u.cmp >= CMP_MIN_U ? u.cmp : 0.0f);
   pwmWrite(HTR, u.rh);

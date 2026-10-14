@@ -9,6 +9,7 @@ const AlarmDef ALARMS[ALARM_COUNT] = {
     {"A03", "Clean-room pressure high", 15, false},
     {"A04", "Clean-room RH out of band", 120, false},
     {"A05", "Evaporator at frost limit, air pump capped", 30, false},
+    {"A06", "Exhaust contaminated (PT-102): diverted to the outer BIBO HEPA", 5, true},
     {"A07", "Supply temperature off set point", 90, false},
     {"A08", "ACH below 20 /h", 30, false},
     {"A09", "HEPA dP high, check filter", 10, false},
@@ -29,13 +30,13 @@ const char* gradeOf(float c05, float c5) {
 
 Controller::Controller() {
   L[0].init("L1 supply airflow -> FAN-102", 0.8f, 1.5f, 0, 1);
-  L[1].init("L2 fresh-air flow -> FAN-101", 1.0f, 1.5f, 0, 1);
-  L[2].init("L3 mixed-air temp -> SV-101 damper", 3.0f, 6.0f, 0, 1);
+  L[1].init("L2 fresh-air header balance -> FAN-101", 1.0f, 1.5f, 0, 1);
+  L[2].init("L3 exhaust particles -> DV-101 (2-position)", 1.0f, 1.0f, 0, 1);
   L[3].init("L4 coil leaving temp -> CMP-101", 1.4f, 18.0f, 0, 1);
   L[4].init("L5 supply temp -> HTR-101", 1.6f, 14.0f, 0, 1);
   L[5].init("L6 room RH -> HUM-101 / coil reset", 2.0f, 120.0f, 0, 1);
   L[6].init("L7 room pressure -> FAN-103", 0.35f, 1.5f, 0, 1);
-  L[2].i = sp.oaMin / 100.0f;
+  L[2].out = 1.0f;            // the exhaust starts on the HEPA bypass until PT-102 proves it clean
   pendingSeason = season;
 }
 
@@ -51,20 +52,15 @@ void Controller::step(const Measured& m, float dt) {
   const SeasonSP& S = seasonSP();
 
   // control inputs: a missing one freezes the loops that need it and raises A13
-  const bool flowOk = ok(m.FT102), faOk = ok(m.FT101), mixOk = ok(m.TT102) && ok(m.TT101) && ok(m.TT107);
+  const bool flowOk = ok(m.FT102), faOk = ok(m.FT101), pxOk = ok(m.PT102);
   const bool coilOk = winter ? ok(m.TT103) : ok(m.TT104), supOk = ok(m.TT105), rhOk = ok(m.MT106), dpOk = ok(m.PDT101);
   const bool proving = flowOk && m.FT102 > 0.25f * sp.flow && m.FT102 > 0.5f;
 
   Outputs tgt;
   if (on) {
     if (flowOk) L[0].run((sp.flow - m.FT102) / 20.0f, dt);
-    if (mixOk) {
-      const bool colderOA = m.TT101 < m.TT107;                  // economiser: action flips when outdoor air is warmer
-      L[2].lo = sp.oaMin / 100.0f;
-      L[2].run((m.TT102 - S.mix) / 50.0f * (colderOA ? 1.0f : -1.0f), dt);
-    }
-    const float fd = L[2].out;
-    if (flowOk && faOk) L[1].run((fd * m.FT102 - m.FT101) / 20.0f, dt);
+    // L2: 100 % fresh air, so the fresh-air compressor keeps the header balanced (FT-101 follows FT-102)
+    if (flowOk && faOk) L[1].run((m.FT102 - m.FT101) / 20.0f, dt);
     if (rhOk) { float e6 = (sp.rh - m.MT106) / 100.0f; L[5].run(winter ? e6 : -e6, dt); }
     const float reset = winter ? 0.0f : 6.0f * L[5].out;          // summer: lower the coil set point to dehumidify
     k.coilSP = S.coil - reset;
@@ -72,18 +68,32 @@ void Controller::step(const Measured& m, float dt) {
     if (supOk) L[4].run((S.sup - m.TT105) / 50.0f, dt);
     if (dpOk) L[6].run((m.PDT101 - sp.dp) / 100.0f, dt);
     if (!proving) { L[3].i = fminf(L[3].i, 0); L[4].i = fminf(L[4].i, 0); }
+    // winter: the evaporator lives in the exhaust lane, so no exhaust air (bypass) = no air pump
+    const bool hpOk = !winter || (recovery && !diverted);
+    if (!hpOk) L[3].i = fminf(L[3].i, 0);
 
     // frost protection (winter): pull the compressor back while the exhaust leaves the coil below −3 °C
-    frost = winter && recovery && ok(m.TT108) && m.TT108 < -3.0f;
+    frost = winter && recovery && !diverted && ok(m.TT108) && m.TT108 < -3.0f;
 
-    tgt.sf = L[0].out; tgt.fa = L[1].out; tgt.dmp = L[2].out; tgt.ef = L[6].out;
-    tgt.cmp = (proving && (recovery || !winter)) ? L[3].out : 0.0f;
+    tgt.sf = L[0].out; tgt.fa = L[1].out; tgt.ef = L[6].out;
+    tgt.cmp = (proving && hpOk) ? L[3].out : 0.0f;
     if (frost) tgt.cmp = fminf(tgt.cmp, u.cmp - 0.05f * dt);    // ramp down while frosting
     tgt.rh = proving ? L[4].out : 0.0f;
     tgt.hum = (proving && winter && (!ok(m.MT105) || m.MT105 < 85.0f)) ? L[5].out : 0.0f;
     // PTC only with the supply fan proven turning
     if (ok(m.rpm102) && m.rpm102 < 300.0f) tgt.rh = 0, tgt.hum = 0;
   }
+
+  // L3 exhaust diverter (2-position, runs even with RUN off): PT-102 above the trip level for 5 s →
+  // DV-101 to the outer BIBO HEPA; back to the air pump only after 60 s below the reset level.
+  // A missing PT-102 reading counts as contaminated (fail-safe). Manual: MAN L3 0 = air pump, ≥50 = HEPA.
+  tripS = (!pxOk || m.PT102 > sp.pxTrip) ? tripS + dt : 0;
+  holdS = (pxOk && m.PT102 < sp.pxReset) ? holdS + dt : 0;
+  L[2].e = pxOk ? (m.PT102 - sp.pxTrip) / sp.pxTrip : 1.0f;
+  if (L[2].man) L[2].out = L[2].mv >= 0.5f ? 1.0f : 0.0f;
+  else if (L[2].out < 0.5f && tripS >= 5.0f) L[2].out = 1.0f;
+  else if (L[2].out >= 0.5f && holdS >= 60.0f) L[2].out = 0.0f;
+  tgt.dv = on ? L[2].out : 1.0f;              // RUN off: the actuator is de-energised and springs to the HEPA
 
   // compressor protection: below the driver's minimum speed it is off; min off / min run times;
   // a season change stops it, waits for the pressures to equalise, then switches the 4-way valve
@@ -108,17 +118,18 @@ void Controller::step(const Measured& m, float dt) {
   u.sf = slewTo(u.sf, tgt.sf, 0.5f, dt);
   u.fa = slewTo(u.fa, tgt.fa, 0.5f, dt);
   u.ef = slewTo(u.ef, tgt.ef, 0.5f, dt);
-  u.dmp = slewTo(u.dmp, tgt.dmp, 1.6f, dt);
+  u.dv = slewTo(u.dv, tgt.dv, 0.1f, dt);      // 10 s stroke (spring return about the same)
   u.cmp = slewTo(u.cmp, tgt.cmp, 0.1f, dt);
   u.rh = slewTo(u.rh, tgt.rh, 0.5f, dt);
   u.hum = slewTo(u.hum, tgt.hum, 0.5f, dt);
-  if (!on) u = Outputs{};
+  if (!on) { float dv = u.dv; u = Outputs{}; u.dv = dv; }
+  diverted = u.dv > 0.5f;
   u.rvCooling = season == Season::Summer;
   u.eevSteps = u.cmp > 0.01f ? (int)(80 + 400 * u.cmp) : 0;
 
   // KPIs
   k.ach = flowOk ? m.FT102 / (0.4925f * 0.490f * 0.395f) : NAN;
-  k.f = (flowOk && faOk && m.FT102 > 0.1f) ? clampf(m.FT101 / m.FT102, 0, 1) : NAN;
+  k.f = 1.0f;                                 // 100 % fresh air
   k.roomGrade = gradeOf(m.PT101, m.PT101R5);
   k.fillGrade = gradeOf(m.PT101A, m.PT101A5);
   energy(m, dt);
@@ -135,9 +146,9 @@ void Controller::energy(const Measured& m, float dt) {
   k.P = Pcmp + Pfans + Pheat + Pctl;
 
   float Pb = NAN;
-  if (ok(m.FT102) && ok(m.FT101) && ok(m.TT101) && ok(m.TT107) && ok(m.TT105)) {
-    const float Q = fmaxf(m.FT102, 0), f = Q > 0.1f ? clampf(m.FT101 / Q, 0, 1) : 0, Cs = capRate(Q);
-    const float Tmb = f * m.TT101 + (1 - f) * m.TT107;
+  if (ok(m.FT102) && ok(m.TT101) && ok(m.TT105)) {
+    const float Q = fmaxf(m.FT102, 0), Cs = capRate(Q);
+    const float Tmb = m.TT101;                                  // 100 % fresh air straight from outdoors
     const float Phum = u.hum * sp.humRatedW;
     float Phc = 0, Preheat = 0;
     if (winter && ok(m.TT103)) {
@@ -145,7 +156,7 @@ void Controller::energy(const Measured& m, float dt) {
       Preheat = Cs * fmaxf(0, m.TT105 - m.TT103 - 0.15f);       // electric reheat (less fan heat)
     } else if (!winter && ok(m.TT104)) {
       float wmb = NAN, wcc = NAN;
-      if (ok(m.MT101) && ok(m.TT106) && ok(m.MT106)) wmb = f * wFromRH(m.TT101, m.MT101) + (1 - f) * wFromRH(m.TT106, m.MT106);
+      if (ok(m.MT101)) wmb = wFromRH(m.TT101, m.MT101);
       if (ok(m.MT105)) wcc = wFromRH(m.TT105, m.MT105);
       float lat = (ok(wmb) && ok(wcc)) ? (Q * RHO / 3600.0f) * HFG * fmaxf(0, wmb - wcc) : 0;
       Phc = (Cs * fmaxf(0, Tmb - m.TT104) + lat) / sp.copBase;  // plain chiller
@@ -169,13 +180,14 @@ void Controller::alarms(const Measured& m, float dt) {
   c[A03] = on && ok(m.PDT101) && m.PDT101 > 40.0f;
   c[A04] = on && ok(m.MT106) && fabsf(m.MT106 - sp.rh) > 10.0f;
   c[A05] = on && frost;
+  c[A06] = !ok(m.PT102) || m.PT102 > sp.pxTrip;
   c[A07] = on && ok(m.TT105) && fabsf(m.TT105 - S.sup) > 2.0f;
   c[A08] = on && ok(k.ach) && k.ach < 20.0f;
   c[A09] = on && ok(m.PDT102) && m.PDT102 > 450.0f;
   c[A10] = ok(m.PT101) && m.PT101 > 0.7f * 352000.0f && m.PT101 <= 352000.0f;
   c[A11] = ok(m.PT101) && m.PT101 > 352000.0f;
   c[A12] = ok(m.PT101A) && m.PT101A > 3520.0f;
-  c[A13] = on && (!ok(m.FT102) || !ok(m.FT101) || !ok(m.TT102) || !ok(m.TT105) || !ok(m.PDT101) || !ok(m.MT106) ||
+  c[A13] = on && (!ok(m.FT102) || !ok(m.FT101) || !ok(m.PT102) || !ok(m.TT105) || !ok(m.PDT101) || !ok(m.MT106) ||
                   !(season == Season::Winter ? ok(m.TT103) : ok(m.TT104)));
   c[A14] = on && ((u.sf > 0.2f && ok(m.rpm102) && m.rpm102 < 100.0f) || (u.fa > 0.2f && ok(m.rpm101) && m.rpm101 < 100.0f) ||
                   (u.ef > 0.2f && ok(m.rpm103) && m.rpm103 < 100.0f));

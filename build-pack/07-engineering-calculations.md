@@ -302,8 +302,9 @@ Targets for a rig this size: ≤ 3 m/s in the supply main (quiet, small ΔP); �
 | Supply riser, LAF tee → right-wall plenum | 2.10 | 30.8 × 21.7 | 25.5 / 28.2 | 0.21 | 0.87 | 1 473 | laminar | 0.043 | 1 | 0.75 | 0.5 | 35 % to the 2 right-wall terminals |
 | Terminal drop 1 (ceiling) | 1.50 | 22.0 × 15.5 | 18.2 / 20.1 | 0.03 | 1.22 | 1 473 | laminar | 0.043 | 0 | 1.00 | 1.0 | 25 %; tee branch K 1.0 |
 | LAF supply drop | 2.40 | 24.2 × 17.1 | 20.0 / 22.1 | 0.20 | 1.62 | 2 143 | laminar | 0.030 | 1 | 1.27 | 2.5 | 40 %; tee branch K 1.0 |
-| Exhaust collector A (behind the partition) | 2.75 | 18.7 × 13.2 | 15.5 / 17.1 | 0.11 | 3.10 | 3 176 | transitional | 0.034 | 1 | 0.85 | 6.3 | from exhaust terminal 1 |
-| Exhaust collector B (behind the partition) | 2.75 | 18.7 × 13.2 | 15.5 / 17.1 | 0.10 | 3.10 | 3 176 | transitional | 0.034 | 1 | 0.85 | 6.2 | from exhaust terminal 2 |
+| Exhaust collector A (behind the partition) | 3.66 | 18.7 × 13.2 | 15.5 / 17.1 | 0.11 | 4.13 | 4 234 | turbulent | 0.040 | 1 | 0.85 | 11.5 | from exhaust terminals 1 + 3 |
+| Exhaust collector B (behind the partition) | 1.83 | 18.7 × 13.2 | 15.5 / 17.1 | 0.10 | 2.07 | 2 117 | laminar | 0.030 | 1 | 0.85 | 2.7 | from exhaust terminal 2 |
+| Exhaust collector C (behind the partition) | 1.83 | 18.7 × 13.2 | 15.5 / 17.1 | 0.14 | 2.07 | 2 117 | laminar | 0.030 | 1 | 0.85 | 2.9 | from exhaust terminal 3 (front, by the pass box) |
 | Exhaust main: clean room → DV-101 | 5.50 | 16.0 × 22.0 | 18.5 / 20.4 | 0.20 | 4.34 | 5 328 | turbulent | 0.037 | 0 | 0.40 | 9.1 | collector tee K 0.4 |
 | Exhaust: DV-101 → air-pump unit (Cu core) | 5.50 | 16.0 × 22.0 | 18.5 / 20.4 | 0.11 | 4.34 | 5 328 | turbulent | 0.037 | 2 | 1.00 | 13.7 | normal path |
 | Exhaust: air-pump unit → roof stack | 5.50 | 16.0 × 22.0 | 18.5 / 20.4 | 1.29 | 4.34 | 5 328 | turbulent | 0.037 | 4 | 2.00 | 51.8 | to the common stack, tee K 0.6 |
@@ -359,7 +360,7 @@ Filters are rated **clean**, at **mid-life** (halfway to final) and at **final**
 | Component | Clean (Pa) | Mid-life (Pa) | Final (Pa) | Note |
 |---|---|---|---|---|
 | H14 BIBO exhaust terminal | 120.0 | 285.0 | 450.0 | H14 BIBO terminal (supply or exhaust) |
-| Exhaust collector (duct) | 6.3 | 6.3 | 6.3 |  |
+| Exhaust collector (duct) | 11.5 | 11.5 | 11.5 |  |
 | Exhaust main (duct) | 9.1 | 9.1 | 9.1 |  |
 | DV-101 (open) | 4.0 | 4.0 | 4.0 | DV-101 open blade |
 | DV-101 → air-pump unit (duct) | 13.7 | 13.7 | 13.7 |  |
@@ -370,14 +371,14 @@ Filters are rated **clean**, at **mid-life** (halfway to final) and at **final**
 | Backdraft damper | 5.0 | 5.0 | 5.0 | backdraft damper, open |
 | Common stack + rain cap | 6.0 | 6.0 | 6.0 | rain cap |
 | Less: clean-room pressure | -15.0 | -15.0 | -15.0 |  |
-| **Total** | **291.0** | **511.0** | **731.0** |  |
+| **Total** | **296.2** | **516.2** | **736.2** |  |
 
 **FAN-103B exhaust fan (HEPA bypass): clean room → BIBO exhaust terminal → outer BIBO HEPA → roof stack** at Q = 5.50 m³/h
 
 | Component | Clean (Pa) | Mid-life (Pa) | Final (Pa) | Note |
 |---|---|---|---|---|
 | H14 BIBO exhaust terminal | 120.0 | 285.0 | 450.0 | H14 BIBO terminal (supply or exhaust) |
-| Exhaust collector (duct) | 6.3 | 6.3 | 6.3 |  |
+| Exhaust collector (duct) | 11.5 | 11.5 | 11.5 |  |
 | Exhaust main (duct) | 9.1 | 9.1 | 9.1 |  |
 | DV-101 (open to the bypass) | 4.0 | 4.0 | 4.0 | DV-101 open blade |
 | HEPA bypass (duct) | 15.7 | 15.7 | 15.7 |  |
@@ -386,14 +387,14 @@ Filters are rated **clean**, at **mid-life** (halfway to final) and at **final**
 | Bypass discharge + common stack (duct) | 53.4 | 53.4 | 53.4 |  |
 | Rain cap | 6.0 | 6.0 | 6.0 | rain cap |
 | Less: clean-room pressure | -15.0 | -15.0 | -15.0 |  |
-| **Total** | **324.5** | **654.5** | **984.5** |  |
+| **Total** | **329.8** | **659.8** | **989.8** |  |
 
 | Fan | Duty point (mid-life) | Must also reach (final, full speed) | Selection |
 |---|---|---|---|
 | FAN-102 supply | 6.00 m³/h at 951 Pa | 6.00 m³/h at 1 409 Pa | 24 V DC centrifugal (radial) blower, PWM + tach. Shut-off pressure ≥ 1 761 Pa, free air ≥ 18 m³/h |
 | FAN-101 fresh-air compressor | 6.00 m³/h at 296 Pa | 6.00 m³/h at 406 Pa | 24 V DC centrifugal blower, PWM + tach. Shut-off ≥ 508 Pa, free air ≥ 12 m³/h |
-| FAN-103 exhaust (air-pump unit) | 5.50 m³/h at 511 Pa | 5.50 m³/h at 731 Pa | 24 V DC blower ≥ 914 Pa shut-off, PWM + tach |
-| FAN-103B exhaust (outer HEPA) | 5.50 m³/h at 655 Pa | 5.50 m³/h at 985 Pa | 24 V DC blower ≥ 1 231 Pa shut-off, same PWM as FAN-103; DV-101's end switch powers the fan of the open path |
+| FAN-103 exhaust (air-pump unit) | 5.50 m³/h at 516 Pa | 5.50 m³/h at 736 Pa | 24 V DC blower ≥ 920 Pa shut-off, PWM + tach |
+| FAN-103B exhaust (outer HEPA) | 5.50 m³/h at 660 Pa | 5.50 m³/h at 990 Pa | 24 V DC blower ≥ 1 237 Pa shut-off, same PWM as FAN-103; DV-101's end switch powers the fan of the open path |
 
 The supply path is the hardest duty, because four filter stages are in series (panel, bag, H13 and the H14 BIBO terminal). If the blower you find cannot reach 1 409 Pa, change the filters earlier: panel at 100 Pa, bag at 160 Pa, both HEPAs at 300 Pa (set the A09 limit to 300). That brings the final point down to **969 Pa**, which 75–97 mm high-pressure 24 V blowers can reach. Read each BIBO terminal's ΔP on its gauge port at every filter check.
 
@@ -401,9 +402,9 @@ Fan affinity for retuning: `Q₂/Q₁ = n₂/n₁`, `ΔP₂/ΔP₁ = (n₂/n₁)
 
 ## 13. Actuator sizing
 
-**DV-101 exhaust diverter.** A two-way blade in a tee at the end of the exhaust main (section 16.0 × 22.0 mm). The worst close-off pressure is the higher fan path at its final point, 985 Pa.
+**DV-101 exhaust diverter.** A two-way blade in a tee at the end of the exhaust main (section 16.0 × 22.0 mm). The worst close-off pressure is the higher fan path at its final point, 990 Pa.
 ```
-aerodynamic torque   T_a ≈ ΔP · A · c / 4 = 985 · 0.000352 · 0.022 / 4 = 0.00191 N·m
+aerodynamic torque   T_a ≈ ΔP · A · c / 4 = 990 · 0.000352 · 0.022 / 4 = 0.00192 N·m
 seal torque          T_s ≈ 5 N·m per m² of blade × 2 seats = 0.00352 N·m      linkage ≈ 0.02 N·m
 required             T = 0.0254 N·m   → with ×3 margin 0.0763 N·m
 ```

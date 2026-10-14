@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-14c';
+var BUILD='2026-10-14d';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -809,10 +809,11 @@ duct('LAF supply drop',[[30.5,RY,0],[30.5,RY-1.4,-4],[30.5,LAF.y1+0.2,-4]],1.1);
 flangeRing('Partition sleeve: supply',0,RY,RZ,1.4,'x');
 /* exhaust: low-level BIBO HEPA exhaust terminals in the partition → collector → PT-102 → DV-101 →
    straight to the air-pump unit (Cu core). Nothing goes back to the AHU. */
-var GRILLE=[[6.9,3],[6.9,-13]];                                // low-level exhaust terminals: centre y, z
+var GRILLE=[[6.9,3],[6.9,-13],[6.9,17]];                       // low-level exhaust terminals: centre y, z (3 = front, by the pass box)
 var EXY=11, EXZ=P_HR_EXIN.z, DVX=-23.5;                          // exhaust main height, line, diverter position
 duct('Exhaust collector A (behind the partition)',[[-1.75,9.6,GRILLE[0][1]],[-1.75,EXY,GRILLE[0][1]],[-1.75,EXY,EXZ-0.9]],0.85);
 duct('Exhaust collector B (behind the partition)',[[-1.75,9.6,GRILLE[1][1]],[-1.75,EXY,GRILLE[1][1]],[-1.75,EXY,EXZ+0.9]],0.85);
+duct('Exhaust collector C (behind the partition)',[[-1.75,9.6,GRILLE[2][1]],[-1.75,EXY,GRILLE[2][1]],[-1.75,EXY,GRILLE[0][1]+0.9]],0.85);
 duct('Exhaust main: clean room → DV-101',[[-1.75,EXY,EXZ],[DVX+1.4,EXY,EXZ]],0.75,null,null,null,LANE);
 duct('Exhaust: DV-101 → air-pump unit (Cu core)',[[DVX-1.4,EXY,EXZ],[-27.2,EXY,EXZ],[-27.2,P_HR_EXIN.y,EXZ],[P_HR_EXIN.x+0.45,P_HR_EXIN.y,EXZ]],0.75,null,null,null,LANE);
 /* the HEPA bypass climbs from DV-101 and runs to the front of the plant room, towards the partition; the outer
@@ -987,7 +988,7 @@ DIFF.forEach(function(d,i){
 GRILLE.forEach(function(gr,i){
   var y=gr[0], z=gr[1];
   hepaFace('Low-level exhaust terminal '+(i+1)+' face screen',TH/2+0.2,y,z,5.4,7.0,'x');
-  bibo('Exhaust BIBO HEPA terminal '+(i+1)+' (H14)',-1.6,y,z,2.6,5.4,7.0,i?'-z':'+z',rigDucts);
+  bibo('Exhaust BIBO HEPA terminal '+(i+1)+' (H14)',-1.6,y,z,2.6,5.4,7.0,i===1?'-z':'+z',rigDucts);
 });
 (function ledPanel(){
   var m=at(box(22,0.3,6,MR.led),24,CEIL-0.25,-15); tag(m,'LED clean-room luminaire'); clean.add(m);
@@ -1473,6 +1474,7 @@ var PATHS={
          [-7.1,YS,0,0.84,'f','tin'],[-5.7,YS,0,0.80,'f','tin'],[-4.3,YS,0,0.84,'f','t2'],[-3.9,YS,0,0.88,'f','t2']].concat(TRAIN_C)),
   /* exhaust: low-level BIBO terminals → collector → PT-102 → DV-101 → Cu core (or the outer HEPA) */
   exA: [[0.6,GRILLE[0][0],GRILLE[0][1],1.0,'r','ret'],[-1.6,GRILLE[0][0],GRILLE[0][1],1.0,'r','ret'],[-1.75,EXY,GRILLE[0][1],0.8,'r','ret'],[-1.75,EXY,EXZ,0.8,'r','ret']],
+  exC: [[0.6,GRILLE[2][0],GRILLE[2][1],1.0,'r','ret'],[-1.6,GRILLE[2][0],GRILLE[2][1],1.0,'r','ret'],[-1.75,EXY,GRILLE[2][1],0.8,'r','ret'],[-1.75,EXY,EXZ,0.8,'r','ret']],
   exB: [[0.6,GRILLE[1][0],GRILLE[1][1],1.0,'r','ret'],[-1.6,GRILLE[1][0],GRILLE[1][1],1.0,'r','ret'],[-1.75,EXY,GRILLE[1][1],0.8,'r','ret'],[-1.75,EXY,EXZ,0.8,'r','ret']],
   exMain: [[-1.75,EXY,EXZ,0.75,'r','ret'],[-14.2,EXY,EXZ,0.75,'r','ret'],[-17,EXY,EXZ,0.75,'r','ret'],[DVX,EXY,EXZ,0.75,'r','ret']],
   exCore: [[DVX,EXY,EXZ,0.6,'r','r1'],[-27.2,EXY,EXZ,0.6,'r','r1'],[-27.2,P_HR_EXIN.y,EXZ,0.6,'r','r1'],[P_HR_EXIN.x+0.4,P_HR_EXIN.y,EXZ,0.55,'r','r1']].concat(cw([
@@ -1492,6 +1494,7 @@ var RISER0=[[P_AHU_SUP.x-0.2,P_AHU_SUP.y,P_AHU_SUP.z,1.0,'m','sup'],[RX,P_AHU_SU
 PATHS.riserA=RISER0.concat([[14,CEIL+1.4,0,0.9,'m','sup'],[14,CEIL+0.2,0,1.1,'m','sup']]);
 PATHS.riserB=RISER0.concat([[30.5,RY,0,1.0,'m','sup'],[(RWP.x0+RWP.x1)/2,RY,0,1.0,'m','sup'],[(RWP.x0+RWP.x1)/2,CEIL,0,1.0,'m','sup'],[(RWP.x0+RWP.x1)/2,31,-1,1.1,'m','sup']]);
 PATHS.riserC=RISER0.concat([[30.5,RY,0,1.0,'m','sup'],[30.5,RY-1.4,-4,0.9,'m','sup'],[30.5,LAF.y1+0.4,-4,0.9,'m','sup'],[30.5,LAF.y0+0.8,-4,1.2,'m','sup']]);
+function GZ(z){ return z>11?GRILLE[2][1]:(z>-5?GRILLE[0][1]:GRILLE[1][1]); }   // nearest low-level exhaust terminal
 PATHS.room=[];
 DIFF.forEach(function(d){
   [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(dr){
@@ -1500,7 +1503,7 @@ DIFF.forEach(function(d){
     var reach=Math.max(3,dist-3.5);
     var x2=xd+dr[0]*reach, z2=zd+dr[1]*reach;
     if(x2>PBX.x0-3 && x2<PBX.x1+3 && z2>PBX.zi-4) x2=PBX.x1+4;     // go round the pass box
-    var gz=z2>-5?GRILLE[0][1]:GRILLE[1][1], gy=GRILLE[0][0];
+    var gz=GZ(z2), gy=GRILLE[0][0];
     PATHS.room.push([[xd,CEIL-0.6,zd,1.4,'m','sup'],[xd+dr[0]*5.5,CEIL-1.6,zd+dr[1]*5.5,2.2,'m','sup'],
       [x2,CEIL-5,z2,3.0,'m','room'],[x2,24,z2,3.6,'m','room'],[x2,9,z2,3.4,'r','room'],
       [Math.min(7,Math.max(x2,4)),5.0,(z2+gz)/2,2.6,'r','room'],[3.2,gy,gz,1.8,'r','ret'],[0.6,gy,gz,1.4,'r','ret']]);
@@ -1509,7 +1512,7 @@ DIFF.forEach(function(d){
 /* LAF first air: straight down from the hood over the open RABS and the filling needles,
    then off the back of the filler and out at low level */
 [27.6,33.4].forEach(function(x){ [-11,-3,4].forEach(function(z){
-  var gz=z>-5?GRILLE[0][1]:GRILLE[1][1], gy=GRILLE[0][0];
+  var gz=GZ(z), gy=GRILLE[0][0];
   PATHS.room.push([[x,LAF.y0-0.4,z,1.6,'m','sup'],[x,VF.deck+8.4,z,2.4,'m','sup'],[x,VF.deck+2.2,z,2.4,'m','sup'],
     [x-5,VF.deck-1.5,z,2.4,'m','room'],[16,4.6,(z+gz)/2,2.6,'r','room'],[3.2,gy,gz,1.8,'r','ret'],[0.6,gy,gz,1.4,'r','ret']]);
 }); });
@@ -1528,7 +1531,7 @@ PATHS.contam=[[OPW.x,20,OPW.z,2.2,'c','room'],[OPW.x-2.5,14,OPW.z+4,2.8,'c','roo
 PATHS.contam2=[[OPW.x+0.5,17,OPW.z-1,2.2,'c','room'],[OPW.x-2,9,OPW.z-6,3.0,'c','room'],[37,5,-18,3.2,'c','room'],
   [18,4.5,-19,2.6,'c','room'],[3.2,GRILLE[1][0],GRILLE[1][1],1.6,'c','ret'],[0.6,GRILLE[1][0],GRILLE[1][1],1.2,'c','ret']];
 PATHS.pbx=[[(PBX.x0+PBX.x1)/2,(PBX.y0+PBX.y1)/2,PBX.zi-0.5,1.6,'c','room'],[10,12,PBX.zi-5,2.4,'c','room'],
-  [8,5,8,2.8,'c','room'],[3.2,GRILLE[0][0],GRILLE[0][1],1.6,'c','ret'],[0.6,GRILLE[0][0],GRILLE[0][1],1.2,'c','ret']];
+  [6,5,15,2.8,'c','room'],[3.2,GRILLE[2][0],GRILLE[2][1],1.6,'c','ret'],[0.6,GRILLE[2][0],GRILLE[2][1],1.2,'c','ret']];
 
 /* polyline with arc-length table and a perpendicular frame per segment */
 function mkPath(pts){
@@ -1590,7 +1593,7 @@ var STREAMS=[
   stream('supply',[PATHS.supply],620,'Qfa',{size:0.42}),
   stream('riser',[PATHS.riserA,PATHS.riserB,PATHS.riserC],700,'Qsup',{vk:9}),
   stream('room',PATHS.room,1700,'Qsup',{size:0.85,vk:11}),
-  stream('ret',[PATHS.exA,PATHS.exA,PATHS.exB],420,'Qret'),
+  stream('ret',[PATHS.exA,PATHS.exB,PATHS.exC],420,'Qret'),
   stream('exmain',[PATHS.exMain],300,'Qex',{size:0.42}),
   stream('stale',[PATHS.exCore],460,'Qcore',{size:0.42,fadeOut:true}),
   stream('byp',[PATHS.exByp],360,'Qbyp',{size:0.42,fadeOut:true}),
@@ -1641,7 +1644,7 @@ var airVisible=true, contamVisible=true;
 
 /* ---------------------------------------------- coloured air columns */
 var ribbons=new THREE.Group(); scene.add(ribbons);
-var RIBS=['comp','hr','direct','supply','riserA','riserB','riserC','exA','exB','exMain','exCore','exByp'];
+var RIBS=['comp','hr','direct','supply','riserA','riserB','riserC','exA','exB','exC','exMain','exCore','exByp'];
 var ribbonMeshes=[];
 function buildRibbons(){
   while(ribbons.children.length){ var c=ribbons.children.pop(); c.geometry.dispose(); c.material.dispose();
@@ -1681,7 +1684,8 @@ var arrowDefs=[
   {p:[RWP.x0-2.2,15.5,-1], rz:Math.PI/2, c:'mix'},
   {p:[BYP.sx,BYP.top+4.5,BYP.sz], rz:0, c:'ret'},
   {p:[3.4,GRILLE[0][0]+4.6,GRILLE[0][1]], rz:Math.PI/2, c:'ret'},
-  {p:[3.4,GRILLE[1][0]+4.6,GRILLE[1][1]], rz:Math.PI/2, c:'ret'}
+  {p:[3.4,GRILLE[1][0]+4.6,GRILLE[1][1]], rz:Math.PI/2, c:'ret'},
+  {p:[3.4,GRILLE[2][0]+4.6,GRILLE[2][1]], rz:Math.PI/2, c:'ret'}
 ];
 function buildArrows(){
   while(arrows.children.length){ var c=arrows.children.pop(); c.geometry.dispose(); c.material.dispose(); }
@@ -1851,8 +1855,9 @@ var DUCTAIR={
   'Supply riser':['Qsup',1,'m','sup'],
   'Terminal drop 1 (ceiling)':['Qsup',0.25,'m','sup'],
   'LAF supply drop':['Qsup',0.4,'m','sup'],
-  'Exhaust collector A (behind the partition)':['Qret',0.5,'r','ret'],
-  'Exhaust collector B (behind the partition)':['Qret',0.5,'r','ret'],
+  'Exhaust collector A (behind the partition)':['Qret',0.667,'r','ret'],
+  'Exhaust collector B (behind the partition)':['Qret',0.333,'r','ret'],
+  'Exhaust collector C (behind the partition)':['Qret',0.333,'r','ret'],
   'Exhaust main: clean room → DV-101':['Qex',1,'r','ret'],
   'Exhaust: DV-101 → air-pump unit (Cu core)':['Qcore',1,'r','r1'],
   'HEPA bypass: DV-101 → outer BIBO HEPA':['Qbyp',1,'c','ret'],

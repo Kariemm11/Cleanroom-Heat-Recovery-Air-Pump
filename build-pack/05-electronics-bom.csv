@@ -33,5 +33,5 @@ Item,Qty,Description,Example part / type,Where,Notes
 32,1,Harness,FR4 flex/rigid strips 1 mm with copper tracks (one per device),as drawn in the 3D model / STEP,see build-pack/04-pcb-and-harness.md
 33,1,Main PCB,2-layer FR4 1.6 mm 1 oz; ≈ 180 × 120 mm,back wall of the plant room,traces per calc §15
 34,1,R32 mechanical set (no PCB connection),liquid receiver ≥ 15 cm³; suction accumulator ≥ 20 cm³; bi-flow filter-drier; sight glass with moisture indicator; 2 Schrader charging valves; 1/8 in + 3/16 in copper tube,plant-room floor,charged by a certified technician (≈ 40 g; weigh in)
-35,7,HEPA filter media + BIBO change bags,H14 glass-fibre media in 3D-printed frames; PVC change bags on Ø20–40 mm rings,"ceiling terminal, LAF hood, 2 right-wall terminals, 2 exhaust terminals, outer HEPA","mechanical, no PCB connection; leak-scan every frame"
+35,7,HEPA filter media + BIBO change bags,H14 glass-fibre media in 3D-printed frames; PVC change bags on Ø20–40 mm rings,"ceiling terminal, LAF hood, 2 right-wall terminals, 3 exhaust terminals, outer HEPA","mechanical, no PCB connection; leak-scan every frame"
 36,1,Cu plate core,"copper Cu-ETP plates 0.3 mm, gap 2 mm, ≈ 66 mm cube; both faces Ra ≤ 0.8 µm; edges folded + sealed",air-pump unit,mechanical; check Ra with a profilometer (calc §4)

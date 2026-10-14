@@ -41,6 +41,7 @@ PANELS = [
         ("rect", 85, 445, 31, 22, "supply duct 31 × 22"),
         ("rect", 30, 69, 70, 54, "exhaust terminal 1 (H14 BIBO) 70 × 54"),
         ("rect", -130, 69, 70, 54, "exhaust terminal 2 (H14 BIBO) 70 × 54"),
+        ("rect", 170, 69, 70, 54, "exhaust terminal 3 (H14 BIBO) 70 × 54"),
         ("hole", -190, 308, 4, 0, "PDT-101 reference tube Ø4"),
         ("rect", -103, 8, 20, 4, "PCB harness slot (floor)"),
     ]),

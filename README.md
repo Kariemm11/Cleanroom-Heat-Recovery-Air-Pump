@@ -11,7 +11,7 @@ This repository has two parts:
 |---|---|---|
 | **3D simulation** | An interactive, live-running digital twin with HMI, control loops, energy, CO₂, ACH, airborne particles and a contamination containment screen | [`index.html`](index.html) |
 | **Build pack** | Everything needed to build the real rig: wiring diagrams, I/O list, PCB and harness, electronics BOM, ESP32-S3 firmware, all equations and sizing (ducts, fans, actuators, refrigerant, electrics), build and commissioning guide, live monitor | [`build-pack/`](build-pack/), [`firmware/`](firmware/) |
-| **3D CAD design** | A STEP assembly that SolidWorks opens directly, with 289 named and coloured parts in 9 sub-assemblies | [`cad/`](cad/) |
+| **3D CAD design** | A STEP assembly that SolidWorks opens directly, with 180 named, coloured parts in 9 sub-assemblies, one STEP per part, and 2D DXF views of every part, sub-assembly and the whole rig | [`cad/`](cad/) |
 
 ![The rig in the simulator](docs/img/rig-overview.jpg)
 
@@ -24,7 +24,7 @@ The rig is designed for **hazardous material**:
   - the ceiling terminal;
   - an **LAF hood over the vial filler**;
   - **two right-wall terminals** behind the operator;
-  - the two low-level exhaust terminals.
+  - the three low-level exhaust terminals.
 - **PT-102 watches the exhaust** before it reaches the air pump. If the exhaust is contaminated, **DV-101** diverts it through an **outer BIBO HEPA** (on a shelf beside the fresh-air compressor) and FAN-103B. DV-101 is spring return, so it is fail-safe.
 - **One exhaust outlet:** both exhausts leave through a single roof stack at the front-right of the plant room, with a rain cap and a backdraft damper on each branch. The fresh-air compressor's louvre is the only opening in the outdoor wall.
 - **All ducts are rectangular.**
@@ -45,7 +45,7 @@ The rig is designed for **hazardous material**:
 | **Plant room** (x < 0) | **AHU, single deck, 100 % fresh air**: outdoor-air pre-filter, fresh-air plenum (no mixing box, no core), panel + bag filters, **pre-heat coil**, cooling coil, droplet eliminator, **reheat coil**, steam humidifier, supply fan, H13 HEPA, attenuator. **Heat-recovery air-pump unit** behind it with the non-contact **Cu plate core** (Ra ≤ 0.8 µm), the exhaust-air coil and FAN-103. R32 compressor, receiver, accumulator, 4-way valve and EEV under the AHU. |
 | **Fresh air** | **Fresh-air compressor** (centrifugal, PWM speed) behind a wall louvre → header → **all of it through the air-pump unit's Cu core** → AHU intake. A slide-gated branch straight to the AHU is used only for the baseline test. |
 | **Supply** | AHU supply → boot → **riser** (FT-102 airflow) → through the partition → ceiling-void duct → **four H14 bag-in/bag-out terminals**: ceiling terminal 1, the **LAF hood** over the filler, and **two right-wall terminals** (high and low) in a wall plenum. |
-| **Exhaust** | **Two low-level H14 BIBO exhaust terminals** in the partition → collector → **PT-102** (particles) → **DV-101** → the air-pump unit's Cu core and evaporator → FAN-103 → **common roof stack**. If PT-102 sees contamination: DV-101 → **outer BIBO HEPA** → FAN-103B → the same stack. Nothing returns to the AHU, and nothing is discharged next to the fresh-air intake. |
+| **Exhaust** | **Three low-level H14 BIBO exhaust terminals** in the partition (one at the front, by the pass box) → collector → **PT-102** (particles) → **DV-101** → the air-pump unit's Cu core and evaporator → FAN-103 → **common roof stack**. If PT-102 sees contamination: DV-101 → **outer BIBO HEPA** → FAN-103B → the same stack. Nothing returns to the AHU, and nothing is discharged next to the fresh-air intake. |
 | **Clean room** (x > 0) | 492.5 × 490 × 395 mm net (V = 0.0953 m³). Human scale inside is about 1:7. It holds a **vial filling machine** along the right wall under its own LAF hood (infeed turntable, conveyor, 4-needle filling with product tank and peristaltic pump, stoppering, outfeed table, open RABS with glove ports, light tower). There is a **pass box** through the front wall beside the door, with interlocked inner and outer doors and a UV cycle, and a **gowned operator** working at the RABS gloves. An **air particle sensor (PT-101)** on the back wall samples the room air and, through a sample tube, an isokinetic probe beside the filling needles. Also a staging bench, LED luminaire, room T + RH, room ΔP and a hinged access door. The filler and the pass box are stand-alone equipment, not wired to the rig PCB. |
 | **Controls** | Main controller PCB (ESP32-S3, 3 × ACS712 current sensors, MOSFET drivers, I²C mux) on the back wall. Every device is reached by a **flat FR4 PCB strip** with copper tracks. **HMI-101**, a 7-inch touch screen, sits on the front face. A 24 V DC supply powers the rig. |
 
@@ -189,8 +189,10 @@ At the defaults, the room reads about 121 000 /m³ (Grade B in operation) and th
 
 ## The CAD model (SolidWorks)
 
-- [`cad/cleanroom-rig-assembly.step`](cad/cleanroom-rig-assembly.step) is the whole rig as an AP214 STEP file in **mm**. It has **9 sub-assemblies, 289 named, coloured parts and 1 431 solids**, and the overall size is 1069 × 625 × 539 mm (the height includes the HEPA-bypass roof stack). It includes the PT-101 particle counter (probe, sample tube, PCB strip) and the R32 receiver, accumulator, filter-drier, sight glass and charging ports.
+- [`cad/cleanroom-rig-assembly.step`](cad/cleanroom-rig-assembly.step) is the whole rig as an AP214 STEP file in **mm**. It has **9 sub-assemblies, 180 named parts (298 coloured bodies) and 1 442 solids**, and the overall size is 1069 × 626 × 539 mm (the height includes the HEPA-bypass roof stack). It includes the PT-101 particle counter (probe, sample tube, PCB strip) and the R32 receiver, accumulator, filter-drier, sight glass and charging ports.
 - [`cad/step/`](cad/step/) holds one STEP file per sub-assembly: enclosure, AHU, heat-recovery air-pump unit, fresh-air compressor, ductwork, clean room, exhaust safety (PT-102, DV-101, outer HEPA), controls and HMI, PCB wiring harness.
+- [`cad/parts/`](cad/parts/) has **one STEP file per part** (180), sorted by sub-assembly.
+- [`cad/dxf/`](cad/dxf/) has the **2D drawings as DXF** (layers VISIBLE, HIDDEN, TEXT, BORDER; mm; first-angle front / top / right-side views): the whole rig, each sub-assembly, every part, and the flat cutting profiles of the 9 acrylic panels. [`cad/drawings/rig-2D-views.pdf`](cad/drawings/rig-2D-views.pdf) collects the assembly and sub-assembly sheets.
 - [`cad/BOM.csv`](cad/BOM.csv) lists every part with its size and material.
 - [`cad/drawings/enclosure-GA.pdf`](cad/drawings/enclosure-GA.pdf) is the acrylic **fabrication drawing**: panel views, every cut-out with its position, and the cut list.
 
@@ -214,7 +216,7 @@ index.html                  simulator page (layout, HMI dock, controls)
 assets/js/rig-model.js      plant physics + 7 PI loops + energy/CO₂ + particles (runs in Node too)
 assets/js/rig.js            3D scene: earlier AHU + air-pump geometry, rig, air, PCB, HMI
 assets/js/share.js          link / QR sharing of the current settings
-cad/                        STEP assembly, sub-assemblies, BOM, drawings, geometry source
+cad/                        STEP assembly, sub-assemblies, per-part STEP, DXF (2D), BOM, drawings, geometry source
 tools/export_geometry.js    dumps the simulator's solids to cad/rig-geometry.json
 tools/build_cad.py          rebuilds them as STEP solids (CadQuery / OpenCascade)
 tools/make_drawings.py      enclosure fabrication drawing

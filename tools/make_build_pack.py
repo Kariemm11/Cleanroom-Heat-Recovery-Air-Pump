@@ -57,6 +57,19 @@ def pdfs():
     open(h, "w", encoding="utf-8").write("<!doctype html><html><head><meta charset='utf-8'><style>@page{size:A3 landscape;margin:0}body{margin:0}"
                                          ".pg{width:420mm;height:297mm;page-break-after:always;overflow:hidden}.pg svg{width:420mm;height:297mm}</style></head><body>" + svgs + "</body></html>")
     jobs.append({"src": h, "out": os.path.join(BP, "03-wiring-diagrams.pdf"), "a3": True})
+    # 2D views of the whole rig and of every sub-assembly (written by tools/build_cad.py), and the enclosure drawing
+    vdir = os.path.join(ROOT, "cad", "drawings", "views")
+    if os.path.isdir(vdir):
+        svgs = "".join(f"<div class='pg'>{open(os.path.join(vdir, f), encoding='utf-8').read()}</div>" for f in sorted(os.listdir(vdir)) if f.endswith(".svg"))
+        h = os.path.join(tmp, "views.html")
+        open(h, "w", encoding="utf-8").write("<!doctype html><html><head><meta charset='utf-8'><style>@page{size:A3 landscape;margin:0}body{margin:0}"
+                                             ".pg{width:420mm;height:297mm;page-break-after:always;overflow:hidden}.pg svg{width:420mm;height:297mm}</style></head><body>" + svgs + "</body></html>")
+        jobs.append({"src": h, "out": os.path.join(ROOT, "cad", "drawings", "rig-2D-views.pdf"), "a3": True})
+    ga = os.path.join(ROOT, "cad", "drawings", "enclosure-GA.svg")
+    h = os.path.join(tmp, "ga.html")
+    open(h, "w", encoding="utf-8").write("<!doctype html><html><head><meta charset='utf-8'><style>@page{size:A3 landscape;margin:0}body{margin:0}"
+                                         "svg{width:420mm;height:297mm}</style></head><body>" + open(ga, encoding="utf-8").read() + "</body></html>")
+    jobs.append({"src": h, "out": os.path.join(ROOT, "cad", "drawings", "enclosure-GA.pdf"), "a3": True})
     js = os.path.join(tmp, "pdf.js")
     open(js, "w").write(
         "const { chromium } = require(%s);\n(async () => {\n  const b = await chromium.launch({ executablePath: %s });\n"

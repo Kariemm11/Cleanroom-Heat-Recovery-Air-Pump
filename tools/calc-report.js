@@ -125,8 +125,9 @@ addRect("Tempered-air duct: recovery unit → AHU", D.Qfa, 0.2, "fresh air off t
 })();
 addRect("Terminal drop 1 (ceiling)", D.Qsup * 0.25, 1.0, "25 %; tee branch K 1.0");
 addRect("LAF supply drop", D.Qsup * 0.40, 1.0, "40 %; tee branch K 1.0");
-addRect("Exhaust collector A (behind the partition)", Qret / 2, 0.5, "from exhaust terminal 1");
-addRect("Exhaust collector B (behind the partition)", Qret / 2, 0.5, "from exhaust terminal 2");
+addRect("Exhaust collector A (behind the partition)", Qret * 2 / 3, 0.5, "from exhaust terminals 1 + 3");
+addRect("Exhaust collector B (behind the partition)", Qret / 3, 0.5, "from exhaust terminal 2");
+addRect("Exhaust collector C (behind the partition)", Qret / 3, 0.5, "from exhaust terminal 3 (front, by the pass box)");
 addRect("Exhaust main: clean room → DV-101", Qex, 0.4, "collector tee K 0.4");
 addRect("Exhaust: DV-101 → air-pump unit (Cu core)", Qex, 0.3, "normal path");
 addRect("Exhaust: air-pump unit → roof stack", Qex, 0.6, "to the common stack, tee K 0.6");

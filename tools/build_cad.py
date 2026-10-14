@@ -260,6 +260,42 @@ def main(src, outdir="cad"):
         w.writerow(["Sub-assembly", "Part", "Bodies", "X (mm)", "Y (mm)", "Z (mm)", "Material / finish"])
         w.writerows(bom)
 
+    # one STEP per part (with its colours), then the 2D views + DXF for every part, sub-assembly and the whole rig
+    import cad_2d
+    sheets = []
+    for asm, parts in tree.items():
+        if not parts:
+            continue
+        adir = cad_2d.safe(ascii_name(asm))
+        allsolids = []
+        os.makedirs(os.path.join(outdir, "parts", adir), exist_ok=True)
+        for part, cols in parts.items():
+            pa = cq.Assembly(name=ascii_name(part))
+            solids = []
+            for i, (col, sl) in enumerate(cols.items()):
+                pa.add(cq.Compound.makeCompound(sl), name="body" + str(i + 1), color=cq.Color(*col))
+                solids += sl
+            pa.export(os.path.join(outdir, "parts", adir, cad_2d.safe(ascii_name(part)) + ".step"))
+            allsolids += solids
+            try:
+                comp = cq.Compound.makeCompound(solids)
+                cad_2d.write_dxf(os.path.join(outdir, "dxf", "parts", adir, cad_2d.safe(ascii_name(part)) + ".dxf"),
+                                 ascii_name(asm) + " / " + ascii_name(part), cad_2d.layout(comp, poly=True))   # polygonal HLR: exact HLR stalls on some curved parts
+            except Exception as e:  # keep going
+                fails.append((part, "2D", str(e)[:80]))
+        comp = cq.Compound.makeCompound(allsolids)
+        placed = cad_2d.layout(comp, poly=True)
+        cad_2d.write_dxf(os.path.join(outdir, "dxf", "sub-assemblies", adir + ".dxf"), "Sub-assembly: " + ascii_name(asm), placed)
+        cad_2d.write_svg(os.path.join(outdir, "drawings", "views", adir + ".svg"), "Sub-assembly: " + ascii_name(asm), placed)
+        sheets.append(adir)
+        print("  2D", asm, flush=True)
+    placed = cad_2d.layout(root.toCompound(), poly=True)
+    cad_2d.write_dxf(os.path.join(outdir, "dxf", "cleanroom-rig-assembly.dxf"), "Clean-room rig: general arrangement", placed)
+    cad_2d.write_svg(os.path.join(outdir, "drawings", "views", "00_cleanroom-rig-assembly.svg"), "Clean-room rig: general arrangement", placed)
+    import make_drawings
+    cad_2d.write_panels(make_drawings.PANELS, os.path.join(outdir, "dxf", "enclosure-panels"))
+    print("  2D done", flush=True)
+
     total = sum(len(s) for parts in tree.values() for cols in parts.values() for s in cols.values())
     print("solids written:", total, "of", len(data), "· parts:", len(bom))
     for f_ in fails:

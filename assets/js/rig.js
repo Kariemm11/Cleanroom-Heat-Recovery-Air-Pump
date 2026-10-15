@@ -3330,7 +3330,7 @@ var LOGKEY={TT101:'outdoor_T_C',TT109:'fresh_off_Cu_core_T_C',TT103:'after_prehe
 var REP={title:'Clean-room heat-recovery rig: data log report',by:'Eng. Kariem Moussa',sup:'Dr. Eng. Ahmed Maher',inst:'German International University · Department of Pharmaceutical Engineering',notes:''};
 try{ var _rp=JSON.parse(localStorage.getItem('rig-report')||'null'); if(_rp) Object.keys(REP).forEach(function(k){ if(typeof _rp[k]==='string') REP[k]=_rp[k]; }); }catch(e){}
 var LOGO_SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256"><rect width="64" height="64" rx="14" fill="#0a1119"/><rect x="19" y="19" width="26" height="26" rx="3" transform="rotate(45 32 32)" fill="none" stroke="#e9f0f7" stroke-width="3"/><path d="M8 27H56" stroke="#49aeff" stroke-width="4" stroke-linecap="round"/><path d="M8 37H56" stroke="#ff9143" stroke-width="4" stroke-linecap="round"/></svg>';
-var PDFLIB=null;
+var PDFLIB=null, SIMVER=BUILD.replace(/[a-z]+$/,'');   // the PDFs show the date only
 function loadPdfLib(cb){
   if(PDFLIB) return cb(PDFLIB);
   function add(src,next){ var s=document.createElement('script'); s.src=src; s.onload=next; s.onerror=function(){ hmiToast('Could not load the PDF library'); setText('dlPdfSt',''); }; document.head.appendChild(s); }
@@ -3347,7 +3347,7 @@ function fmtv(v,unit){ if(!isFinite(v)) return '-'; var a=Math.abs(v), d=unit===
 var ACC=[18,115,204], INK=[18,28,38], DIM=[90,104,118];
 function newDoc(kind){
   var J=PDFLIB.jsPDF, doc=new J({unit:'mm',format:'a4',orientation:'portrait',compress:true});
-  doc.setProperties({title:pt(REP.title),subject:kind,author:pt(REP.by),creator:'Clean-room heat-recovery rig simulator '+BUILD});
+  doc.setProperties({title:pt(REP.title),subject:kind,author:pt(REP.by),creator:'Clean-room heat-recovery rig simulator '+SIMVER});
   return doc;
 }
 function heading(doc,y,t,need){
@@ -3382,7 +3382,7 @@ function decorate(doc,kind,logo){
     doc.setDrawColor(73,174,255); doc.setLineWidth(0.6); doc.line(14,18.5,W/2,18.5); doc.setDrawColor(255,145,67); doc.line(W/2,18.5,W-14,18.5);
     doc.setDrawColor(200,210,220); doc.setLineWidth(0.2); doc.line(14,H-12,W-14,H-12);
     doc.setFontSize(7); doc.setTextColor.apply(doc,DIM);
-    doc.text(pt('Simulated data from the rig model (build '+BUILD+'): model results, not measurements. Prepared by '+REP.by+'.'),14,H-8);
+    doc.text(pt('Simulated data from the rig model (version '+SIMVER+'): model results, not measurements. Prepared by '+REP.by+'.'),14,H-8);
     doc.text('Page '+i+' of '+n,W-14,H-8,{align:'right'}); }
 }
 function tableOpts(extra){ var o={theme:'striped',margin:{left:14,right:14,top:26,bottom:18},styles:{fontSize:8,cellPadding:1.3,textColor:INK,lineColor:[220,228,236]},
@@ -3414,7 +3414,7 @@ function buildLogPdf(){
     var doc=newDoc(kind);
     var y=cover(doc,kind,[['Prepared by',REP.by],['Supervisor',REP.sup],['Institution',REP.inst],['Exported',new Date().toLocaleString()],
       ['Logged period','simulated '+hms(t0)+' to '+hms(t1)+' ('+grp(t1-t0,0)+' s)'],['Records',rows.length+' rows, '+spacing(rows)+', '+LOGCOLS.length+' columns'],
-      ['Operating mode at the end',modeLine()],['Simulator build',BUILD]],logo);
+      ['Operating mode at the end',modeLine()],['Simulator version',SIMVER]],logo);
     y=heading(doc,y,'Key performance indicators at the end of the log');
     doc.autoTable(tableOpts({startY:y,head:[['Indicator','Value','Detail']],body:kpiRows(),columnStyles:{0:{cellWidth:46},1:{cellWidth:36,fontStyle:'bold'}}}));
     y=heading(doc,doc.lastAutoTable.finalY+8,'Operating conditions and set points');
@@ -3455,7 +3455,7 @@ function buildSnapPdf(){
   loadPdfLib(function(){ svgDataUrl(LOGO_SVG,256,256,1).then(function(logo){
     var kind='Snapshot report', doc=newDoc(kind), sl=trendSlice();
     var y=cover(doc,kind,[['Prepared by',REP.by],['Supervisor',REP.sup],['Institution',REP.inst],['Exported',new Date().toLocaleString()],
-      ['Snapshot at','simulated time '+hms(m.t)+' ('+grp(m.t,0)+' s)'],['Operating mode',modeLine()],['Simulator build',BUILD]],logo);
+      ['Snapshot at','simulated time '+hms(m.t)+' ('+grp(m.t,0)+' s)'],['Operating mode',modeLine()],['Simulator version',SIMVER]],logo);
     y=heading(doc,y,'Key performance indicators');
     doc.autoTable(tableOpts({startY:y,head:[['Indicator','Value','Detail']],body:kpiRows(),columnStyles:{0:{cellWidth:46},1:{cellWidth:36,fontStyle:'bold'}}}));
     y=heading(doc,doc.lastAutoTable.finalY+8,'Operating conditions and set points');

@@ -27,7 +27,7 @@ PANELS = [
         ("hole", -294, 276, 3.4, 0, "PCB standoff M3"), ("hole", -126, 276, 3.4, 0, ""),
         ("hole", -294, 384, 3.4, 0, ""), ("hole", -126, 384, 3.4, 0, ""),
         ("hole", 425, 200, 3.4, 0, "MT-106 sensor M3"), ("hole", 455, 200, 3.4, 0, ""),
-        ("rect", -17.5, 110, 22, 16, "exhaust collector C into the plant room 22 × 16"),
+        ("rect", -17.5, 110, 19, 13.5, "exhaust collector C into the plant room 19 × 13.5"),
     ]),
     ("Left wall (outdoor side)", 1, (490, 490), "z-y", [
         ("hole", -140, 220, 38, 0, "fresh-air compressor intake Ø38"),
@@ -120,28 +120,34 @@ def panel_view(ox, oy, panel, u0, v0, title, flip_u=False):
 
 def main(outdir="cad/drawings"):
     os.makedirs(outdir, exist_ok=True)
-    W, H = 420, 297
+    W, H = 594, 420                                    # A2 landscape, so every panel with a cut-out fits at 1:6
     s = svg_open(W, H)
     s.append(f'<rect x="8" y="8" width="{W - 16}" height="{H - 16}" fill="none" stroke="{INK}" stroke-width="0.5"/>')
     by = {p[0]: p for p in PANELS}
-    c1, c2, c3 = 24, 24 + 1000 * S + 20, 24 + 1000 * S + 20 + 490 * S + 20
-    r1, r2 = 28, 132
+    g = 22
+    c1 = 24
+    c2 = c1 + 1000 * S + g
+    c3 = c2 + 490 * S + g
+    c4 = c3 + 490 * S + g
+    r1, r2 = 30, 140
     s += panel_view(c1, r1, by["Front wall"], -500, 495, "FRONT WALL — seen from the front")
     s += panel_view(c2, r1, by["Left wall (outdoor side)"], -245, 495, "LEFT WALL — outdoor side")
     s += panel_view(c3, r1, by["Partition wall"], 245, 495, "PARTITION — from the clean room", flip_u=True)
+    s += panel_view(c4, r1, by["Right wall"], 245, 495, "RIGHT WALL — seen from outside", flip_u=True)
     s += panel_view(c1, r2, by["Back wall"], -500, 495, "BACK WALL — seen from inside")
     s += panel_view(c2, r2, by["Clean-room false ceiling"], 2.5, 245, "FALSE CEILING — from below")
+    s += panel_view(c2 + 492.5 * S + g, r2, by["Roof"], -500, 250, "ROOF — from above, front edge at the top")
 
     # cut-out legend with positions (centre of each hole / opening, as seen in the view)
-    s.append(text(24, 226, "CUT-OUTS — centre positions in mm, measured in each view from its left and bottom edges", 2.8, weight=600))
+    s.append(text(24, 252, "CUT-OUTS — centre positions in mm, measured in each view from its left and bottom edges", 2.8, weight=600))
     for k, (name, lines) in enumerate(LEGEND.items()):
-        x0, y0 = 24 + (k % 3) * 130, 233 + (k // 3) * 26
+        x0, y0 = 24 + (k % 4) * 140, 260 + (k // 4) * 36
         s.append(text(x0, y0, name, 2.4, weight=600))
         for i, ln in enumerate(lines):
             s.append(text(x0 + 1.5, y0 + 3.2 * (i + 1), ln, 2.0, color=MUTED))
 
     # cut list as a table
-    tx, ty = c3, r2
+    tx, ty = W - 12 - 88, r2                           # right of the roof view, inside the frame
     s.append(text(tx, ty - 2.2, "ACRYLIC CUT LIST — 5 mm cast PMMA", 3.0, weight=600))
     s.append(f'<line x1="{tx}" y1="{ty + 2}" x2="{tx + 88}" y2="{ty + 2}" stroke="{MUTED}" stroke-width="0.2"/>')
     s.append(text(tx, ty + 1, "Panel", 2.2, color=MUTED)); s.append(text(tx + 56, ty + 1, "Qty", 2.2, color=MUTED))
@@ -161,7 +167,7 @@ def main(outdir="cad/drawings"):
     s.append(f'<rect x="{W - 150}" y="{H - 34}" width="142" height="26" fill="none" stroke="{INK}" stroke-width="0.4"/>')
     s.append(text(W - 146, H - 27, "CLEAN-ROOM HEAT-RECOVERY AIR-PUMP TEST RIG", 2.8, weight=600))
     s.append(text(W - 146, H - 22, "Acrylic enclosure 1000 × 500 × 500 mm — general arrangement", 2.3))
-    s.append(text(W - 146, H - 17, "Scale 1:6 on A3 · dimensions in mm · 3D model: cad/cleanroom-rig-assembly.step", 2.1, color=MUTED))
+    s.append(text(W - 146, H - 17, "Scale 1:6 on A2 · dimensions in mm · 3D: cad/cleanroom-rig-assembly.step / .dwg", 2.1, color=MUTED))
     s.append(text(W - 146, H - 12.4, "Eng. Kariem Moussa · supervised by Dr. Eng. Ahmed Maher · GIU", 2.1, color=MUTED))
     s.append("</svg>")
     path = os.path.join(outdir, "enclosure-GA.svg")

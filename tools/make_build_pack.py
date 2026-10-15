@@ -67,8 +67,8 @@ def pdfs():
         jobs.append({"src": h, "out": os.path.join(ROOT, "cad", "drawings", "rig-2D-views.pdf"), "a3": True})
     ga = os.path.join(ROOT, "cad", "drawings", "enclosure-GA.svg")
     h = os.path.join(tmp, "ga.html")
-    open(h, "w", encoding="utf-8").write("<!doctype html><html><head><meta charset='utf-8'><style>@page{size:A3 landscape;margin:0}body{margin:0}"
-                                         "svg{width:420mm;height:297mm}</style></head><body>" + open(ga, encoding="utf-8").read() + "</body></html>")
+    open(h, "w", encoding="utf-8").write("<!doctype html><html><head><meta charset='utf-8'><style>@page{size:A2 landscape;margin:0}body{margin:0}"
+                                         "svg{width:594mm;height:420mm}</style></head><body>" + open(ga, encoding="utf-8").read() + "</body></html>")
     jobs.append({"src": h, "out": os.path.join(ROOT, "cad", "drawings", "enclosure-GA.pdf"), "a3": True})
     js = os.path.join(tmp, "pdf.js")
     open(js, "w").write(

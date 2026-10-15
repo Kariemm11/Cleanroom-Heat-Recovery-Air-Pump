@@ -2,7 +2,7 @@
 
 | # | File | What it is |
 |---|---|---|
-| 01 | [`../cad/cleanroom-rig-assembly.step`](../cad/cleanroom-rig-assembly.step) | **3D CAD (SolidWorks)**: 289 parts in 9 sub-assemblies; `../cad/step/` holds one file per sub-assembly; `../cad/BOM.csv`; enclosure drawing `../cad/drawings/enclosure-GA.pdf` |
+| 01 | [`../cad/cleanroom-rig-assembly.step`](../cad/cleanroom-rig-assembly.step) | **3D CAD (SolidWorks)**: 181 parts in 9 sub-assemblies; `../cad/step/` holds one file per sub-assembly; `../cad/BOM.csv`; enclosure drawing `../cad/drawings/enclosure-GA.pdf` |
 | 02 | [`02-io-list.csv`](02-io-list.csv) | **Inputs and outputs**: every tag, device, signal, ESP32-S3 pin, connector, range, scaling, loop and alarm |
 | 03 | [`03-wiring-power.svg`](03-wiring-power.svg), [`03-wiring-controller.svg`](03-wiring-controller.svg), `03-wiring-diagrams.pdf` | **Wiring diagrams**: power distribution (PSU, fuses, current sensors, rails) and controller I/O (every pin → interface → device → connector) |
 | 04 | [`04-pcb-and-harness.md`](04-pcb-and-harness.md) | **PCB and harness**: main-board rules, connector pin-outs J1–J24, FR4 strip build, bring-up order |

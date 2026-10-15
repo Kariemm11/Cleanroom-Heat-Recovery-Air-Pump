@@ -106,14 +106,14 @@ Ductwork,Tempered-air duct recovery unit to AHU,4,120.0,29.2,111.6,"Clear PVC / 
 Ductwork,Exhaust air-pump unit to roof stack,5,431.0,422.2,313.0,Stainless steel 304 / clear PVC
 Ductwork,Supply boot,1,30.0,23.2,87.0,"Clear PVC / PETG duct, 2 mm wall"
 Ductwork,Supply riser,5,455.4,405.3,115.8,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Terminal drop 1 (ceiling),1,15.5,31.0,22.0,"PMMA (cast acrylic), 5 mm, clear"
-Ductwork,LAF supply drop,2,24.2,175.0,57.1,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
-Ductwork,Terminal drop 2 (ceiling above the operator),3,68.7,40.4,61.4,"Operator figure (e.g. PLA print), cleanroom gown colours"
-Ductwork,Terminal drop 3 (ceiling above the operator),3,68.7,40.4,41.4,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Ductwork,Terminal drop 1 (ceiling),1,15.5,31.0,22.0,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,LAF supply drop,2,24.2,175.0,57.1,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Terminal drop 2 (ceiling above the operator),3,68.7,40.4,61.4,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Terminal drop 3 (ceiling above the operator),3,68.7,40.4,41.4,"Clear PVC / PETG duct, 2 mm wall"
 Ductwork,Partition sleeve supply,4,4.0,34.7,43.8,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Exhaust collector A (behind the partition),2,18.7,23.4,102.5,See model colour
-Ductwork,Exhaust collector B (behind the partition),2,18.7,23.4,94.2,See model colour
-Ductwork,Exhaust collector C (right wall behind the operator),4,549.2,87.2,227.4,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Ductwork,Exhaust collector A (behind the partition),2,18.7,23.4,102.5,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Exhaust collector B (behind the partition),2,18.7,23.4,94.2,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Exhaust collector C (right wall behind the operator),4,549.2,87.2,227.4,"Clear PVC / PETG duct, 2 mm wall"
 Ductwork,Exhaust main clean room to DV-101,1,203.5,22.0,16.0,24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee
 Ductwork,Exhaust DV-101 to air-pump unit (Cu core),3,47.4,82.2,16.0,"Copper Cu-ETP (C11000) plates 0.3 mm, both faces Ra <= 0.8 um, edges folded + sealed"
 Ductwork,HEPA bypass DV-101 to outer BIBO HEPA,2,136.0,107.0,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"

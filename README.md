@@ -3,7 +3,7 @@
 **Done by Eng. Kariem Moussa, under the supervision of Dr. Eng. Ahmed Maher**
 Department of Pharmaceutical Engineering, German International University (GIU)
 
-A 1.0 × 0.5 m acrylic test rig, 0.5 m high. The first half is the **plant room**. It holds the AHU and the heat-recovery air pump working in parallel. Both are the same units as the earlier 3D model on the project website, with the same parts and layout, scaled to fit. The second half is a **clean room**. It is supplied through a duct riser and two ceiling diffusers, and the air returns through low-level grilles. A fresh-air compressor feeds outdoor air to both units, and the exhaust leaves through the air pump's evaporator. Every sensor and actuator is wired through PCB, and a touch-screen HMI runs the rig.
+A 1.0 × 0.5 m acrylic test rig, 0.5 m high. The first half is the **plant room**. It holds the AHU and the heat-recovery air pump working in parallel. Both are the same units as the earlier 3D model on the project website, with the same parts and layout, scaled to fit. The second half is a **clean room**. It is supplied with 100 % fresh air through a duct riser, three bag-in/bag-out HEPA ceiling terminals and an LAF hood over the vial filler, and the air leaves through three low-level HEPA exhaust terminals. A fresh-air compressor feeds outdoor air to both units, and the exhaust leaves through the air pump's evaporator. Every sensor and actuator is wired through PCB, and a touch-screen HMI runs the rig.
 
 This repository has two parts:
 
@@ -11,7 +11,7 @@ This repository has two parts:
 |---|---|---|
 | **3D simulation** | An interactive, live-running digital twin with HMI, control loops, energy, CO₂, ACH, airborne particles and a contamination containment screen | [`index.html`](index.html) |
 | **Build pack** | Everything needed to build the real rig: wiring diagrams, I/O list, PCB and harness, electronics BOM, ESP32-S3 firmware, all equations and sizing (ducts, fans, actuators, refrigerant, electrics), build and commissioning guide, live monitor | [`build-pack/`](build-pack/), [`firmware/`](firmware/) |
-| **3D CAD design** | A STEP assembly that SolidWorks opens directly, with 180 named, coloured parts in 9 sub-assemblies, one STEP per part, and 2D DXF views of every part, sub-assembly and the whole rig | [`cad/`](cad/) |
+| **3D CAD design** | 3D **STEP** (SolidWorks), 3D **DWG** (AutoCAD) and 3D **DXF** of the whole rig, the plant system (AHU + air-pump unit working in parallel), every sub-assembly and every part (181 named, coloured parts in 9 sub-assemblies), plus 2D DXF views of all of them | [`cad/`](cad/) |
 
 ![The rig in the simulator](docs/img/rig-overview.jpg)
 
@@ -186,11 +186,13 @@ At the defaults, the room reads about 121 000 /m³ (Grade B in operation) and th
 
 ![Trends: 11 charts](docs/img/rig-trends.jpg)
 
-## The CAD model (SolidWorks)
+## The CAD model (SolidWorks, AutoCAD)
 
-- [`cad/cleanroom-rig-assembly.step`](cad/cleanroom-rig-assembly.step) is the whole rig as an AP214 STEP file in **mm**. It has **9 sub-assemblies, 180 named parts (298 coloured bodies) and 1 442 solids**, and the overall size is 1069 × 626 × 539 mm (the height includes the HEPA-bypass roof stack). It includes the PT-101 particle counter (probe, sample tube, PCB strip) and the R32 receiver, accumulator, filter-drier, sight glass and charging ports.
+- [`cad/cleanroom-rig-assembly.step`](cad/cleanroom-rig-assembly.step) is the whole rig as an AP214 STEP file in **mm**. It has **9 sub-assemblies, 181 named parts (298 coloured bodies) and 1 445 solids**, and the overall size is 1057 × 626 × 561 mm (the height includes the HEPA-bypass roof stack; the depth includes collector C outside the back wall). It includes the PT-101 particle counter (probe, sample tube, PCB strip) and the R32 receiver, accumulator, filter-drier, sight glass and charging ports.
 - [`cad/step/`](cad/step/) holds one STEP file per sub-assembly: enclosure, AHU, heat-recovery air-pump unit, fresh-air compressor, ductwork, clean room, exhaust safety (PT-102, DV-101, outer HEPA), controls and HMI, PCB wiring harness.
-- [`cad/parts/`](cad/parts/) has **one STEP file per part** (180), sorted by sub-assembly.
+- [`cad/plant-system-AHU-and-air-pump-in-parallel.step`](cad/plant-system-AHU-and-air-pump-in-parallel.step) is **the plant on its own**: the AHU and the heat-recovery air-pump unit working in parallel on one R32 circuit, with the fresh-air compressor, the exhaust safety train and the ducts that join them.
+- [`cad/parts/`](cad/parts/) has **one STEP file per part** (181), sorted by sub-assembly.
+- [`cad/dwg/`](cad/dwg/) has the **3D DWG files for AutoCAD** (AutoCAD 2018 format, mm, Z up): the whole rig, the plant system, every sub-assembly and every part. Each part is a block on its sub-assembly's layer, in its own colour. [`cad/dxf3d/`](cad/dxf3d/) has the same set as 3D DXF.
 - [`cad/dxf/`](cad/dxf/) has the **2D drawings as DXF** (layers VISIBLE, HIDDEN, TEXT, BORDER; mm; first-angle front / top / right-side views): the whole rig, each sub-assembly, every part, and the flat cutting profiles of the 9 acrylic panels. [`cad/drawings/rig-2D-views.pdf`](cad/drawings/rig-2D-views.pdf) collects the assembly and sub-assembly sheets.
 - [`cad/BOM.csv`](cad/BOM.csv) lists every part with its size and material.
 - [`cad/drawings/enclosure-GA.pdf`](cad/drawings/enclosure-GA.pdf) is the acrylic **fabrication drawing**: panel views, every cut-out with its position, and the cut list.

@@ -8,6 +8,8 @@ groups them into named parts and sub-assemblies, and writes:
 
   cad/cleanroom-rig-assembly.step     the whole rig (AP214, mm, names + colours)
   cad/step/<sub-assembly>.step        one file per sub-assembly
+  cad/plant-system-AHU-and-air-pump-in-parallel.step   the plant on its own (AHU + air-pump unit + ducts)
+  cad/parts/<sub-assembly>/<part>.step one file per part
   cad/BOM.csv                          part list with sizes, materials and body counts
 
 Usage:  python tools/build_cad.py cad/rig-geometry.json
@@ -25,6 +27,11 @@ import cadquery as cq
 from OCP.gp import gp_Quaternion, gp_Trsf, gp_Vec
 
 MM = 10.0  # cm → mm
+
+# the plant that works in parallel: AHU + heat-recovery air-pump unit on one R32 circuit, with the fresh-air
+# compressor, the exhaust safety train and the ducts that join them
+PLANT = ["AHU", "Heat-recovery air-pump unit", "Fresh-air compressor",
+         "Exhaust safety: PT-102 + DV-101 + outer HEPA", "Ductwork"]
 
 ASM_ORDER = [
     "Acrylic enclosure",
@@ -234,6 +241,7 @@ def main(src, outdir="cad"):
     tree, fails = build_tree(data)
     print("solids built", flush=True)
     root = cq.Assembly(name="Cleanroom_HR_AirPump_Rig")
+    plant = cq.Assembly(name="Plant_AHU_and_air_pump_in_parallel")   # the plant working in parallel, on its own
     bom = []
     for asm, parts in tree.items():
         if not parts:
@@ -256,7 +264,10 @@ def main(src, outdir="cad"):
         sub.export(os.path.join(outdir, "step", ascii_name(asm).replace(" ", "_") + ".step"))
         print("  wrote", asm, flush=True)
         root.add(sub, name=ascii_name(asm))
+        if asm in PLANT:
+            plant.add(sub, name=ascii_name(asm))
     root.export(os.path.join(outdir, "cleanroom-rig-assembly.step"))
+    plant.export(os.path.join(outdir, "plant-system-AHU-and-air-pump-in-parallel.step"))
 
     with open(os.path.join(outdir, "BOM.csv"), "w", newline="") as f:
         w = csv.writer(f)
@@ -295,6 +306,9 @@ def main(src, outdir="cad"):
     placed = cad_2d.layout(root.toCompound(), poly=True)
     cad_2d.write_dxf(os.path.join(outdir, "dxf", "cleanroom-rig-assembly.dxf"), "Clean-room rig: general arrangement", placed)
     cad_2d.write_svg(os.path.join(outdir, "drawings", "views", "00_cleanroom-rig-assembly.svg"), "Clean-room rig: general arrangement", placed)
+    placed = cad_2d.layout(plant.toCompound(), poly=True)
+    cad_2d.write_dxf(os.path.join(outdir, "dxf", "plant-system-AHU-and-air-pump-in-parallel.dxf"), "Plant: AHU + air-pump unit in parallel", placed)
+    cad_2d.write_svg(os.path.join(outdir, "drawings", "views", "01_plant-system-AHU-and-air-pump-in-parallel.svg"), "Plant: AHU + air-pump unit in parallel", placed)
     import make_drawings
     cad_2d.write_panels(make_drawings.PANELS, os.path.join(outdir, "dxf", "enclosure-panels"))
     print("  2D done", flush=True)
@@ -322,9 +336,9 @@ def material(part, col):
         (("isokinetic",), "Stainless steel 316L isokinetic sampling probe"),
         (("sample",), "Conductive PU sample tubing, 4 mm OD"),
         (("particle",), "Laser particle counter, 0.5 + 5.0 um channels; 316L 2-port sampling manifold"),
-        (("operator",), "Operator figure (e.g. PLA print), cleanroom gown colours"),
+        (("operator",) if p.startswith("operator") else (), "Operator figure (e.g. PLA print), cleanroom gown colours"),
         (("cu",) if "core" in words else (), "Copper Cu-ETP (C11000) plates 0.3 mm, both faces Ra <= 0.8 um, edges folded + sealed"),
-        (("bibo", "laf"), "Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"),
+        (("bibo", "laf") if "drop" not in words else (), "Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"),
         (("dv",), "24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee"),
         (("pt",) if "102" in words else (), "Particle sensor SPS30 (indicative) with sample probe"),
         (("plenum", "skirts", "stack", "cap"), "Stainless steel 304 / clear PVC"),
@@ -334,10 +348,10 @@ def material(part, col):
         (("hose",), "Platinum-cured silicone tubing"),
         (("filling", "turntable", "accumulation", "tank", "stopper", "chute", "press"), "Stainless steel 316L / polycarbonate RABS"),
         (("pass",), "Stainless steel 304 with glass vision panels"),
+        (("duct", "riser", "header", "boot", "branch", "discharge", "sleeve", "drop", "collector"), "Clear PVC / PETG duct, 2 mm wall"),
         (("acrylic", "ceiling"), "PMMA (cast acrylic), 5 mm, clear"),
         (("strip",), "FR4 flex/rigid strip, 1 mm, ENIG copper tracks"),
         (("pcb",), "FR4 2-layer PCB 1.6 mm + components"),
-        (("duct", "riser", "header", "boot", "branch", "discharge", "sleeve", "drop"), "Clear PVC / PETG duct, 2 mm wall"),
         (("frame",) if "base" in words else (), "Aluminium 20x20 extrusion, black anodised"),
         (("casing",), "Clear PETG panel (3D model: galvanised steel)"),
         (("coil",), "Copper tube + aluminium fins"),

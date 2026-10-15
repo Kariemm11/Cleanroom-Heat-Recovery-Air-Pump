@@ -1,0 +1,9 @@
+{
+  "name": "cleanroom-rig-tools",
+  "private": true,
+  "description": "Node dependencies of the CAD export tools (tools/make_dwg.mjs writes the 3D DWG files)",
+  "license": "MIT",
+  "dependencies": {
+    "@node-projects/acad-ts": "3.3.0"
+  }
+}

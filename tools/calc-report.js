@@ -180,7 +180,7 @@ const pRoom = CASES.win.m.P.dp;
 const supPath = budget([
   ["Panel filter", COMP.panel], ["Bag filter", COMP.bag], ["Pre-heat coil", COMP.pre], ["Cooling coil (wet)", COMP.cool],
   ["Reheat coil", COMP.reheat], ["Droplet eliminator", COMP.elim], ["Steam lance", COMP.steam], ["H13 HEPA (AHU)", COMP.hepa], ["Attenuator", COMP.atten],
-  ["Supply boot (duct)", dpOf("Supply boot")], ["Supply riser + drop 2 (duct, to the farthest terminal)", dpOf("Supply riser") + dpOf("Terminal drop 2")],
+  ["Supply boot (duct)", dpOf("Supply boot")], ["Supply riser + branch (duct, index run)", Math.max(dpOf("Supply riser") + dpOf("Terminal drop 2"), dpOf("Supply riser → terminal-1 tee") + dpOf("Supply riser, tee 1 → LAF tee") + dpOf("LAF supply drop"))],
   ["H14 BIBO terminal", COMP.bibo], ["Terminal face screen", COMP.face], ["Clean-room pressure", pRoom],
 ]);
 // FAN-101 fresh-air compressor: lab (0 Pa) → air-pump unit Cu core → AHU inlet (0 Pa)
@@ -588,7 +588,7 @@ tbl(["Part", "Drawn in the CAD", "Typical real minimum", "Build"], [
   ["EEV, filter-drier, sight glass", "on the AHU base", "EEV body ≈ Ø25 × 60 mm", "plant-room floor, in the liquid line"],
   ["Sensors (SHT31, DS18B20 probes, SDP810, D6F)", "as drawn", "fit (DS18B20 in Ø3–4 mm probes)", "fit"],
   ["PT-101 particle counter", "32 × 42 × 16 mm", "two SPS30 (41 × 41 × 12 mm each)", "enclosure ≈ 45 × 90 mm on the back wall"],
-  ["BIBO HEPA housings (4 supply incl. LAF, 2 exhaust, 1 outer)", "as drawn", "H14 media in 3D-printed frames, PVC change bags on Ø20–40 mm rings", "fit; leak-scan every frame"],
+  ["BIBO HEPA housings (3 ceiling + LAF supply, 3 exhaust, 1 outer = 8)", "as drawn", "H14 media in 3D-printed frames, PVC change bags on Ø20–40 mm rings", "fit; leak-scan every frame"],
   ["DV-101 actuator", "18 × 18 × 13 mm", "spring-return actuators ≈ 60 × 100 × 60 mm", "**mount beside the duct**, shaft through the duct wall"],
 ]);
 P("The plant room is about 490 × 490 × 490 mm and the AHU fills only part of it, so all of these fit beside it without changing the AHU's shape.");

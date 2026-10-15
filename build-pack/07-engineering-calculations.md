@@ -335,11 +335,11 @@ Filters are rated **clean**, at **mid-life** (halfway to final) and at **final**
 | H13 HEPA (AHU) | 145.0 | 297.5 | 450.0 | H13; PDT-102 alarm at 450 Pa |
 | Attenuator | 8.0 | 8.0 | 8.0 | attenuator |
 | Supply boot (duct) | 2.7 | 2.7 | 2.7 |  |
-| Supply riser + drop 2 (duct, to the farthest terminal) | 12.3 | 12.3 | 12.3 |  |
+| Supply riser + branch (duct, index run) | 12.7 | 12.7 | 12.7 |  |
 | H14 BIBO terminal | 120.0 | 285.0 | 450.0 | H14 BIBO terminal (supply or exhaust) |
 | Terminal face screen | 3.0 | 3.0 | 3.0 | perforated face screen |
 | Clean-room pressure | 15.0 | 15.0 | 15.0 |  |
-| **Total** | **495.3** | **952.8** | **1410.3** |  |
+| **Total** | **495.7** | **953.2** | **1410.7** |  |
 
 **FAN-101 fresh-air compressor: lab → Cu core → AHU inlet** at Q = 6.00 m³/h
 
@@ -393,12 +393,12 @@ Filters are rated **clean**, at **mid-life** (halfway to final) and at **final**
 
 | Fan | Duty point (mid-life) | Must also reach (final, full speed) | Selection |
 |---|---|---|---|
-| FAN-102 supply | 6.00 m³/h at 953 Pa | 6.00 m³/h at 1 410 Pa | 24 V DC centrifugal (radial) blower, PWM + tach. Shut-off pressure ≥ 1 763 Pa, free air ≥ 18 m³/h |
+| FAN-102 supply | 6.00 m³/h at 953 Pa | 6.00 m³/h at 1 411 Pa | 24 V DC centrifugal (radial) blower, PWM + tach. Shut-off pressure ≥ 1 763 Pa, free air ≥ 18 m³/h |
 | FAN-101 fresh-air compressor | 6.00 m³/h at 296 Pa | 6.00 m³/h at 406 Pa | 24 V DC centrifugal blower, PWM + tach. Shut-off ≥ 508 Pa, free air ≥ 12 m³/h |
 | FAN-103 exhaust (air-pump unit) | 5.50 m³/h at 525 Pa | 5.50 m³/h at 745 Pa | 24 V DC blower ≥ 931 Pa shut-off, PWM + tach |
 | FAN-103B exhaust (outer HEPA) | 5.50 m³/h at 669 Pa | 5.50 m³/h at 999 Pa | 24 V DC blower ≥ 1 248 Pa shut-off, same PWM as FAN-103; DV-101's end switch powers the fan of the open path |
 
-The supply path is the hardest duty, because four filter stages are in series (panel, bag, H13 and the H14 BIBO terminal). If the blower you find cannot reach 1 410 Pa, change the filters earlier: panel at 100 Pa, bag at 160 Pa, both HEPAs at 300 Pa (set the A09 limit to 300). That brings the final point down to **970 Pa**, which 75–97 mm high-pressure 24 V blowers can reach. Read each BIBO terminal's ΔP on its gauge port at every filter check.
+The supply path is the hardest duty, because four filter stages are in series (panel, bag, H13 and the H14 BIBO terminal). If the blower you find cannot reach 1 411 Pa, change the filters earlier: panel at 100 Pa, bag at 160 Pa, both HEPAs at 300 Pa (set the A09 limit to 300). That brings the final point down to **971 Pa**, which 75–97 mm high-pressure 24 V blowers can reach. Read each BIBO terminal's ΔP on its gauge port at every filter check.
 
 Fan affinity for retuning: `Q₂/Q₁ = n₂/n₁`, `ΔP₂/ΔP₁ = (n₂/n₁)²`, `P₂/P₁ = (n₂/n₁)³`. Air power: `P_air = Q·ΔP`. At the supply duty point this is 1.59 W; with a small-blower total efficiency of about 15–25 % that needs 7.9 W electrical, which matches the 8 W rating.
 
@@ -534,7 +534,7 @@ The AHU and air-pump unit are Model C's units at 1.1 cm per model unit, as requi
 | EEV, filter-drier, sight glass | on the AHU base | EEV body ≈ Ø25 × 60 mm | plant-room floor, in the liquid line |
 | Sensors (SHT31, DS18B20 probes, SDP810, D6F) | as drawn | fit (DS18B20 in Ø3–4 mm probes) | fit |
 | PT-101 particle counter | 32 × 42 × 16 mm | two SPS30 (41 × 41 × 12 mm each) | enclosure ≈ 45 × 90 mm on the back wall |
-| BIBO HEPA housings (4 supply incl. LAF, 2 exhaust, 1 outer) | as drawn | H14 media in 3D-printed frames, PVC change bags on Ø20–40 mm rings | fit; leak-scan every frame |
+| BIBO HEPA housings (3 ceiling + LAF supply, 3 exhaust, 1 outer = 8) | as drawn | H14 media in 3D-printed frames, PVC change bags on Ø20–40 mm rings | fit; leak-scan every frame |
 | DV-101 actuator | 18 × 18 × 13 mm | spring-return actuators ≈ 60 × 100 × 60 mm | **mount beside the duct**, shaft through the duct wall |
 
 The plant room is about 490 × 490 × 490 mm and the AHU fills only part of it, so all of these fit beside it without changing the AHU's shape.

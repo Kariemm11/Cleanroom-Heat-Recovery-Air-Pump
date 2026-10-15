@@ -196,11 +196,8 @@ def duct_solids(rec):
     return out
 
 
-def main(src, outdir="cad"):
-    data = json.load(open(src))
-    os.makedirs(os.path.join(outdir, "step"), exist_ok=True)
-
-    # group: sub-assembly → part → colour → solids
+def build_tree(data):
+    """every exported primitive as an exact solid, grouped: sub-assembly → part → colour → solids"""
     tree = OrderedDict((a, OrderedDict()) for a in ASM_ORDER)
     fails = []
     for rec in data:
@@ -228,7 +225,13 @@ def main(src, outdir="cad"):
             continue
         col = tuple(round(c, 2) for c in rec["mat"]["c"]) + (max(0.25, rec["mat"]["o"]),)
         tree[asm].setdefault(part, OrderedDict()).setdefault(col, []).append(solid)
+    return tree, fails
 
+
+def main(src, outdir="cad"):
+    data = json.load(open(src))
+    os.makedirs(os.path.join(outdir, "step"), exist_ok=True)
+    tree, fails = build_tree(data)
     print("solids built", flush=True)
     root = cq.Assembly(name="Cleanroom_HR_AirPump_Rig")
     bom = []

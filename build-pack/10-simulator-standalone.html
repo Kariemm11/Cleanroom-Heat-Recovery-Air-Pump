@@ -300,7 +300,7 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 </style>
 </head>
 <body>
-<div id="app" data-build="2026-10-14d">
+<div id="app" data-build="2026-10-15c">
   <div id="stage">
     <canvas id="scene" aria-label="3D model of the clean-room test rig"></canvas>
 
@@ -540,7 +540,7 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 
      fresh-air compressor → header → air-pump unit Cu plate core (fresh lane) → AHU: filters
      → pre-heat coil → cooling coil → reheat coil → steam humidifier → supply fan → HEPA
-     → bag-in/bag-out HEPA terminals (2 ceiling + 2 right wall) → clean room
+     → bag-in/bag-out HEPA terminals (3 ceiling + LAF hood) → clean room
      clean room → BIBO HEPA exhaust terminals → PT-102 → DV-101 diverter ─┬─ Cu plate core (exhaust lane) → exhaust-air coil → FAN-103 → outdoors
                                                                           └─ outer BIBO HEPA → FAN-103B → outdoors
 
@@ -981,7 +981,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-14d';
+var BUILD='2026-10-15c';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -1770,21 +1770,26 @@ duct('Core bypass: header → AHU (baseline test)',[[HX,HY,P_AHU_OA.z],[HX,P_AHU
 /* supply: AHU supply connection → boot → riser → through the partition → ceiling void */
 var RZ=8.5, RX=-4.5, RY=44.5;
 rectDuct('Supply boot',3.0,2.32,8.7, -4.5,P_AHU_SUP.y,5.7);
-/* the riser feeds the three bag-in/bag-out terminals: ceiling terminal 1, the LAF hood over the filler,
-   and the right-wall supply plenum with its two wall terminals (operator side) */
+/* the riser feeds the bag-in/bag-out supply terminals: ceiling terminal 1, the LAF hood over the filler, and
+   ceiling terminals 2 + 3 above and just behind the operator (down-flow over the operator to exhaust terminal 3) */
 var LAF={x0:25.6,x1:35.4,z0:-15.4,z1:7.4,y0:24,y1:27.6};       // unidirectional-flow hood over the filler
-var RWP={x0:46,x1:BX-TH,y0:8,y1:CEIL,z0:-6.5,z1:4.5};          // right-wall supply plenum
-duct('Supply riser',[[RX,P_AHU_SUP.y+1.1,RZ],[RX,RY,RZ],[0.6,RY,RZ],[8,RY,RZ],[8,RY,0],[(RWP.x0+RWP.x1)/2,RY,0],[(RWP.x0+RWP.x1)/2,CEIL+0.3,0]],1.4);
+var CT={x:44.5, z:[-5.2,3.2], a:7.2, tx:39.5};                  // ceiling terminals 2 + 3: centre x, centre z's, face size, riser tee
+duct('Supply riser',[[RX,P_AHU_SUP.y+1.1,RZ],[RX,RY,RZ],[0.6,RY,RZ],[8,RY,RZ],[8,RY,0],[CT.tx,RY,0]],1.4);
 duct('Terminal drop 1 (ceiling)',[[14,RY,0],[14,CEIL+1.4,0]],1.0);
 duct('LAF supply drop',[[30.5,RY,0],[30.5,RY-1.4,-4],[30.5,LAF.y1+0.2,-4]],1.1);
+CT.z.forEach(function(z,i){                                      // tee at the end of the riser, one drop per terminal
+  duct('Terminal drop '+(i+2)+' (ceiling, above the operator)',[[CT.tx,RY,0],[CT.tx,RY,z],[CT.x,RY,z],[CT.x,CEIL+1.4,z]],0.85);
+});
 flangeRing('Partition sleeve: supply',0,RY,RZ,1.4,'x');
 /* exhaust: low-level BIBO HEPA exhaust terminals in the partition → collector → PT-102 → DV-101 →
    straight to the air-pump unit (Cu core). Nothing goes back to the AHU. */
-var GRILLE=[[6.9,3],[6.9,-13],[6.9,17]];                       // low-level exhaust terminals: centre y, z (3 = front, by the pass box)
+var GRILLE=[[6.9,3],[6.9,-13]];                                // low-level exhaust terminals in the partition: centre y, z
+var T3={y:4.15, z:-1, hx:51.3, dz:-26.3};                       // exhaust terminal 3: low on the right wall, behind the operator;
+                                                                // its BIBO housing sits outside the wall (x hx), its duct runs outside the back wall (z dz)
 var EXY=11, EXZ=P_HR_EXIN.z, DVX=-23.5;                          // exhaust main height, line, diverter position
 duct('Exhaust collector A (behind the partition)',[[-1.75,9.6,GRILLE[0][1]],[-1.75,EXY,GRILLE[0][1]],[-1.75,EXY,EXZ-0.9]],0.85);
 duct('Exhaust collector B (behind the partition)',[[-1.75,9.6,GRILLE[1][1]],[-1.75,EXY,GRILLE[1][1]],[-1.75,EXY,EXZ+0.9]],0.85);
-duct('Exhaust collector C (behind the partition)',[[-1.75,9.6,GRILLE[2][1]],[-1.75,EXY,GRILLE[2][1]],[-1.75,EXY,GRILLE[0][1]+0.9]],0.85);
+duct('Exhaust collector C (right wall, behind the operator)',[[T3.hx,T3.y,T3.z-3.5],[T3.hx,T3.y,T3.dz],[-1.75,T3.y,T3.dz],[-1.75,EXY,T3.dz],[-1.75,EXY,GRILLE[1][1]]],0.85);
 duct('Exhaust main: clean room → DV-101',[[-1.75,EXY,EXZ],[DVX+1.4,EXY,EXZ]],0.75,null,null,null,LANE);
 duct('Exhaust: DV-101 → air-pump unit (Cu core)',[[DVX-1.4,EXY,EXZ],[-27.2,EXY,EXZ],[-27.2,P_HR_EXIN.y,EXZ],[P_HR_EXIN.x+0.45,P_HR_EXIN.y,EXZ]],0.75,null,null,null,LANE);
 /* the HEPA bypass climbs from DV-101 and runs to the front of the plant room, towards the partition; the outer
@@ -1938,29 +1943,26 @@ DIFF.forEach(function(d,i){
     g.add(at(new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.18,CEIL-LAF.y1,8),MR.steel),q[0],(CEIL+LAF.y1)/2,q[1])); });
   clean.add(g);
 })();
-/* right-wall supply plenum with two BIBO HEPA terminals, high and low, behind the operator: clean air
-   reaches the operator first, then the filler, then the low-level exhausts on the far wall */
-(function rightWall(){
-  var g=new THREE.Group(); tag(g,'Right-wall supply plenum');
-  var cz=(RWP.z0+RWP.z1)/2, w=RWP.x1-RWP.x0, d=RWP.z1-RWP.z0;
-  g.add(at(box(w,0.3,d,MR.white),RWP.x0+w/2,RWP.y0,cz));
-  g.add(at(box(w,RWP.y1-RWP.y0,0.3,MR.white),RWP.x0+w/2,(RWP.y0+RWP.y1)/2,RWP.z0));
-  g.add(at(box(w,RWP.y1-RWP.y0,0.3,MR.white),RWP.x0+w/2,(RWP.y0+RWP.y1)/2,RWP.z1));
-  var fm=box(0.3,RWP.y1-RWP.y0,d,std(new THREE.Color('#eef1f4'),{m:0.1,r:0.55,t:true,o:0.35,side:THREE.DoubleSide,dw:false}));
-  at(fm,RWP.x0,(RWP.y0+RWP.y1)/2,cz); fm.renderOrder=2; g.add(fm);
-  clean.add(g);
-  [[30,'Right-wall BIBO HEPA terminal 2 (high, H14)'],[15.5,'Right-wall BIBO HEPA terminal 3 (low, H14)']].forEach(function(q){
-    bibo(q[1],RWP.x0+w/2+0.2,q[0],cz,w-0.6,7.2,7.6,'+x');   // bagged out from outside, through the right wall
-    hepaFace(q[1].replace('BIBO HEPA terminal','terminal').replace(' (high, H14)',' face').replace(' (low, H14)',' face'),RWP.x0-0.1,q[0],cz,7.2,7.6,'x');
-  });
-})();
+/* ceiling terminals 2 + 3: H14 BIBO housings in the ceiling void, above and just behind the operator. Clean air comes
+   down over the operator (head and shoulders first), so what the operator sheds is carried down to exhaust terminal 3
+   at the foot of the wall behind them, away from the filler; the LAF hood keeps the Grade A first air over the product.
+   Bagged out from the ceiling void, like terminal 1. 72 × 72 mm faces: the same face velocity as terminal 1. */
+CT.z.forEach(function(z,i){
+  bibo('Ceiling BIBO HEPA terminal '+(i+2)+' (H14)',CT.x,CEIL+1.9,z,CT.a,3.0,CT.a,i?'+z':'-z');
+  hepaFace('Ceiling terminal '+(i+2)+' face screen',CT.x,CEIL-0.15,z,CT.a,CT.a,'y');
+});
 /* low-level exhaust terminals in the partition: H14 BIBO housings on the plant-room side, so a
    contaminated filter is bagged out from outside the clean room */
 GRILLE.forEach(function(gr,i){
   var y=gr[0], z=gr[1];
   hepaFace('Low-level exhaust terminal '+(i+1)+' face screen',TH/2+0.2,y,z,5.4,7.0,'x');
-  bibo('Exhaust BIBO HEPA terminal '+(i+1)+' (H14)',-1.6,y,z,2.6,5.4,7.0,i===1?'-z':'+z',rigDucts);
+  bibo('Exhaust BIBO HEPA terminal '+(i+1)+' (H14)',-1.6,y,z,2.6,5.4,7.0,i?'-z':'+z',rigDucts);
 });
+/* exhaust terminal 3: low on the right wall, right behind the operator and under ceiling terminals 2 + 3, so what the
+   operator sheds is taken straight down and out. Its H14 BIBO housing is outside the wall (bagged out from outside the
+   clean room); collector C runs outside the right and back walls and enters the plant room to join collector B. */
+hepaFace('Low-level exhaust terminal 3 face screen',BX-TH-0.2,T3.y,T3.z,5.4,7.0,'x');
+bibo('Exhaust BIBO HEPA terminal 3 (H14)',T3.hx,T3.y,T3.z,2.6,5.4,7.0,'+z',rigDucts);
 (function ledPanel(){
   var m=at(box(22,0.3,6,MR.led),24,CEIL-0.25,-15); tag(m,'LED clean-room luminaire'); clean.add(m);
 })();
@@ -2141,7 +2143,8 @@ var PBX={x0:6,x1:16,y0:12.5,y1:22.5,zi:18,zo:28};   // body; the front wall sits
 /* ------------------------------------------------ vial filling machine (stand-alone, not wired to the rig PCB) */
 /* The filler and the operator stand next to the right wall. They are built in the filler's own frame
    (VF, OP: line along x, glove side +z) and turned a quarter turn, so the line runs along the wall and
-   the operator's back faces the two right-wall HEPA terminals: FW() maps the frame to the world. */
+   the operator's back faces the right wall (ceiling terminals 2 + 3 above, exhaust terminal 3 at the foot of the wall):
+   FW() maps the frame to the world. */
 var VF={x0:24,x1:48,z0:-11.5,z1:-0.5,deck:10.9,cz:-6}, FTX=36.5, FTZ=32;
 function FW(x,y,z){ return W(z+FTX,y,FTZ-x); }
 (function filler(){
@@ -2445,7 +2448,8 @@ var PATHS={
          [-7.1,YS,0,0.84,'f','tin'],[-5.7,YS,0,0.80,'f','tin'],[-4.3,YS,0,0.84,'f','t2'],[-3.9,YS,0,0.88,'f','t2']].concat(TRAIN_C)),
   /* exhaust: low-level BIBO terminals → collector → PT-102 → DV-101 → Cu core (or the outer HEPA) */
   exA: [[0.6,GRILLE[0][0],GRILLE[0][1],1.0,'r','ret'],[-1.6,GRILLE[0][0],GRILLE[0][1],1.0,'r','ret'],[-1.75,EXY,GRILLE[0][1],0.8,'r','ret'],[-1.75,EXY,EXZ,0.8,'r','ret']],
-  exC: [[0.6,GRILLE[2][0],GRILLE[2][1],1.0,'r','ret'],[-1.6,GRILLE[2][0],GRILLE[2][1],1.0,'r','ret'],[-1.75,EXY,GRILLE[2][1],0.8,'r','ret'],[-1.75,EXY,EXZ,0.8,'r','ret']],
+  exC: [[BX-TH-0.6,T3.y,T3.z,1.0,'r','ret'],[T3.hx,T3.y,T3.z,1.0,'r','ret'],[T3.hx,T3.y,T3.z-3.5,0.8,'r','ret'],[T3.hx,T3.y,T3.dz,0.8,'r','ret'],
+        [-1.75,T3.y,T3.dz,0.8,'r','ret'],[-1.75,EXY,T3.dz,0.8,'r','ret'],[-1.75,EXY,GRILLE[1][1],0.8,'r','ret'],[-1.75,EXY,EXZ,0.8,'r','ret']],
   exB: [[0.6,GRILLE[1][0],GRILLE[1][1],1.0,'r','ret'],[-1.6,GRILLE[1][0],GRILLE[1][1],1.0,'r','ret'],[-1.75,EXY,GRILLE[1][1],0.8,'r','ret'],[-1.75,EXY,EXZ,0.8,'r','ret']],
   exMain: [[-1.75,EXY,EXZ,0.75,'r','ret'],[-14.2,EXY,EXZ,0.75,'r','ret'],[-17,EXY,EXZ,0.75,'r','ret'],[DVX,EXY,EXZ,0.75,'r','ret']],
   exCore: [[DVX,EXY,EXZ,0.6,'r','r1'],[-27.2,EXY,EXZ,0.6,'r','r1'],[-27.2,P_HR_EXIN.y,EXZ,0.6,'r','r1'],[P_HR_EXIN.x+0.4,P_HR_EXIN.y,EXZ,0.55,'r','r1']].concat(cw([
@@ -2463,9 +2467,10 @@ var RISER0=[[P_AHU_SUP.x-0.2,P_AHU_SUP.y,P_AHU_SUP.z,1.0,'m','sup'],[RX,P_AHU_SU
   [RX,P_AHU_SUP.y+2.5,RZ,1.1,'m','sup'],[RX,RY,RZ,1.1,'m','sup'],[0.5,RY,RZ,1.1,'m','sup'],[8,RY,RZ,1.1,'m','sup'],
   [8,RY,0,1.1,'m','sup'],[14,RY,0,1.0,'m','sup']];
 PATHS.riserA=RISER0.concat([[14,CEIL+1.4,0,0.9,'m','sup'],[14,CEIL+0.2,0,1.1,'m','sup']]);
-PATHS.riserB=RISER0.concat([[30.5,RY,0,1.0,'m','sup'],[(RWP.x0+RWP.x1)/2,RY,0,1.0,'m','sup'],[(RWP.x0+RWP.x1)/2,CEIL,0,1.0,'m','sup'],[(RWP.x0+RWP.x1)/2,31,-1,1.1,'m','sup']]);
+PATHS.riserB=RISER0.concat([[30.5,RY,0,1.0,'m','sup'],[CT.tx,RY,0,1.0,'m','sup'],[CT.tx,RY,CT.z[0],0.8,'m','sup'],[CT.x,RY,CT.z[0],0.8,'m','sup'],[CT.x,CEIL+1.4,CT.z[0],0.8,'m','sup'],[CT.x,CEIL+0.2,CT.z[0],1.0,'m','sup']]);
+PATHS.riserD=RISER0.concat([[30.5,RY,0,1.0,'m','sup'],[CT.tx,RY,0,1.0,'m','sup'],[CT.tx,RY,CT.z[1],0.8,'m','sup'],[CT.x,RY,CT.z[1],0.8,'m','sup'],[CT.x,CEIL+1.4,CT.z[1],0.8,'m','sup'],[CT.x,CEIL+0.2,CT.z[1],1.0,'m','sup']]);
 PATHS.riserC=RISER0.concat([[30.5,RY,0,1.0,'m','sup'],[30.5,RY-1.4,-4,0.9,'m','sup'],[30.5,LAF.y1+0.4,-4,0.9,'m','sup'],[30.5,LAF.y0+0.8,-4,1.2,'m','sup']]);
-function GZ(z){ return z>11?GRILLE[2][1]:(z>-5?GRILLE[0][1]:GRILLE[1][1]); }   // nearest low-level exhaust terminal
+function GZ(z){ return z>-5?GRILLE[0][1]:GRILLE[1][1]; }      // nearest partition exhaust terminal
 PATHS.room=[];
 DIFF.forEach(function(d){
   [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(dr){
@@ -2487,14 +2492,15 @@ DIFF.forEach(function(d){
   PATHS.room.push([[x,LAF.y0-0.4,z,1.6,'m','sup'],[x,VF.deck+8.4,z,2.4,'m','sup'],[x,VF.deck+2.2,z,2.4,'m','sup'],
     [x-5,VF.deck-1.5,z,2.4,'m','room'],[16,4.6,(z+gz)/2,2.6,'r','room'],[3.2,gy,gz,1.8,'r','ret'],[0.6,gy,gz,1.4,'r','ret']]);
 }); });
-/* right-wall terminals: across the operator's back first, then over and past the filler, to the far wall */
-[-4,0,3].forEach(function(dz){
-  var z=-1+dz, gy=GRILLE[0][0];
-  PATHS.room.push([[RWP.x0-0.4,30,z,1.6,'m','sup'],[41,28.5,z*1.4,2.4,'m','sup'],[33,29.5,z*1.8,3.0,'m','sup'],
-    [20,22,z*2,3.4,'m','room'],[9,9,z>0?4:-9,3.2,'r','room'],[3.2,gy,z>0?3:-13,1.8,'r','ret'],[0.6,gy,z>0?3:-13,1.4,'r','ret']]);
-  PATHS.room.push([[RWP.x0-0.4,15.5,z,1.6,'m','sup'],[41.5,15,z+(z>=0?4:-4),2.4,'m','sup'],[38,13.5,z+(z>=0?9:-14),2.8,'m','sup'],
-    [24,9,z>=0?11:-19,3.2,'m','room'],[10,5.5,z>=0?6:-15,3.0,'r','room'],[3.2,gy,z>=0?3:-13,1.8,'r','ret'],[0.6,gy,z>=0?3:-13,1.4,'r','ret']]);
-});
+/* ceiling terminals 2 + 3: down over the operator; most of it goes on down behind the operator's legs into exhaust
+   terminal 3 at the foot of the right wall, the rest along the floor beside the filler to the partition terminals */
+CT.z.forEach(function(z){ [-2.2,0,2.2].forEach(function(d){
+  var x=CT.x+d, gz=z>0?GRILLE[0][1]:GRILLE[1][1], gy=GRILLE[0][0];
+  PATHS.room.push([[x,CEIL-0.6,z,1.3,'m','sup'],[x,CEIL-4.5,z,1.9,'m','sup'],[x+0.8,24,z*0.85,2.4,'m','room'],
+    [46+d*0.4,12,(z+T3.z)/2,2.4,'m','room'],[47.6,T3.y+0.6,T3.z+(z>0?1.6:-1.6),1.8,'r','room'],[BX-TH-0.6,T3.y,T3.z,1.3,'r','ret']]);
+  PATHS.room.push([[x,CEIL-0.6,z,1.3,'m','sup'],[x-1,CEIL-5,z*1.2,2.0,'m','sup'],[x-2.5,18,z>0?7+d:-11+d,2.6,'m','room'],
+    [38,6,z>0?10:-18,3.0,'m','room'],[20,5,z>0?8:-19,2.8,'r','room'],[3.2,gy,gz,1.8,'r','ret'],[0.6,gy,gz,1.4,'r','ret']]);
+}); });
 /* contamination: particles shed by the operator are swept past the sides of the filler at low level,
    under the LAF first air, and out through the low-level exhausts; plus what the pass box lets in */
 PATHS.contam=[[OPW.x,20,OPW.z,2.2,'c','room'],[OPW.x-2.5,14,OPW.z+4,2.8,'c','room'],[37,8,10,3.2,'c','room'],
@@ -2502,7 +2508,10 @@ PATHS.contam=[[OPW.x,20,OPW.z,2.2,'c','room'],[OPW.x-2.5,14,OPW.z+4,2.8,'c','roo
 PATHS.contam2=[[OPW.x+0.5,17,OPW.z-1,2.2,'c','room'],[OPW.x-2,9,OPW.z-6,3.0,'c','room'],[37,5,-18,3.2,'c','room'],
   [18,4.5,-19,2.6,'c','room'],[3.2,GRILLE[1][0],GRILLE[1][1],1.6,'c','ret'],[0.6,GRILLE[1][0],GRILLE[1][1],1.2,'c','ret']];
 PATHS.pbx=[[(PBX.x0+PBX.x1)/2,(PBX.y0+PBX.y1)/2,PBX.zi-0.5,1.6,'c','room'],[10,12,PBX.zi-5,2.4,'c','room'],
-  [6,5,15,2.8,'c','room'],[3.2,GRILLE[2][0],GRILLE[2][1],1.6,'c','ret'],[0.6,GRILLE[2][0],GRILLE[2][1],1.2,'c','ret']];
+  [8,5,8,2.8,'c','room'],[3.2,GRILLE[0][0],GRILLE[0][1],1.6,'c','ret'],[0.6,GRILLE[0][0],GRILLE[0][1],1.2,'c','ret']];
+/* what the operator sheds low down goes straight back into exhaust terminal 3 behind the legs */
+PATHS.contam3=[[OPW.x+0.6,13,OPW.z+0.8,2.0,'c','room'],[OPW.x+2.4,7,OPW.z+0.4,2.2,'c','room'],[46.8,T3.y+0.4,T3.z,1.8,'c','room'],
+  [BX-TH-0.6,T3.y,T3.z,1.3,'c','ret'],[T3.hx,T3.y,T3.z,1.0,'c','ret']];
 
 /* polyline with arc-length table and a perpendicular frame per segment */
 function mkPath(pts){
@@ -2562,13 +2571,13 @@ var STREAMS=[
   stream('hr',[PATHS.hr],440,'Qhr',{size:0.42}),
   stream('direct',[PATHS.direct],240,'Qdir'),
   stream('supply',[PATHS.supply],620,'Qfa',{size:0.42}),
-  stream('riser',[PATHS.riserA,PATHS.riserB,PATHS.riserC],700,'Qsup',{vk:9}),
+  stream('riser',[PATHS.riserA,PATHS.riserB,PATHS.riserC,PATHS.riserD],760,'Qsup',{vk:9}),
   stream('room',PATHS.room,1700,'Qsup',{size:0.85,vk:11}),
   stream('ret',[PATHS.exA,PATHS.exB,PATHS.exC],420,'Qret'),
   stream('exmain',[PATHS.exMain],300,'Qex',{size:0.42}),
   stream('stale',[PATHS.exCore],460,'Qcore',{size:0.42,fadeOut:true}),
   stream('byp',[PATHS.exByp],360,'Qbyp',{size:0.42,fadeOut:true}),
-  stream('contam',[PATHS.contam,PATHS.contam2],320,'Qcont',{size:0.6,vk:6,fadeIn:true}),
+  stream('contam',[PATHS.contam,PATHS.contam2,PATHS.contam3],360,'Qcont',{size:0.6,vk:6,fadeIn:true}),
   stream('pbx',[PATHS.pbx],160,'Qpbx',{size:0.6,vk:8,fadeIn:true})
 ];
 var _v=new THREE.Vector3(), _c=new THREE.Color();
@@ -2615,7 +2624,7 @@ var airVisible=true, contamVisible=true;
 
 /* ---------------------------------------------- coloured air columns */
 var ribbons=new THREE.Group(); scene.add(ribbons);
-var RIBS=['comp','hr','direct','supply','riserA','riserB','riserC','exA','exB','exC','exMain','exCore','exByp'];
+var RIBS=['comp','hr','direct','supply','riserA','riserB','riserC','riserD','exA','exB','exC','exMain','exCore','exByp'];
 var ribbonMeshes=[];
 function buildRibbons(){
   while(ribbons.children.length){ var c=ribbons.children.pop(); c.geometry.dispose(); c.material.dispose();
@@ -2651,12 +2660,12 @@ var arrowDefs=[
   {p:[-57,22,-14], rz:-Math.PI/2, c:'fresh'},
   {p:[14,35.6,0], rz:Math.PI, c:'mix'},
   {p:[30.5,LAF.y0-3.2,-4], rz:Math.PI, c:'mix'},
-  {p:[RWP.x0-2.2,30,-1], rz:Math.PI/2, c:'mix'},
-  {p:[RWP.x0-2.2,15.5,-1], rz:Math.PI/2, c:'mix'},
+  {p:[CT.x,CEIL-4.4,CT.z[0]], rz:Math.PI, c:'mix'},
+  {p:[CT.x,CEIL-4.4,CT.z[1]], rz:Math.PI, c:'mix'},
   {p:[BYP.sx,BYP.top+4.5,BYP.sz], rz:0, c:'ret'},
   {p:[3.4,GRILLE[0][0]+4.6,GRILLE[0][1]], rz:Math.PI/2, c:'ret'},
   {p:[3.4,GRILLE[1][0]+4.6,GRILLE[1][1]], rz:Math.PI/2, c:'ret'},
-  {p:[3.4,GRILLE[2][0]+4.6,GRILLE[2][1]], rz:Math.PI/2, c:'ret'}
+  {p:[45.6,T3.y+0.2,T3.z+5.6], rz:-Math.PI/2, c:'ret'}
 ];
 function buildArrows(){
   while(arrows.children.length){ var c=arrows.children.pop(); c.geometry.dispose(); c.material.dispose(); }
@@ -2825,10 +2834,12 @@ var DUCTAIR={
   'Exhaust: air-pump unit → roof stack':['Qcore',1,'r','exh'],
   'Supply riser':['Qsup',1,'m','sup'],
   'Terminal drop 1 (ceiling)':['Qsup',0.25,'m','sup'],
+  'Terminal drop 2 (ceiling, above the operator)':['Qsup',0.175,'m','sup'],
+  'Terminal drop 3 (ceiling, above the operator)':['Qsup',0.175,'m','sup'],
   'LAF supply drop':['Qsup',0.4,'m','sup'],
-  'Exhaust collector A (behind the partition)':['Qret',0.667,'r','ret'],
-  'Exhaust collector B (behind the partition)':['Qret',0.333,'r','ret'],
-  'Exhaust collector C (behind the partition)':['Qret',0.333,'r','ret'],
+  'Exhaust collector A (behind the partition)':['Qret',0.333,'r','ret'],
+  'Exhaust collector B (behind the partition)':['Qret',0.667,'r','ret'],
+  'Exhaust collector C (right wall, behind the operator)':['Qret',0.333,'r','ret'],
   'Exhaust main: clean room → DV-101':['Qex',1,'r','ret'],
   'Exhaust: DV-101 → air-pump unit (Cu core)':['Qcore',1,'r','r1'],
   'HEPA bypass: DV-101 → outer BIBO HEPA':['Qbyp',1,'c','ret'],
@@ -2888,10 +2899,11 @@ var RIGLABELS=[
   {text:'AHU · 100 % fresh air',sub:'no mixing box, no recirculation, no exhaust inside',a:C2W(1,YT,0),o:W(9,6,13)},
   {text:'Heat-recovery air-pump unit',sub:'Cu plate core · the only exhaust path',a:C2W(MXC,MY+MH/2,MZ),o:W(-6,13,-8)},
   {text:'Supply riser',sub:'FT-102 airflow → 4 BIBO HEPA terminals',a:W(RX,32,RZ),o:W(5,5,9)},
-  {text:'Ceiling BIBO HEPA terminal',sub:'H14 · bag-in/bag-out from the ceiling void',a:W(14,CEIL-0.4,0),o:W(-3,-6,13)},
+  {text:'Ceiling BIBO HEPA terminal 1',sub:'H14 · bag-in/bag-out from the ceiling void',a:W(14,CEIL-0.4,0),o:W(-3,-6,13)},
   {text:'LAF hood over the filler',sub:'H14 BIBO · down-flow first air · 100 % fresh air',a:W(LAF.x1,LAF.y1,LAF.z1),o:W(4,6,10)},
-  {text:'Right-wall BIBO HEPA terminals',sub:'×2 high + low · behind the operator',a:W(RWP.x0,33.6,RWP.z1),o:W(3,5,12)},
+  {text:'Ceiling BIBO HEPA terminals 2 + 3',sub:'H14 · above the operator · down to exhaust terminal 3',a:W(CT.x,CEIL-0.4,CT.z[1]+CT.a/2),o:W(3,5,12)},
   {text:'Low-level exhaust terminals',sub:'H14 BIBO · straight to the air pump',a:W(0.6,GRILLE[0][0]+2,GRILLE[0][1]),o:W(9,-1,12)},
+  {text:'Exhaust terminal 3',sub:'H14 BIBO · low on the wall behind the operator',a:W(BX-TH,T3.y+2,T3.z+3.5),o:W(6,-2,12)},
   {text:'PT-102 exhaust particles',sub:'diverts dirty exhaust before the air pump',a:W(-17,EXY+3.2,EXZ),o:W(4,8,6),tier:'plant'},
   {text:'DV-101 diverter',sub:'spring return · fail-safe to the HEPA',a:W(DVX,EXY+1.4,EXZ+1.6),o:W(-3,6,8),tier:'plant'},
   {text:'Outer BIBO HEPA + FAN-103B',sub:'beside the fresh-air compressor · out through the common roof stack',a:W((BYP.x0+BYP.x1)/2,BYP.y+3,BYP.z),o:W(4,9,9),tier:'plant'},
@@ -2903,7 +2915,7 @@ var RIGLABELS=[
   {text:'Acrylic enclosure',sub:'1000 × 500 × 500 mm · 5 mm PMMA',a:W(BX,BY,BZ),o:W(8,2,8)},
   {text:'Vial filling machine',sub:'along the right wall · open RABS under the LAF',a:FW(44,VF.deck+8.4,VF.z0),o:W(-6,9,-6)},
   {text:'Pass box',sub:'material transfer · interlocked doors + UV',a:W((PBX.x0+PBX.x1)/2,PBX.y1+0.3,BZ),o:W(-8,7,6)},
-  {text:'Operator',sub:'back to the right-wall terminals · protected first air',a:W(OPW.x,25.6,OPW.z),o:W(5,6,9)},
+  {text:'Operator',sub:'under ceiling terminals 2 + 3 · down-flow to exhaust terminal 3',a:W(OPW.x,25.6,OPW.z),o:W(5,6,9)},
   {text:'Air particle sensor',sub:'PT-101 · room air + fill-point probe',a:W(PT.x,PT.y+2.1,PT.z),o:W(-2,18,4)},
   {text:'24 V DC supply',sub:'feeds the PCB',a:W(-40,TH+3.2,-20),o:W(-5,-5,-4),tier:'aux'},
   {text:'Room T + RH',sub:'MT-106 · SHT31',a:W(44,24,-BZ+TH+1.2),o:W(4,6,4),tier:'aux'},
@@ -3335,10 +3347,10 @@ function drawAlarms(){
 /* Contamination containment strategy: the barriers, each with its live state */
 var BARRIERS=[
   {t:'Pressure cascade',d:'The clean room is held above the plant room and the lab, so any leak flows outward and outside air cannot get in. PDT-101 drives the exhaust fans (L7).'},
-  {t:'100 % fresh air, BIBO HEPA on every terminal',d:'Once-through fresh air only: nothing is recirculated. Panel and ePM1 bag filters and an H13 HEPA in the AHU, then an H14 bag-in/bag-out HEPA at every supply terminal (ceiling, LAF hood, 2 right-wall) and every exhaust terminal. Used filters are bagged out without being touched.'},
+  {t:'100 % fresh air, BIBO HEPA on every terminal',d:'Once-through fresh air only: nothing is recirculated. Panel and ePM1 bag filters and an H13 HEPA in the AHU, then an H14 bag-in/bag-out HEPA at every supply terminal (3 ceiling terminals, LAF hood) and every exhaust terminal (2 in the partition, 1 low on the right wall). Used filters are bagged out without being touched.'},
   {t:'Dilution and recovery',d:'A high air-change rate dilutes what people and the process shed. Recovery to 1 % of a peak takes 4.6 ÷ ACH hours.'},
   {t:'LAF first air at the fill point (Grade A)',d:'The filler runs under its own LAF hood (H14 BIBO, fed with 100 % fresh air). Down-flow first air reaches the needles before anything else, then sweeps down and away.'},
-  {t:'Operator protection: air from behind, low-level exhausts',d:'Two right-wall terminals blow clean air onto the operator\'s back, then over the filler, to low-level BIBO exhausts in the far wall. Dust from the product is carried away from the operator\'s breathing zone.'},
+  {t:'Operator and product protection: down-flow over the operator',d:'Ceiling terminals 2 + 3 blow clean air down over the operator; exhaust terminal 3 at the foot of the wall behind the operator takes it straight out, so what the operator sheds goes down and away from the filler. The RABS barrier and the LAF hood keep product dust away from the operator\'s breathing zone.'},
   {t:'Material transfer through the pass box',d:'Two interlocked doors that never open together, with a UV cycle between them. The clean room is never open to the lab.'},
   {t:'People: gowning and glove ports',d:'Grade B gown: hood, goggles, mask, overshoes, sterile gloves. Hands enter the RABS only through the glove ports; no open-door interventions.'},
   {t:'Heat recovery without cross-contamination',d:''},
@@ -3370,7 +3382,7 @@ function updateContainment(){
   var ach=k.ach, rec=ach>0.1?4.6/ach*60:Infinity; st[2]=ach>=40?'ok':(ach>=20?'warn':'bad');
   v[2]=f1(ach)+' ACH · 100:1 in '+(isFinite(rec)?f1(rec)+' min':'—');
   st[3]=worst([lvl(s.PT101A,3520),lvl(s.PT101A5,29)]); v[3]=kfmt(s.PT101A)+' /m³ · ≥5 µm '+f0(s.PT101A5);
-  st[4]='ok'; v[4]='2 wall terminals · 2 low exhausts, centre 69 mm above the floor';
+  st[4]='ok'; v[4]='2 ceiling terminals over the operator · 3 low exhausts (2 partition, 1 behind the operator)';
   st[5]='ok'; v[5]=CR.pb.state+' · '+CR.pb.transfers+' transfers';
   st[6]='ok'; v[6]='operator working through the gloves';
   if(!m.recovery){ st[7]='ok'; v[7]='core bypassed: no transfer'; d[7]='In the baseline test the fresh air bypasses the Cu core, so exhaust and fresh air cannot meet.'; }

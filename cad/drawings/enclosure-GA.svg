@@ -52,12 +52,10 @@
 <text x="349.57" y="97.80" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">2</text>
 <rect x="369.00" y="94.50" width="11.67" height="9.00" fill="none" stroke="#c6302f" stroke-width="0.3"/>
 <text x="376.23" y="97.80" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">3</text>
-<rect x="319.00" y="94.50" width="11.67" height="9.00" fill="none" stroke="#c6302f" stroke-width="0.3"/>
-<text x="326.23" y="97.80" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">4</text>
 <circle cx="384.83" cy="59.17" r="0.35" fill="none" stroke="#c6302f" stroke-width="0.3"/>
-<text x="386.23" y="57.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">5</text>
+<text x="386.23" y="57.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">4</text>
 <rect x="368.67" y="108.83" width="3.33" height="0.67" fill="none" stroke="#c6302f" stroke-width="0.3"/>
-<text x="371.73" y="107.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">6</text>
+<text x="371.73" y="107.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">5</text>
 <line x1="312.33" y1="109.67" x2="312.33" y2="115.67" stroke="#1273cc" stroke-width="0.15"/>
 <line x1="394.00" y1="109.67" x2="394.00" y2="115.67" stroke="#1273cc" stroke-width="0.15"/>
 <line x1="312.33" y1="114.67" x2="394.00" y2="114.67" stroke="#1273cc" stroke-width="0.2" marker-start="url(#a)" marker-end="url(#a)"/>
@@ -80,6 +78,8 @@
 <text x="179.57" y="179.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">5</text>
 <circle cx="183.17" cy="181.17" r="0.35" fill="none" stroke="#c6302f" stroke-width="0.3"/>
 <text x="184.57" y="179.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">6</text>
+<rect x="102.58" y="194.83" width="3.67" height="2.67" fill="none" stroke="#c6302f" stroke-width="0.3"/>
+<text x="105.82" y="194.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">7</text>
 <line x1="24.00" y1="213.67" x2="24.00" y2="219.67" stroke="#1273cc" stroke-width="0.15"/>
 <line x1="190.67" y1="213.67" x2="190.67" y2="219.67" stroke="#1273cc" stroke-width="0.15"/>
 <line x1="24.00" y1="218.67" x2="190.67" y2="218.67" stroke="#1273cc" stroke-width="0.2" marker-start="url(#a)" marker-end="url(#a)"/>
@@ -94,18 +94,20 @@
 <text x="234.98" y="171.63" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">1</text>
 <rect x="259.08" y="178.08" width="4.00" height="2.83" fill="none" stroke="#c6302f" stroke-width="0.3"/>
 <text x="262.48" y="178.30" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">2</text>
-<rect x="287.92" y="170.25" width="3.67" height="5.17" fill="none" stroke="#c6302f" stroke-width="0.3"/>
-<text x="291.15" y="171.63" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">3</text>
+<rect x="278.42" y="175.50" width="12.00" height="12.00" fill="none" stroke="#c6302f" stroke-width="0.3"/>
+<text x="285.82" y="180.30" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">3</text>
+<rect x="278.42" y="161.50" width="12.00" height="12.00" fill="none" stroke="#c6302f" stroke-width="0.3"/>
+<text x="285.82" y="166.30" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">4</text>
 <circle cx="254.58" cy="196.83" r="0.35" fill="none" stroke="#c6302f" stroke-width="0.3"/>
-<text x="255.98" y="195.63" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">4</text>
+<text x="255.98" y="195.63" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">5</text>
 <circle cx="267.58" cy="196.83" r="0.35" fill="none" stroke="#c6302f" stroke-width="0.3"/>
-<text x="268.98" y="195.63" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">5</text>
+<text x="268.98" y="195.63" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">6</text>
 <circle cx="254.58" cy="162.17" r="0.35" fill="none" stroke="#c6302f" stroke-width="0.3"/>
-<text x="255.98" y="160.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">6</text>
+<text x="255.98" y="160.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">7</text>
 <circle cx="267.58" cy="162.17" r="0.35" fill="none" stroke="#c6302f" stroke-width="0.3"/>
-<text x="268.98" y="160.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">7</text>
+<text x="268.98" y="160.97" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">8</text>
 <circle cx="250.25" cy="197.83" r="0.50" fill="none" stroke="#c6302f" stroke-width="0.3"/>
-<text x="251.65" y="196.63" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">8</text>
+<text x="251.65" y="196.63" font-size="2.0" text-anchor="start" fill="#c6302f" font-weight="600">9</text>
 <line x1="210.67" y1="213.67" x2="210.67" y2="219.67" stroke="#1273cc" stroke-width="0.15"/>
 <line x1="292.75" y1="213.67" x2="292.75" y2="219.67" stroke="#1273cc" stroke-width="0.15"/>
 <line x1="210.67" y1="218.67" x2="292.75" y2="218.67" stroke="#1273cc" stroke-width="0.2" marker-start="url(#a)" marker-end="url(#a)"/>
@@ -132,9 +134,8 @@
 <text x="285.50" y="236.20" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">1  supply duct 31 × 22  @ 160 from left, 440 from bottom</text>
 <text x="285.50" y="239.40" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">2  exhaust terminal 1 (H14 BIBO) 70 × 54  @ 215 from left, 64 from bottom</text>
 <text x="285.50" y="242.60" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">3  exhaust terminal 2 (H14 BIBO) 70 × 54  @ 375 from left, 64 from bottom</text>
-<text x="285.50" y="245.80" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">4  exhaust terminal 3 (H14 BIBO) 70 × 54  @ 75 from left, 64 from bottom</text>
-<text x="285.50" y="249.00" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">5  PDT-101 reference tube Ø4  @ 435 from left, 303 from bottom</text>
-<text x="285.50" y="252.20" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">6  PCB harness slot (floor)  @ 348 from left, 3 from bottom</text>
+<text x="285.50" y="245.80" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">4  PDT-101 reference tube Ø4  @ 435 from left, 303 from bottom</text>
+<text x="285.50" y="249.00" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">5  PCB harness slot (floor)  @ 348 from left, 3 from bottom</text>
 <text x="24.00" y="259.00" font-size="2.4" text-anchor="start" fill="#121c26" font-weight="600">Back wall</text>
 <text x="25.50" y="262.20" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">1  PCB standoff M3  @ 206 from left, 271 from bottom</text>
 <text x="25.50" y="265.40" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">2  PCB standoff M3 (same)  @ 374 from left, 271 from bottom</text>
@@ -142,15 +143,17 @@
 <text x="25.50" y="271.80" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">4  PCB standoff M3 (same)  @ 374 from left, 379 from bottom</text>
 <text x="25.50" y="275.00" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">5  MT-106 sensor M3  @ 925 from left, 195 from bottom</text>
 <text x="25.50" y="278.20" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">6  MT-106 sensor M3 (same)  @ 955 from left, 195 from bottom</text>
+<text x="25.50" y="281.40" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">7  exhaust collector C into the plant room 22 × 16  @ 482.5 from left, 105 from bottom</text>
 <text x="154.00" y="259.00" font-size="2.4" text-anchor="start" fill="#121c26" font-weight="600">Clean-room false ceiling</text>
 <text x="155.50" y="262.20" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">1  ceiling H14 BIBO terminal 86 × 86  @ 137.5 from left, 245 from bottom</text>
 <text x="155.50" y="265.40" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">2  LAF supply drop 24 × 17  @ 302.5 from left, 205 from bottom</text>
-<text x="155.50" y="268.60" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">3  right-wall plenum feed 22 × 31  @ 474.5 from left, 245 from bottom</text>
-<text x="155.50" y="271.80" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">4  LAF hanger Ø4  @ 263.5 from left, 101 from bottom</text>
-<text x="155.50" y="275.00" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">5  LAF hanger Ø4 (same)  @ 341.5 from left, 101 from bottom</text>
-<text x="155.50" y="278.20" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">6  LAF hanger Ø4 (same)  @ 263.5 from left, 309 from bottom</text>
-<text x="155.50" y="281.40" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">7  LAF hanger Ø4 (same)  @ 341.5 from left, 309 from bottom</text>
-<text x="155.50" y="284.60" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">8  luminaire cable Ø6  @ 237.5 from left, 95 from bottom</text>
+<text x="155.50" y="268.60" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">3  ceiling H14 BIBO terminal 2 72 × 72  @ 442.5 from left, 193 from bottom</text>
+<text x="155.50" y="271.80" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">4  ceiling H14 BIBO terminal 3 72 × 72  @ 442.5 from left, 277 from bottom</text>
+<text x="155.50" y="275.00" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">5  LAF hanger Ø4  @ 263.5 from left, 101 from bottom</text>
+<text x="155.50" y="278.20" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">6  LAF hanger Ø4 (same)  @ 341.5 from left, 101 from bottom</text>
+<text x="155.50" y="281.40" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">7  LAF hanger Ø4 (same)  @ 263.5 from left, 309 from bottom</text>
+<text x="155.50" y="284.60" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">8  LAF hanger Ø4 (same)  @ 341.5 from left, 309 from bottom</text>
+<text x="155.50" y="287.80" font-size="2.0" text-anchor="start" fill="#5d6e7e" font-weight="400">9  luminaire cable Ø6  @ 237.5 from left, 95 from bottom</text>
 <text x="312.33" y="129.80" font-size="3.0" text-anchor="start" fill="#121c26" font-weight="600">ACRYLIC CUT LIST — 5 mm cast PMMA</text>
 <line x1="312.3333333333333" y1="134" x2="400.3333333333333" y2="134" stroke="#5d6e7e" stroke-width="0.2"/>
 <text x="312.33" y="133.00" font-size="2.2" text-anchor="start" fill="#5d6e7e" font-weight="400">Panel</text>

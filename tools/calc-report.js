@@ -113,7 +113,7 @@ addRect("Tempered-air duct: recovery unit → AHU", D.Qfa, 0.2, "fresh air off t
   const d = ductCalc("Supply boot", D.Qsup, Dh, b.depth / 100, [90], 0.3, "", { a, b: h });
   d.De = huebscher(a, h); ducts.push(d);
 })();
-(function () {                                                  // riser: full flow → terminal-1 tee (x 14) → LAF tee (x 30.5) → right-wall plenum
+(function () {                                                  // riser: full flow → terminal-1 tee (x 14) → LAF tee (x 30.5) → tee to ceiling terminals 2 + 3
   const c = ductRec["Supply riser"], p = c.pts, ang = bends(p);
   const cum = [0]; for (let i = 1; i < p.length; i++) cum.push(cum[i - 1] + Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1], p[i][2] - p[i - 1][2]));
   const k = p.findIndex((q, i) => i < p.length - 1 && q[2] === 0 && p[i + 1][2] === 0 && p[i + 1][0] > q[0]);   // the run along the ceiling void
@@ -121,13 +121,15 @@ addRect("Tempered-air duct: recovery unit → AHU", D.Qfa, 0.2, "fresh air off t
   const L1 = at(14), L2 = at(30.5) - L1, L3 = cum[cum.length - 1] - at(30.5);
   addRect("Supply riser", D.Qsup, 0.3, "full supply flow", "Supply riser → terminal-1 tee", L1 / 100, ang.slice(0, k));
   addRect("Supply riser", D.Qsup * 0.75, 0.4, "75 %; tee run K 0.4", "Supply riser, tee 1 → LAF tee", L2 / 100, []);
-  addRect("Supply riser", D.Qsup * 0.35, 0.4, "35 % to the 2 right-wall terminals", "Supply riser, LAF tee → right-wall plenum", L3 / 100, ang.slice(k));
+  addRect("Supply riser", D.Qsup * 0.35, 0.4, "35 % to ceiling terminals 2 + 3", "Supply riser, LAF tee → terminal 2/3 tee", L3 / 100, ang.slice(k));
 })();
 addRect("Terminal drop 1 (ceiling)", D.Qsup * 0.25, 1.0, "25 %; tee branch K 1.0");
+addRect("Terminal drop 2 (ceiling, above the operator)", D.Qsup * 0.175, 1.0, "17.5 %; tee branch K 1.0");
+addRect("Terminal drop 3 (ceiling, above the operator)", D.Qsup * 0.175, 1.0, "17.5 %; tee branch K 1.0");
 addRect("LAF supply drop", D.Qsup * 0.40, 1.0, "40 %; tee branch K 1.0");
-addRect("Exhaust collector A (behind the partition)", Qret * 2 / 3, 0.5, "from exhaust terminals 1 + 3");
-addRect("Exhaust collector B (behind the partition)", Qret / 3, 0.5, "from exhaust terminal 2");
-addRect("Exhaust collector C (behind the partition)", Qret / 3, 0.5, "from exhaust terminal 3 (front, by the pass box)");
+addRect("Exhaust collector A (behind the partition)", Qret / 3, 0.5, "from exhaust terminal 1");
+addRect("Exhaust collector B (behind the partition)", Qret * 2 / 3, 0.5, "from exhaust terminal 2, + terminal 3 after the junction");
+addRect("Exhaust collector C (right wall, behind the operator)", Qret / 3, 0.6, "from exhaust terminal 3, outside the right and back walls");
 addRect("Exhaust main: clean room → DV-101", Qex, 0.4, "collector tee K 0.4");
 addRect("Exhaust: DV-101 → air-pump unit (Cu core)", Qex, 0.3, "normal path");
 addRect("Exhaust: air-pump unit → roof stack", Qex, 0.6, "to the common stack, tee K 0.6");
@@ -178,7 +180,7 @@ const pRoom = CASES.win.m.P.dp;
 const supPath = budget([
   ["Panel filter", COMP.panel], ["Bag filter", COMP.bag], ["Pre-heat coil", COMP.pre], ["Cooling coil (wet)", COMP.cool],
   ["Reheat coil", COMP.reheat], ["Droplet eliminator", COMP.elim], ["Steam lance", COMP.steam], ["H13 HEPA (AHU)", COMP.hepa], ["Attenuator", COMP.atten],
-  ["Supply boot (duct)", dpOf("Supply boot")], ["Supply riser (duct, to the farthest terminal)", dpOf("Supply riser")],
+  ["Supply boot (duct)", dpOf("Supply boot")], ["Supply riser + drop 2 (duct, to the farthest terminal)", dpOf("Supply riser") + dpOf("Terminal drop 2")],
   ["H14 BIBO terminal", COMP.bibo], ["Terminal face screen", COMP.face], ["Clean-room pressure", pRoom],
 ]);
 // FAN-101 fresh-air compressor: lab (0 Pa) → air-pump unit Cu core → AHU inlet (0 Pa)
@@ -190,14 +192,14 @@ const faPath = budget([
 ]);
 // FAN-103 exhaust fan, normal path: room (+ΔP) → BIBO exhaust terminal → PT-102 → DV-101 → Cu core → coil → outdoors
 const exPath = budget([
-  ["H14 BIBO exhaust terminal", COMP.bibo], ["Exhaust collector (duct)", dpOf("Exhaust collector A")], ["Exhaust main (duct)", dpOf("Exhaust main")],
+  ["H14 BIBO exhaust terminal", COMP.bibo], ["Exhaust collectors C + B (duct, index run from terminal 3)", dpOf("Exhaust collector C") + dpOf("Exhaust collector B")], ["Exhaust main (duct)", dpOf("Exhaust main")],
   ["DV-101 (open)", COMP.dv], ["DV-101 → air-pump unit (duct)", dpOf("Exhaust: DV-101")], ["Recovery-unit exhaust filter", COMP.hrExFilter],
   ["Cu plate core, exhaust side", COMP.hrCore], ["Exhaust-air coil", COMP.exCoil], ["Exhaust duct to the roof stack", dpOf("Exhaust: air-pump unit")],
   ["Backdraft damper", COMP.bdd], ["Common stack + rain cap", COMP.cap], ["Less: clean-room pressure", -pRoom],
 ]);
 // FAN-103B, HEPA bypass: room (+ΔP) → BIBO exhaust terminal → DV-101 → outer BIBO HEPA → outdoors
 const bypPath = budget([
-  ["H14 BIBO exhaust terminal", COMP.bibo], ["Exhaust collector (duct)", dpOf("Exhaust collector A")], ["Exhaust main (duct)", dpOf("Exhaust main")],
+  ["H14 BIBO exhaust terminal", COMP.bibo], ["Exhaust collectors C + B (duct, index run from terminal 3)", dpOf("Exhaust collector C") + dpOf("Exhaust collector B")], ["Exhaust main (duct)", dpOf("Exhaust main")],
   ["DV-101 (open to the bypass)", COMP.dv], ["HEPA bypass (duct)", dpOf("HEPA bypass")], ["Outer BIBO HEPA (H14)", COMP.outer],
   ["Backdraft damper", COMP.bdd], ["Bypass discharge + common stack (duct)", dpOf("Bypass discharge")], ["Rain cap", COMP.cap], ["Less: clean-room pressure", -pRoom],
 ]);

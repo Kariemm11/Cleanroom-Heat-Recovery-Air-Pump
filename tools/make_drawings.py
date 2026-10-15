@@ -27,6 +27,7 @@ PANELS = [
         ("hole", -294, 276, 3.4, 0, "PCB standoff M3"), ("hole", -126, 276, 3.4, 0, ""),
         ("hole", -294, 384, 3.4, 0, ""), ("hole", -126, 384, 3.4, 0, ""),
         ("hole", 425, 200, 3.4, 0, "MT-106 sensor M3"), ("hole", 455, 200, 3.4, 0, ""),
+        ("rect", -17.5, 110, 22, 16, "exhaust collector C into the plant room 22 × 16"),
     ]),
     ("Left wall (outdoor side)", 1, (490, 490), "z-y", [
         ("hole", -140, 220, 38, 0, "fresh-air compressor intake Ø38"),
@@ -34,20 +35,18 @@ PANELS = [
         ("hole", -178, 200, 4.5, 0, "compressor bracket M4"), ("hole", -138, 200, 4.5, 0, ""),
     ]),
     ("Right wall", 1, (490, 490), "z-y", [
-        ("hole", -10, 300, 50, 0, "BIBO change port, wall terminal 2 (high) Ø50"),
-        ("hole", -10, 155, 50, 0, "BIBO change port, wall terminal 3 (low) Ø50"),
+        ("rect", -10, 41.5, 70, 54, "exhaust terminal 3 (H14 BIBO, behind the operator) 70 × 54"),
     ]),
     ("Partition wall", 1, (490, 490), "z-y", [
         ("rect", 85, 445, 31, 22, "supply duct 31 × 22"),
         ("rect", 30, 69, 70, 54, "exhaust terminal 1 (H14 BIBO) 70 × 54"),
         ("rect", -130, 69, 70, 54, "exhaust terminal 2 (H14 BIBO) 70 × 54"),
-        ("rect", 170, 69, 70, 54, "exhaust terminal 3 (H14 BIBO) 70 × 54"),
         ("hole", -190, 308, 4, 0, "PDT-101 reference tube Ø4"),
         ("rect", -103, 8, 20, 4, "PCB harness slot (floor)"),
     ]),
     ("Clean-room false ceiling", 1, (492.5, 490), "x-z", [
         ("rect", 140, 0, 86, 86, "ceiling H14 BIBO terminal 86 × 86"),
-        ("rect", 305, -40, 24, 17, "LAF supply drop 24 × 17"), ("rect", 477, 0, 22, 31, "right-wall plenum feed 22 × 31"),
+        ("rect", 305, -40, 24, 17, "LAF supply drop 24 × 17"), ("rect", 445, -52, 72, 72, "ceiling H14 BIBO terminal 2 72 × 72"), ("rect", 445, 32, 72, 72, "ceiling H14 BIBO terminal 3 72 × 72"),
         ("hole", 266, -144, 4, 0, "LAF hanger Ø4"), ("hole", 344, -144, 4, 0, ""), ("hole", 266, 64, 4, 0, ""), ("hole", 344, 64, 4, 0, ""),
         ("hole", 240, -150, 6, 0, "luminaire cable Ø6"),
     ]),

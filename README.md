@@ -21,14 +21,13 @@ The rig is designed for **hazardous material**:
 - **100 % fresh air, once through.** The AHU has no mixing box, no recirculation dampers or servo, and no extract deck, core or thermal wheel. No exhaust air ever enters the AHU.
 - **The exhaust only pre-cools the fresh air**, through the air-pump unit's non-contact **Cu plate core** (copper plates, surface roughness **Ra ≤ 0.8 µm**). This is the only exhaust path.
 - **Every terminal is bag-in/bag-out H14 HEPA:**
-  - the ceiling terminal;
+  - **three ceiling terminals**: terminal 1 over the room, and terminals 2 + 3 above and just behind the operator;
   - an **LAF hood over the vial filler**;
-  - **two right-wall terminals** behind the operator;
   - the three low-level exhaust terminals.
 - **PT-102 watches the exhaust** before it reaches the air pump. If the exhaust is contaminated, **DV-101** diverts it through an **outer BIBO HEPA** (on a shelf beside the fresh-air compressor) and FAN-103B. DV-101 is spring return, so it is fail-safe.
 - **One exhaust outlet:** both exhausts leave through a single roof stack at the front-right of the plant room, with a rain cap and a backdraft damper on each branch. The fresh-air compressor's louvre is the only opening in the outdoor wall.
 - **All ducts are rectangular.**
-- **The filler and operator stand along the right wall.** The operator's back faces the wall terminals, so the air passes the operator first, then the product, then the low-level exhausts.
+- **The filler and operator stand along the right wall.** Ceiling terminals 2 + 3 blow down over the operator, and exhaust terminal 3 at the foot of the wall behind the operator takes that air straight out, so what the operator sheds goes down and away from the filler. The LAF hood gives the Grade A first air over the product.
 - **The staging bench sits beside the pass box.**
 
 ### Open the simulator
@@ -44,8 +43,8 @@ The rig is designed for **hazardous material**:
 |---|---|
 | **Plant room** (x < 0) | **AHU, single deck, 100 % fresh air**: outdoor-air pre-filter, fresh-air plenum (no mixing box, no core), panel + bag filters, **pre-heat coil**, cooling coil, droplet eliminator, **reheat coil**, steam humidifier, supply fan, H13 HEPA, attenuator. **Heat-recovery air-pump unit** behind it with the non-contact **Cu plate core** (Ra ≤ 0.8 µm), the exhaust-air coil and FAN-103. R32 compressor, receiver, accumulator, 4-way valve and EEV under the AHU. |
 | **Fresh air** | **Fresh-air compressor** (centrifugal, PWM speed) behind a wall louvre → header → **all of it through the air-pump unit's Cu core** → AHU intake. A slide-gated branch straight to the AHU is used only for the baseline test. |
-| **Supply** | AHU supply → boot → **riser** (FT-102 airflow) → through the partition → ceiling-void duct → **four H14 bag-in/bag-out terminals**: ceiling terminal 1, the **LAF hood** over the filler, and **two right-wall terminals** (high and low) in a wall plenum. |
-| **Exhaust** | **Three low-level H14 BIBO exhaust terminals** in the partition (one at the front, by the pass box) → collector → **PT-102** (particles) → **DV-101** → the air-pump unit's Cu core and evaporator → FAN-103 → **common roof stack**. If PT-102 sees contamination: DV-101 → **outer BIBO HEPA** → FAN-103B → the same stack. Nothing returns to the AHU, and nothing is discharged next to the fresh-air intake. |
+| **Supply** | AHU supply → boot → **riser** (FT-102 airflow) → through the partition → ceiling-void duct → **four H14 bag-in/bag-out terminals**: ceiling terminal 1, the **LAF hood** over the filler, and **ceiling terminals 2 + 3** above and just behind the operator. |
+| **Exhaust** | **Three low-level H14 BIBO exhaust terminals**: two in the partition and one low on the right wall, right behind the operator → collector → **PT-102** (particles) → **DV-101** → the air-pump unit's Cu core and evaporator → FAN-103 → **common roof stack**. If PT-102 sees contamination: DV-101 → **outer BIBO HEPA** → FAN-103B → the same stack. Nothing returns to the AHU, and nothing is discharged next to the fresh-air intake. |
 | **Clean room** (x > 0) | 492.5 × 490 × 395 mm net (V = 0.0953 m³). Human scale inside is about 1:7. It holds a **vial filling machine** along the right wall under its own LAF hood (infeed turntable, conveyor, 4-needle filling with product tank and peristaltic pump, stoppering, outfeed table, open RABS with glove ports, light tower). There is a **pass box** through the front wall beside the door, with interlocked inner and outer doors and a UV cycle, and a **gowned operator** working at the RABS gloves. An **air particle sensor (PT-101)** on the back wall samples the room air and, through a sample tube, an isokinetic probe beside the filling needles. Also a staging bench, LED luminaire, room T + RH, room ΔP and a hinged access door. The filler and the pass box are stand-alone equipment, not wired to the rig PCB. |
 | **Controls** | Main controller PCB (ESP32-S3, 3 × ACS712 current sensors, MOSFET drivers, I²C mux) on the back wall. Every device is reached by a **flat FR4 PCB strip** with copper tracks. **HMI-101**, a 7-inch touch screen, sits on the front face. A 24 V DC supply powers the rig. |
 
@@ -133,7 +132,7 @@ The HMI's **Containment** screen shows ten barriers, each with a live status (�
 | 2 | 100 % fresh air, BIBO HEPA on every terminal | Once-through fresh air; panel + bag + H13 in the AHU, then an H14 bag-in/bag-out HEPA at every supply and exhaust terminal. Used filters are bagged out without being touched. | Supply particle count; PDT-102 above 450 Pa means a loaded filter |
 | 3 | Dilution and recovery | The air change rate dilutes what people and the process shed. Recovery to 1 % takes 4.6 ÷ ACH hours. | ≥ 40 ACH OK. At 62.9 ACH the 100:1 recovery takes 4.4 min (Annex 1 guide: 15–20 min) |
 | 4 | LAF first air at the fill point (Grade A) | The filler runs under its own LAF hood (H14 BIBO, 100 % fresh air), so filtered air reaches the needles first. | PT-101 fill point ≤ 3 520 /m³ (≥0.5 µm) and ≤ 29 /m³ (≥5.0 µm) |
-| 5 | Operator protection: air from behind, low-level exhausts | The two right-wall terminals blow onto the operator's back, then over the filler, to low-level exhausts in the far wall. Product dust is carried away from the operator. | Shown as pink particles in 3D |
+| 5 | Operator and product protection: down-flow over the operator, low-level exhausts | Ceiling terminals 2 + 3 blow down over the operator; exhaust terminal 3 at the foot of the wall behind the operator and the two partition exhausts take the air out at low level. Operator particles go down and away from the filler; the RABS barrier and the LAF hood keep product dust away from the operator. | Shown as pink particles in 3D |
 | 6 | Material transfer through the pass box | Two interlocked doors that never open together, with a UV cycle between them. | Door state and transfer count; the inner door adds a short particle burst |
 | 7 | People: gowning and glove ports | Grade B gown. Hands enter the RABS only through the glove ports. | Operator particle shedding (editable) |
 | 8 | Heat recovery without cross-contamination | The sealed Cu plate core (Ra ≤ 0.8 µm) keeps exhaust and fresh air apart; there is no mixing box and no thermal wheel. | Always OK; the baseline test bypasses the core |

@@ -6,7 +6,7 @@
 
      fresh-air compressor → header → air-pump unit Cu plate core (fresh lane) → AHU: filters
      → pre-heat coil → cooling coil → reheat coil → steam humidifier → supply fan → HEPA
-     → bag-in/bag-out HEPA terminals (2 ceiling + 2 right wall) → clean room
+     → bag-in/bag-out HEPA terminals (3 ceiling + LAF hood) → clean room
      clean room → BIBO HEPA exhaust terminals → PT-102 → DV-101 diverter ─┬─ Cu plate core (exhaust lane) → exhaust-air coil → FAN-103 → outdoors
                                                                           └─ outer BIBO HEPA → FAN-103B → outdoors
 

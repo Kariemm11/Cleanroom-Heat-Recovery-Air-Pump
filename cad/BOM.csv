@@ -105,13 +105,15 @@ Ductwork,Core bypass header to AHU (baseline test),2,124.2,76.9,22.0,"Clear PVC 
 Ductwork,Tempered-air duct recovery unit to AHU,4,120.0,29.2,111.6,"Clear PVC / PETG duct, 2 mm wall"
 Ductwork,Exhaust air-pump unit to roof stack,5,431.0,422.2,313.0,Stainless steel 304 / clear PVC
 Ductwork,Supply boot,1,30.0,23.2,87.0,"Clear PVC / PETG duct, 2 mm wall"
-Ductwork,Supply riser,6,553.3,405.3,115.8,"Clear PVC / PETG duct, 2 mm wall"
+Ductwork,Supply riser,5,455.4,405.3,115.8,"Clear PVC / PETG duct, 2 mm wall"
 Ductwork,Terminal drop 1 (ceiling),1,15.5,31.0,22.0,"PMMA (cast acrylic), 5 mm, clear"
 Ductwork,LAF supply drop,2,24.2,175.0,57.1,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Ductwork,Terminal drop 2 (ceiling above the operator),3,68.7,40.4,61.4,"Operator figure (e.g. PLA print), cleanroom gown colours"
+Ductwork,Terminal drop 3 (ceiling above the operator),3,68.7,40.4,41.4,"Operator figure (e.g. PLA print), cleanroom gown colours"
 Ductwork,Partition sleeve supply,4,4.0,34.7,43.8,"Clear PVC / PETG duct, 2 mm wall"
 Ductwork,Exhaust collector A (behind the partition),2,18.7,23.4,102.5,See model colour
 Ductwork,Exhaust collector B (behind the partition),2,18.7,23.4,94.2,See model colour
-Ductwork,Exhaust collector C (behind the partition),2,18.7,23.4,140.4,See model colour
+Ductwork,Exhaust collector C (right wall behind the operator),4,549.2,87.2,227.4,"Operator figure (e.g. PLA print), cleanroom gown colours"
 Ductwork,Exhaust main clean room to DV-101,1,203.5,22.0,16.0,24 V spring-return damper actuator + SPDT end switch; aluminium blade in a PETG tee
 Ductwork,Exhaust DV-101 to air-pump unit (Cu core),3,47.4,82.2,16.0,"Copper Cu-ETP (C11000) plates 0.3 mm, both faces Ra <= 0.8 um, edges folded + sealed"
 Ductwork,HEPA bypass DV-101 to outer BIBO HEPA,2,136.0,107.0,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
@@ -125,7 +127,7 @@ Ductwork,Exhaust BIBO HEPA terminal 2 (H14) -2,2,26.6,21.0,16.0,"Stainless steel
 Ductwork,Exhaust BIBO HEPA terminal 2 (H14) -3,1,15.8,15.8,23.2,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
 Ductwork,Exhaust BIBO HEPA terminal 3 (H14),1,26.0,54.0,70.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
 Ductwork,Exhaust BIBO HEPA terminal 3 (H14) -2,2,26.6,21.0,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
-Ductwork,Exhaust BIBO HEPA terminal 3 (H14) -3,1,15.8,15.8,23.2,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Ductwork,Exhaust BIBO HEPA terminal 3 (H14) -3,1,15.8,15.8,23.3,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
 Clean room,Ceiling BIBO HEPA terminal 1 (H14),1,86.0,36.0,86.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
 Clean room,Ceiling BIBO HEPA terminal 1 (H14) -2,2,33.0,27.4,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
 Clean room,Ceiling BIBO HEPA terminal 1 (H14) -3,1,21.9,21.9,32.3,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
@@ -138,18 +140,16 @@ Clean room,LAF hood perforated outlet screen,1,92.0,3.0,222.0,"Stainless steel 3
 Clean room,LAF hood perforated outlet screen -2,4,97.0,4.0,227.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
 Clean room,LAF hood PVC skirts plus hangers,4,99.5,44.0,229.5,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
 Clean room,LAF hood PVC skirts plus hangers -2,4,81.6,124.0,211.6,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
-Clean room,Right-wall supply plenum,3,35.0,321.5,113.0,Stainless steel 304 / clear PVC
-Clean room,Right-wall supply plenum -2,1,3.0,320.0,110.0,Stainless steel 304 / clear PVC
-Clean room,Right-wall BIBO HEPA terminal 2 (high H14),1,29.0,72.0,76.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
-Clean room,Right-wall BIBO HEPA terminal 2 (high H14) -2,2,7.0,42.8,42.8,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
-Clean room,Right-wall BIBO HEPA terminal 2 (high H14) -3,1,53.8,36.5,36.5,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
-Clean room,Right-wall terminal 2 face,1,3.0,72.0,76.0,See model colour
-Clean room,Right-wall terminal 2 face -2,4,4.0,77.0,81.0,See model colour
-Clean room,Right-wall BIBO HEPA terminal 3 (low H14),1,29.0,72.0,76.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
-Clean room,Right-wall BIBO HEPA terminal 3 (low H14) -2,2,7.0,42.8,42.8,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
-Clean room,Right-wall BIBO HEPA terminal 3 (low H14) -3,1,53.8,36.5,36.5,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
-Clean room,Right-wall terminal 3 face,1,3.0,72.0,76.0,See model colour
-Clean room,Right-wall terminal 3 face -2,4,4.0,77.0,81.0,See model colour
+Clean room,Ceiling BIBO HEPA terminal 2 (H14),1,72.0,30.0,72.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Ceiling BIBO HEPA terminal 2 (H14) -2,2,29.2,23.6,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Ceiling BIBO HEPA terminal 2 (H14) -3,1,18.2,18.2,26.9,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Ceiling terminal 2 face screen,1,72.0,3.0,72.0,"PMMA (cast acrylic), 5 mm, clear"
+Clean room,Ceiling terminal 2 face screen -2,4,77.0,4.0,77.0,"PMMA (cast acrylic), 5 mm, clear"
+Clean room,Ceiling BIBO HEPA terminal 3 (H14),1,72.0,30.0,72.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Ceiling BIBO HEPA terminal 3 (H14) -2,2,29.2,23.6,16.0,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Ceiling BIBO HEPA terminal 3 (H14) -3,1,18.2,18.2,26.8,"Stainless steel 304 bag-in/bag-out housing, H14 media, PVC change bag"
+Clean room,Ceiling terminal 3 face screen,1,72.0,3.0,72.0,"PMMA (cast acrylic), 5 mm, clear"
+Clean room,Ceiling terminal 3 face screen -2,4,77.0,4.0,77.0,"PMMA (cast acrylic), 5 mm, clear"
 Clean room,Low-level exhaust terminal 1 face screen,1,3.0,54.0,70.0,See model colour
 Clean room,Low-level exhaust terminal 1 face screen -2,4,4.0,59.0,75.0,See model colour
 Clean room,Low-level exhaust terminal 2 face screen,1,3.0,54.0,70.0,See model colour

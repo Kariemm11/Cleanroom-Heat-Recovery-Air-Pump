@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-15d';
+var BUILD='2026-10-15e';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -2961,7 +2961,7 @@ if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){
 for(var w0=0;w0<1800;w0++) RigModel.step(m,0.05);              // 90 s: let the loops and the room particle count settle before the first frame
 refreshPathColors(m.a); colorRibbons(); colorDuctFlow();
 applySeason(); applyCasing(); applyExplode(); applyBox('clear'); buildZones(); setZones($('cbZones').checked);
-if(window.innerHeight<700 || window.innerWidth<760) setHmiOpen(false);
+if(window.innerHeight<480 || window.innerWidth<760) setHmiOpen(false);   // open by default, also inside the project website's viewer; only phones and very short windows start collapsed
 resize();
 var fl0=flows(); for(var s0=0;s0<STREAMS.length;s0++) updateStream(STREAMS[s0],0,0,fl0);
 updateDuctFlow(0,0,fl0); setDuctAir($('cbDuctAir').checked);

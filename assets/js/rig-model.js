@@ -76,8 +76,9 @@
       gen: 12000,     // particles ≥0.5 µm shed in the clean room per minute (operator + filling line), rig scale
       coa: 2.0e7,     // outdoor particles ≥0.5 µm per m³
       volt: 24,       // DC bus voltage
-      winter: { oat: -2, orh: 80, coil: 21, sup: 22 },
-      summer: { oat: 35, orh: 40, coil: 12, sup: 16 }
+      winter: { oat: -2, orh: 80, coil: 21, sup: 22, room: 22 },
+      summer: { oat: 35, orh: 40, coil: 12, sup: 16, room: 21 },
+      tctl: "room"   // "room": L8 sets the supply set point to hold the room temperature · "supply": fixed supply set point
     };
   }
 
@@ -126,7 +127,8 @@
         L4: PI("Coil leaving temp → air-pump compressor", 1.4, 18, 0, 1),
         L5: PI("Final supply temp → reheat coil", 1.6, 14, 0, 1),
         L6: PI("Clean-room RH → humidifier / dehumidify", 2.0, 120, 0, 1),
-        L7: PI("Clean-room pressure → exhaust fans", 0.35, 1.5, 0, 1)
+        L7: PI("Clean-room pressure → exhaust fans", 0.35, 1.5, 0, 1),
+        L8: PI("Clean-room temperature → supply set point (cascade)", 1.5, 300, 0, 1)
       },
       pw: {}, kpi: {},
       E: { act: 0, base: 0, co2: 0, co2base: 0, t: 0, ab: { hr: { wh: 0, t: 0 }, base: { wh: 0, t: 0 } } },
@@ -134,7 +136,15 @@
       trend: [], _trendT: 0
     };
     m.loops.L3.out = 1;          // starts on the HEPA bypass until the exhaust is proven clean
+    m.supSP = m.P[m.season].sup; trackSup(m);
     return m;
+  }
+
+  /* L8 output range: the supply set point it may ask for in each season, °C */
+  function supRange(winter) { return winter ? [12, 35] : [10, 26]; }
+  function trackSup(m) {                                   // bumpless: L8 starts from the fixed supply set point
+    var r = supRange(m.season === "winter"), L8 = m.loops.L8;
+    L8.i = L8.out = clamp((m.P[m.season].sup - r[0]) / (r[1] - r[0]), 0, 1); m._l8Season = m.season;
   }
 
   /* -------------------------------------------------------- one time step */
@@ -154,10 +164,15 @@
       var e6 = (P.rh - s.MT106) / 100;
       runPI(L.L6, winter ? e6 : -e6, dt);
       var reset = winter ? 0 : 6 * L.L6.out;
-      m.coilSP = S.coil - reset;
+      // L8 cascade: the room temperature set point resets the supply set point (fixed supply set point in "supply" mode)
+      if (m._l8Season !== m.season) trackSup(m);
+      var rg = supRange(winter);
+      if (P.tctl === "room") { runPI(L.L8, (S.room - s.TT106) / 10, dt); m.supSP = rg[0] + L.L8.out * (rg[1] - rg[0]); }
+      else { m.supSP = S.sup; trackSup(m); }
+      m.coilSP = Math.min(S.coil - reset, m.supSP - (winter ? 0 : 0.5));   // never condition the air past the supply set point
       var pv4 = winter ? s.TT103 : s.TT104;
       runPI(L.L4, (winter ? 1 : -1) * (m.coilSP - pv4) / 50, dt);
-      runPI(L.L5, (S.sup - s.TT105) / 50, dt);
+      runPI(L.L5, (m.supSP - s.TT105) / 50, dt);
       runPI(L.L7, (s.PDT101 - P.dp) / 100, dt);
       if (!proving) { L.L4.i = Math.min(L.L4.i, 0); L.L5.i = Math.min(L.L5.i, 0); }
       if (A.dv > 0.5) L.L4.i = Math.min(L.L4.i, 0);                // compressor locked out: no wind-up
@@ -372,7 +387,7 @@
              ctl: Pctl, total: Pact, base: Pbase, W: W, cop: cop, Qhp: Qhp, Qdsh: Math.min(Qdsh, x.Qrh),
              Qrec: Math.abs(Q1), Qout: Qout, frost: frost };
     var hrs = dt / 3600;
-    m.E.act += Pact * hrs; m.E.base += (div ? Pact : Pbase) * hrs;   // no saving is claimed while the exhaust is diverted m.E.t += dt;
+    m.E.act += Pact * hrs; m.E.base += (div ? Pact : Pbase) * hrs; m.E.t += dt;   // no saving is claimed while the exhaust is diverted
     m.E.co2 += Pact * hrs * P.ef; m.E.co2base += Pbase * hrs * P.ef;      // grams (W·h × kg/kWh = g)
     var ab = rec ? m.E.ab.hr : m.E.ab.base; ab.wh += Pact * hrs; ab.t += dt;
 
@@ -396,7 +411,7 @@
       ["A04", "Clean-room RH out of band", on && Math.abs(s.MT106 - P.rh) > 10, 120, "warning"],
       ["A05", "Evaporator at frost limit — air pump capped", on && m.recovery && m.season === "winter" && m.pw.frost, 30, "warning"],
       ["A06", "Exhaust contaminated (PT-102) — diverted to the outer BIBO HEPA, recovery suspended", s.PT102 > P.pxTrip, 5, "serious"],
-      ["A07", "Supply temperature off set point", on && Math.abs(s.TT105 - S.sup) > 2, 90, "warning"],
+      ["A07", "Supply temperature off set point", on && Math.abs(s.TT105 - m.supSP) > 2, 90, "warning"],
       ["A08", "ACH below 20 /h (ISO 8 minimum)", on && s.FT102 / ROOM.V < 20, 30, "warning"],
       ["A09", "HEPA ΔP high — check filter", on && s.PDT102 > 450, 10, "warning"],
       ["A10", "Room particles above alert limit (70 % of Grade B in operation)", s.PT101 > 0.7 * 352000 && s.PT101 <= 352000, 60, "warning"],

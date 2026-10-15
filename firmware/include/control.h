@@ -37,15 +37,16 @@ struct PI {
 
 enum class Season : uint8_t { Winter = 0, Summer = 1 };
 
-struct SeasonSP { float coil, sup; };
+struct SeasonSP { float coil, sup, room; };   // coil, supply and room temperature set points, °C
 struct Setpoints {
   float flow = 6.0f;          // supply airflow, m³/h (100 % fresh air, once through)
   float rh = 45.0f;           // room RH, %
   float dp = 15.0f;           // room pressure, Pa
   float pxTrip = 1000.0f;     // PT-102 exhaust particles ≥0.5 µm that throw DV-101 to the outer HEPA, /m³
   float pxReset = 300.0f;     // … and the level it must stay below for 60 s before it goes back to the air pump
-  SeasonSP winter{21, 22};
-  SeasonSP summer{12, 16};
+  SeasonSP winter{21, 22, 22};
+  SeasonSP summer{12, 16, 21};
+  bool roomCtl = true;        // true: L8 resets the supply set point to hold the room temperature; false: fixed supply set point
   float ef = 0.50f;           // grid emission factor, kg CO₂/kWh
   float copBase = 2.8f;       // baseline chiller COP
   float ctrlW = 3.5f;         // controller + HMI not on a CT channel, W
@@ -76,7 +77,7 @@ extern const AlarmDef ALARMS[ALARM_COUNT];
 
 struct Kpi {
   float ach = 0, P = 0, Pbase = 0, saving = 0, co2h = 0, co2hBase = 0, f = 0;
-  float coilSP = 0;
+  float coilSP = 0, supSP = 0;   // active coil and supply set points (supSP comes from L8 when roomCtl)
   const char* roomGrade = "-";
   const char* fillGrade = "-";
 };
@@ -86,7 +87,7 @@ class Controller {
   Setpoints sp;
   Season season = Season::Winter;
   bool on = true, recovery = true;
-  PI L[7];                    // L1 … L7 (index 0 … 6)
+  PI L[8];                    // L1 … L8 (index 0 … 7)
   Outputs u;                  // commands after slew + interlocks
   Kpi k;
   double Ewh = 0, EwhBase = 0, co2g = 0, co2gBase = 0, runS = 0;
@@ -104,6 +105,7 @@ class Controller {
 
  private:
   Season pendingSeason = Season::Winter;
+  int l8Season = -1;          // season the L8 integrator was initialised for (bumpless start / season change)
   float cmpOffS = 1e9f, cmpOnS = 0, rvHoldS = 0;
   bool cmpRunning = false;
   float tripS = 0, holdS = 0; // PT-102 time above the trip level / below the reset level

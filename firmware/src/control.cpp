@@ -36,6 +36,7 @@ Controller::Controller() {
   L[4].init("L5 supply temp -> HTR-101", 1.6f, 14.0f, 0, 1);
   L[5].init("L6 room RH -> HUM-101 / coil reset", 2.0f, 120.0f, 0, 1);
   L[6].init("L7 room pressure -> FAN-103", 0.35f, 1.5f, 0, 1);
+  L[7].init("L8 room temp -> supply set point (cascade)", 1.5f, 300.0f, 0, 1);
   L[2].out = 1.0f;            // the exhaust starts on the HEPA bypass until PT-102 proves it clean
   pendingSeason = season;
 }
@@ -57,20 +58,27 @@ void Controller::step(const Measured& m, float dt) {
   const bool proving = flowOk && m.FT102 > 0.25f * sp.flow && m.FT102 > 0.5f;
 
   Outputs tgt;
+  bool cmpInterlock = !on;   // a lost interlock stops the compressor at once, whatever its min-run time
   if (on) {
     if (flowOk) L[0].run((sp.flow - m.FT102) / 20.0f, dt);
     // L2: 100 % fresh air, so the fresh-air compressor keeps the header balanced (FT-101 follows FT-102)
     if (flowOk && faOk) L[1].run((m.FT102 - m.FT101) / 20.0f, dt);
     if (rhOk) { float e6 = (sp.rh - m.MT106) / 100.0f; L[5].run(winter ? e6 : -e6, dt); }
     const float reset = winter ? 0.0f : 6.0f * L[5].out;          // summer: lower the coil set point to dehumidify
-    k.coilSP = S.coil - reset;
+    // L8 cascade: the room temperature set point resets the supply set point (bumpless from the fixed one)
+    const float lo = winter ? 12.0f : 10.0f, hi = winter ? 35.0f : 26.0f;
+    if (l8Season != (int)season) { L[7].i = L[7].out = clampf((S.sup - lo) / (hi - lo), 0, 1); l8Season = (int)season; }
+    if (sp.roomCtl && ok(m.TT106)) { L[7].run((S.room - m.TT106) / 10.0f, dt); k.supSP = lo + L[7].out * (hi - lo); }
+    else { k.supSP = S.sup; L[7].i = L[7].out = clampf((S.sup - lo) / (hi - lo), 0, 1); }
+    k.coilSP = fminf(S.coil - reset, k.supSP - (winter ? 0.0f : 0.5f));   // never condition past the supply set point
     if (coilOk) { float pv = winter ? m.TT103 : m.TT104; L[3].run((winter ? 1.0f : -1.0f) * (k.coilSP - pv) / 50.0f, dt); }
-    if (supOk) L[4].run((S.sup - m.TT105) / 50.0f, dt);
+    if (supOk) L[4].run((k.supSP - m.TT105) / 50.0f, dt);
     if (dpOk) L[6].run((m.PDT101 - sp.dp) / 100.0f, dt);
     if (!proving) { L[3].i = fminf(L[3].i, 0); L[4].i = fminf(L[4].i, 0); }
     // winter: the evaporator lives in the exhaust lane, so no exhaust air (bypass) = no air pump
     const bool hpOk = !diverted && (!winter || recovery);   // no exhaust air on the air pump's coil while diverted
     if (!hpOk) L[3].i = fminf(L[3].i, 0);
+    cmpInterlock = !proving || !hpOk;
 
     // frost protection (winter): pull the compressor back while the exhaust leaves the coil below −3 °C
     frost = winter && recovery && !diverted && ok(m.TT108) && m.TT108 < -3.0f;
@@ -103,7 +111,7 @@ void Controller::step(const Measured& m, float dt) {
   if (cmpRunning) {
     cmpOnS += dt;
     if (!want && cmpOnS >= 120.0f) { cmpRunning = false; cmpOffS = 0; }
-    else if (!want && pendingSeason != season) { cmpRunning = false; cmpOffS = 0; }   // season change overrides min-run
+    else if (!want && (pendingSeason != season || cmpInterlock)) { cmpRunning = false; cmpOffS = 0; }   // season change / interlock override min-run
   } else {
     cmpOffS += dt;
     if (want && cmpOffS >= 180.0f) { cmpRunning = true; cmpOnS = 0; }
@@ -173,7 +181,6 @@ void Controller::energy(const Measured& m, float dt) {
 }
 
 void Controller::alarms(const Measured& m, float dt) {
-  const SeasonSP& S = seasonSP();
   bool c[ALARM_COUNT] = {};
   c[A01] = on && ok(m.FT102) && m.FT102 < 0.8f * sp.flow;
   c[A02] = on && ok(m.PDT101) && m.PDT101 < 5.0f;
@@ -181,7 +188,7 @@ void Controller::alarms(const Measured& m, float dt) {
   c[A04] = on && ok(m.MT106) && fabsf(m.MT106 - sp.rh) > 10.0f;
   c[A05] = on && frost;
   c[A06] = !ok(m.PT102) || m.PT102 > sp.pxTrip;
-  c[A07] = on && ok(m.TT105) && fabsf(m.TT105 - S.sup) > 2.0f;
+  c[A07] = on && ok(m.TT105) && fabsf(m.TT105 - k.supSP) > 2.0f;
   c[A08] = on && ok(k.ach) && k.ach < 20.0f;
   c[A09] = on && ok(m.PDT102) && m.PDT102 > 450.0f;
   c[A10] = ok(m.PT101) && m.PT101 > 0.7f * 352000.0f && m.PT101 <= 352000.0f;

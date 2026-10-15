@@ -57,6 +57,7 @@ int main() {
   // --- winter: all loops settle
   {
     rig::Controller c; Plant p; rig::Measured m;
+    c.sp.roomCtl = false;                          // fixed supply set point: checks L5 itself
     runFor(c, p, m, 900, true);
     CHECK(fabsf(m.FT102 - 6) < 0.15f, "L1 supply flow %.2f m3/h, expected 6", m.FT102);
     CHECK(fabsf(m.PDT101 - 15) < 1.5f, "L7 room pressure %.1f Pa, expected 15", m.PDT101);
@@ -111,9 +112,21 @@ int main() {
     CHECK(fabsf(c.L[4].out - hold) < 1e-6f, "L5 output held on a missing TT-105");
   }
 
+  // --- L8 room cascade: the room settles at its set point (winter), and a fixed supply set point still works
+  {
+    rig::Controller c; Plant p; rig::Measured m;
+    c.sp.winter.room = 22.5f;
+    runFor(c, p, m, 3600, true);
+    CHECK(fabsf(m.TT106 - 22.5f) < 0.3f, "L8: winter room %.2f C at its 22.5 C set point (supply SP %.2f)", m.TT106, c.k.supSP);
+    c.sp.roomCtl = false;
+    runFor(c, p, m, 1800, true);
+    CHECK(fabsf(c.k.supSP - c.sp.winter.sup) < 0.01f && fabsf(m.TT105 - c.sp.winter.sup) < 1.0f, "fixed supply mode: supply %.2f C at %.1f C", m.TT105, c.sp.winter.sup);
+  }
+
   // --- season change is sequenced: compressor stops, valve waits 30 s, then switches
   {
     rig::Controller c; Plant p; rig::Measured m;
+    c.sp.roomCtl = false;
     runFor(c, p, m, 600, true);
     c.setSeason(rig::Season::Summer);
     p.Toa = 35; p.RHoa = 40;
@@ -139,7 +152,7 @@ int main() {
 
   // --- compressor protection while it cycles at minimum speed (a mild winter day: the duty is below the minimum)
   {
-    rig::Controller c; Plant p; rig::Measured m; p.Toa = 14;
+    rig::Controller c; Plant p; rig::Measured m; p.Toa = 14; c.sp.roomCtl = false;
     float lastChange = -1, minOff = 1e9f, minOn = 1e9f; bool was = false; int changes = 0;
     for (float t = 0; t < 7200; t += 0.1f) {
       p.step(c.u, m, 0.1f, true); c.step(m, 0.1f);

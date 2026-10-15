@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-15g';
+var BUILD='2026-10-15h';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -2223,9 +2223,10 @@ var LOOPS=[
   {k:'L3',pv:function(){return kfmt(m.s.PT102)+' /m³';},sp:function(){return 'trip > '+kfmt(P.pxTrip)+' · reset < '+kfmt(P.pxReset);},out:'DV-101 exhaust diverter',sens:'PT-102',
    meta:'2-position: trip after 5 s above the trip level, back to the air pump after 60 s below the reset level. Manual: < 50 % = air pump, ≥ 50 % = HEPA bypass.'},
   {k:'L4',pv:function(){return tC(m.season==='winter'?m.s.TT103:m.s.TT104);},sp:function(){return tC(m.coilSP||P[m.season].coil);},out:'CMP-101 air-pump compressor',sens:'TT-103 / TT-104'},
-  {k:'L5',pv:function(){return tC(m.s.TT105);},sp:function(){return tC(P[m.season].sup);},out:'HTR-101 reheat coil',sens:'TT-105'},
+  {k:'L5',pv:function(){return tC(m.s.TT105);},sp:function(){return tC(m.supSP);},out:'HTR-101 reheat coil',sens:'TT-105'},
   {k:'L6',pv:function(){return f0(m.s.MT106)+' % RH';},sp:function(){return f0(P.rh)+' % RH';},out:'HUM-101 humidifier (winter) · coil reset (summer)',sens:'MT-106'},
-  {k:'L7',pv:function(){return sgn(m.s.PDT101)+' Pa';},sp:function(){return '+'+f0(P.dp)+' Pa';},out:'FAN-103 / FAN-103B exhaust fan',sens:'PDT-101'}
+  {k:'L7',pv:function(){return sgn(m.s.PDT101)+' Pa';},sp:function(){return '+'+f0(P.dp)+' Pa';},out:'FAN-103 / FAN-103B exhaust fan',sens:'PDT-101'},
+  {k:'L8',pv:function(){return tC(m.s.TT106);},sp:function(){return P.tctl==='room'?tC(P[m.season].room):'off (fixed supply set point)';},out:'supply set point of L5 (and the coil set point)',sens:'TT-106'}
 ];
 $('pane-lp').innerHTML='<div class="loops">'+LOOPS.map(function(l){
   var L=m.loops[l.k];
@@ -2493,7 +2494,7 @@ function updateHMI(force){
   // KPI bar
   setText('k-ach',f1(k.ach)); setText('kd-ach','/h · '+f2(s.FT102)+' ÷ '+RigModel.ROOM.V.toFixed(4)+' m³');
   setText('k-dp',sgn(s.PDT101)+' Pa'); setText('kd-dp','set +'+f0(P.dp)+' Pa');
-  setText('k-rt',tC(s.TT106)); setText('kd-rt','supply '+tC(s.TT105));
+  setText('k-rt',tC(s.TT106)); setText('kd-rt',(P.tctl==='room'?'set '+tC(P[m.season].room)+' · ':'')+'supply '+tC(s.TT105));
   setText('k-rrh',f0(s.MT106)+' %'); setText('kd-rrh','set '+f0(P.rh)+' %');
   setText('k-pt',kfmt(s.PT101)+' /m³'); setText('kd-pt',gradeOf(s.PT101,s.PT101R5).short+' · fill pt '+kfmt(s.PT101A));
   setText('k-q',f2(s.FT102)+' m³/h'); setText('kd-q','set '+f2(P.flow));
@@ -2526,7 +2527,7 @@ function updateHMI(force){
     LOOPS.forEach(function(l){
       var L=m.loops[l.k];
       setText('lp-pv-'+l.k,l.pv()); setText('lp-sp-'+l.k,l.sp());
-      var o=l.k==='L3'?f0(L.out*90)+'°':(l.k==='L6'&&m.season==='summer'?'−'+f1(6*L.out)+' K':f0(L.out*100)+' %');
+      var o=l.k==='L3'?f0(L.out*90)+'°':(l.k==='L6'&&m.season==='summer'?'−'+f1(6*L.out)+' K':(l.k==='L8'?'supply SP '+tC(m.supSP):f0(L.out*100)+' %'));
       setText('lp-out-'+l.k,o+(L.man?' (manual)':'')); $('lp-bar-'+l.k).style.width=(L.out*100).toFixed(0)+'%';
     });
   } else if(activePane==='en'){
@@ -2760,11 +2761,20 @@ var FIELDS=[
   ['inRh','rh',false,20,70],['inDp','dp',false,0,50],
   ['inGain','gain',false,0,40],['inGen','gen',false,0,200000],['inAmb','amb',false,0,45],['inUa','ua',false,0,20],['inVolt','volt',false,5,60],
   ['inEf','ef',false,0,1.5],['inCop','cop',false,1,8],['inHours','hours',false,100,8760],
-  ['inOat','oat',true,-30,55],['inOrh','orh',true,0,100],['inCoil','coil',true,4,40],['inSup','sup',true,8,40]
+  ['inOat','oat',true,-30,55],['inOrh','orh',true,0,100],['inRoomT','room',true,10,35],['inCoil','coil',true,4,40],['inSup','sup',true,8,40]
 ];
 function loadFields(){
   FIELDS.forEach(function(f){ $(f[0]).value=f[2]?P[state.season][f[1]]:P[f[1]]; });
+  syncTctl();
 }
+/* temperature control: room set point (L8 cascade resets the supply set point) or a fixed supply set point */
+function syncTctl(){
+  var room=P.tctl==='room';
+  $('inRoomT').disabled=!room; $('inSup').disabled=room;
+  $('lblSup').textContent=room?'Final supply set point °C (set by the room loop)':'Final supply set point °C';
+  Array.prototype.forEach.call(document.querySelectorAll('#segTctl button'),function(b){ b.setAttribute('aria-pressed',String(b.dataset.v===P.tctl)); });
+}
+seg('segTctl',function(v){ P.tctl=v; syncTctl(); });
 FIELDS.forEach(function(f){
   var el=$(f[0]);
   el.addEventListener('input',function(){
@@ -2867,6 +2877,75 @@ if(window.matchMedia){
 }
 new MutationObserver(retheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
+
+/* ------------------------------------------------------------- data log: CSV for the thesis */
+var LOG={on:false,every:10,last:-1e9,rows:[],max:200000};
+function r2(v){ return v==null||isNaN(v)?'':Math.round(v*100)/100; }
+var LOGCOLS=[
+  ['time_s',function(){return r2(m.t);}],['season',function(){return m.season;}],['heat_recovery',function(){return m.recovery?'on':'baseline';}],
+  ['temp_control',function(){return P.tctl;}],['exhaust_route',function(){return m.act.dv>0.5?'outer HEPA':'Cu core';}],
+  ['outdoor_T_C',function(){return r2(m.s.TT101);}],['outdoor_RH_pct',function(){return r2(m.s.MT101);}],['fresh_air_m3h',function(){return r2(m.s.FT101);}],
+  ['fresh_off_Cu_core_T_C',function(){return r2(m.s.TT109);}],['after_preheat_T_C',function(){return r2(m.s.TT103);}],['after_cooling_coil_T_C',function(){return r2(m.s.TT104);}],
+  ['coil_SP_C',function(){return r2(m.coilSP);}],['supply_T_C',function(){return r2(m.s.TT105);}],['supply_SP_C',function(){return r2(m.supSP);}],
+  ['supply_RH_pct',function(){return r2(m.s.MT105);}],['supply_airflow_m3h',function(){return r2(m.s.FT102);}],
+  ['room_T_C',function(){return r2(m.s.TT106);}],['room_SP_C',function(){return P.tctl==='room'?r2(P[m.season].room):'';}],['room_RH_pct',function(){return r2(m.s.MT106);}],
+  ['room_RH_SP_pct',function(){return r2(P.rh);}],['room_pressure_Pa',function(){return r2(m.s.PDT101);}],['HEPA_dP_Pa',function(){return r2(m.s.PDT102);}],
+  ['exhaust_in_T_C',function(){return r2(m.s.TT107);}],['exhaust_out_T_C',function(){return r2(m.s.TT108);}],['exhaust_airflow_m3h',function(){return r2(m.a.Qex);}],
+  ['Cu_core_heat_W',function(){return r2(m.pw.Qrec);}],['room_particles_per_m3',function(){return Math.round(m.s.PT101||0);}],['fill_point_particles_per_m3',function(){return Math.round(m.s.PT101A||0);}],
+  ['PT102_exhaust_particles_per_m3',function(){return Math.round(m.s.PT102||0);}],['ACH_per_h',function(){return r2(m.kpi.ach);}],
+  ['supply_fan_pct',function(){return r2(m.act.sf*100);}],['fresh_fan_pct',function(){return r2(m.act.fa*100);}],['exhaust_fan_pct',function(){return r2(m.act.ef*100);}],
+  ['DV101_pct',function(){return r2(m.act.dv*100);}],['compressor_pct',function(){return r2(m.act.cmp*100);}],['reheat_pct',function(){return r2(m.act.rh*100);}],['humidifier_pct',function(){return r2(m.act.hum*100);}],
+  ['air_pump_COP',function(){return m.act.cmp>0.01?r2(m.pw.cop):'';}],['power_W',function(){return r2(m.pw.total);}],['baseline_power_W',function(){return r2(m.pw.base);}],
+  ['saving_pct',function(){return r2(m.kpi.red*100);}],['CO2_g_per_h',function(){return r2(m.kpi.co2h);}],['CO2_baseline_g_per_h',function(){return r2(m.kpi.co2hBase);}],
+  ['energy_Wh',function(){return r2(m.E.act);}],['baseline_energy_Wh',function(){return r2(m.E.base);}],
+  ['alarms',function(){return m.alarms.map(function(a){return a.id||a[0];}).join(' ');}]
+];
+function logTick(){
+  if(!LOG.on || m.t-LOG.last<LOG.every) return;
+  LOG.last=m.t; LOG.rows.push(LOGCOLS.map(function(c){ return c[1](); }));
+  if(LOG.rows.length>=LOG.max) setLog(false);
+}
+function csvCell(v){ v=String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function download(name,text){
+  var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'})); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
+}
+function stamp(){ var d=new Date(); function p(x){return (x<10?'0':'')+x;} return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes()); }
+function setLog(on){
+  LOG.on=on; if(on){ LOG.every=Math.max(1,Math.min(3600,+$('dlEvery').value||10)); LOG.last=-1e9; }
+  $('dlStart').textContent=on?'Stop logging':'Start logging'; $('dlStart').setAttribute('aria-pressed',String(on));
+}
+function inputsCsv(){
+  var rows=[['parameter','value']];
+  rows.push(['season',m.season],['heat_recovery',m.recovery?'on':'baseline'],['temp_control',P.tctl],['exhaust_scenario',m.exContam?'contaminated':'clean'],['simulated_time_s',r2(m.t)]);
+  Object.keys(P).forEach(function(k){ var v=P[k]; if(v&&typeof v==='object') Object.keys(v).forEach(function(j){ rows.push([k+'.'+j,v[j]]); }); else rows.push([k,v]); });
+  return rows;
+}
+$('pane-dl').innerHTML='<div class="dlog">'+
+  '<p class="note">Records every sensor, actuator, set point and KPI of the running simulation in simulated time, for Excel, MATLAB or Python. Set the season, mode and design values, let the readings settle (Trends tab), then start logging. Raise the simulation speed to log long periods quickly.</p>'+
+  '<div class="row"><label>Interval, simulated s <input id="dlEvery" type="number" min="1" max="3600" step="1" value="10"></label>'+
+  '<button class="hbtn" id="dlStart" type="button" aria-pressed="false">Start logging</button>'+
+  '<button class="hbtn" id="dlCsv" type="button">Download log (CSV)</button>'+
+  '<button class="hbtn" id="dlClear" type="button">Clear log</button>'+
+  '<button class="hbtn" id="dlSnap" type="button">Download snapshot: inputs + readings now (CSV)</button></div>'+
+  '<div class="st" id="dlStat">not logging · 0 rows</div>'+
+  '<p class="note">Columns: '+LOGCOLS.map(function(c){return c[0];}).join(', ')+'.</p></div>';
+$('dlStart').addEventListener('click',function(){ setLog(!LOG.on); });
+$('dlClear').addEventListener('click',function(){ LOG.rows=[]; LOG.last=-1e9; });
+$('dlCsv').addEventListener('click',function(){
+  var lines=[LOGCOLS.map(function(c){return c[0];}).join(',')].concat(LOG.rows.map(function(r){ return r.map(csvCell).join(','); }));
+  download('cleanroom-rig-log-'+stamp()+'.csv',lines.join('\n')+'\n');
+});
+$('dlSnap').addEventListener('click',function(){
+  var rows=inputsCsv(); rows.push(['','']); rows.push(['reading','value']);
+  LOGCOLS.forEach(function(c){ rows.push([c[0],c[1]()]); });
+  download('cleanroom-rig-snapshot-'+stamp()+'.csv',rows.map(function(r){ return r.map(csvCell).join(','); }).join('\n')+'\n');
+});
+setInterval(function(){
+  var n=LOG.rows.length, span=n>1?LOG.rows[n-1][0]-LOG.rows[0][0]:0;
+  $('dlStat').textContent=(LOG.on?'logging every '+LOG.every+' s':'not logging')+' · '+n+' rows'+(n>1?' · '+hms(span)+' of simulated time':'');
+},500);
+
 /* ------------------------------------------------------- CAD export hook */
 /* Serialises every visible solid (world cm) so tools/build_cad.py can rebuild the
    same model as STEP solids for SolidWorks. Lines, sprites and particles are skipped. */
@@ -2946,7 +3025,7 @@ function frame(){
   if(state.playing){
     var sdt=dt*state.simSpeed, n=Math.min(400,Math.max(1,Math.ceil(sdt/0.05)));
     m.extGen=CR.pb.innerOpen?15000:0;                    // pass-box inner door open: a short burst of particles
-    for(var i=0;i<n;i++) RigModel.step(m,sdt/n);
+    for(var i=0;i<n;i++){ RigModel.step(m,sdt/n); logTick(); }
     var fl=flows(); showRibbons(fl);
     for(var j=0;j<STREAMS.length;j++) updateStream(STREAMS[j],dt,state.speed,fl);
     if(ductFlow.visible) updateDuctFlow(dt,state.speed,fl);

@@ -27,14 +27,15 @@ void num(Print& o, const char* key, float v, int dec, bool comma = true) {
 void reply(Print& o, const char* s) { o.print("# "); o.println(s); }
 
 void help(Print& o) {
-  reply(o, "SET flow|rh|dp|ef|cop|trip|reset <v> | SET coil|sup <C> | MODE winter|summer | REC on|off | RUN on|off");
-  reply(o, "MAN L1..L7 <0-100> | AUTO L1..L7 | RESET energy | ZERO | SCAN | GET | HELP");
+  reply(o, "SET flow|rh|dp|ef|cop|trip|reset <v> | SET coil|sup|room <C> | TCTL room|supply | MODE winter|summer | REC on|off | RUN on|off");
+  reply(o, "MAN L1..L8 <0-100> | AUTO L1..L8 | RESET energy | ZERO | SCAN | GET | HELP");
 }
 
 void printSettings(Print& o, const rig::Controller& c) {
   o.printf("# flow %.2f m3/h (100 %% fresh air), RH %.0f %%, dP %.1f Pa, EF %.2f, COP base %.1f\n", c.sp.flow, c.sp.rh, c.sp.dp, c.sp.ef, c.sp.copBase);
   o.printf("# PT-102 trip %.0f /m3, reset %.0f /m3, DV-101 %s\n", c.sp.pxTrip, c.sp.pxReset, c.diverted ? "to outer HEPA" : "to air pump");
-  o.printf("# winter coil %.1f sup %.1f | summer coil %.1f sup %.1f\n", c.sp.winter.coil, c.sp.winter.sup, c.sp.summer.coil, c.sp.summer.sup);
+  o.printf("# winter coil %.1f sup %.1f room %.1f | summer coil %.1f sup %.1f room %.1f | control %s (supply SP now %.1f)\n", c.sp.winter.coil, c.sp.winter.sup, c.sp.winter.room,
+           c.sp.summer.coil, c.sp.summer.sup, c.sp.summer.room, c.sp.roomCtl ? "room (L8 cascade)" : "fixed supply", c.k.supSP);
   o.printf("# season %s, recovery %s, run %s\n", c.season == rig::Season::Winter ? "winter" : "summer", c.recovery ? "on" : "off", c.on ? "on" : "off");
 }
 
@@ -57,17 +58,19 @@ void handle(rig::Controller& c, char* line, Print& o) {
     else if (!strcmp(a, "reset")) c.sp.pxReset = rig::clampf(v, 1, 1e6f);
     else if (!strcmp(a, "coil")) S.coil = rig::clampf(v, 4, 40);
     else if (!strcmp(a, "sup")) S.sup = rig::clampf(v, 8, 40);
+    else if (!strcmp(a, "room")) S.room = rig::clampf(v, 10, 35);
     else { reply(o, "unknown SET key"); return; }
     save = true;
   } else if (!strcmp(cmd, "mode") && a) {
     c.setSeason(!strcmp(a, "summer") ? rig::Season::Summer : rig::Season::Winter);
     reply(o, "season change: compressor stops, valve switches after 30 s");
     save = true;
-  } else if (!strcmp(cmd, "rec") && a) { c.recovery = !strcmp(a, "on"); save = true; }
+  } else if (!strcmp(cmd, "tctl") && a) { c.sp.roomCtl = !strcmp(a, "room"); save = true; }
+  else if (!strcmp(cmd, "rec") && a) { c.recovery = !strcmp(a, "on"); save = true; }
   else if (!strcmp(cmd, "run") && a) { c.on = !strcmp(a, "on"); }
   else if ((!strcmp(cmd, "man") || !strcmp(cmd, "auto")) && a && a[0] == 'l') {
     int i = atoi(a + 1) - 1;
-    if (i < 0 || i > 6) { reply(o, "loop L1..L7"); return; }
+    if (i < 0 || i > 7) { reply(o, "loop L1..L8"); return; }
     if (!strcmp(cmd, "auto")) c.L[i].man = false;
     else if (b) { c.L[i].man = true; c.L[i].mv = rig::clampf(atof(b) / 100.0f, 0, 1); }
   } else if (!strcmp(cmd, "reset") && a && !strcmp(a, "energy")) c.resetEnergy();
@@ -118,6 +121,9 @@ void loadSettings(rig::Controller& c) {
   c.sp.winter.sup = prefs.getFloat("wsup", c.sp.winter.sup);
   c.sp.summer.coil = prefs.getFloat("scoil", c.sp.summer.coil);
   c.sp.summer.sup = prefs.getFloat("ssup", c.sp.summer.sup);
+  c.sp.winter.room = prefs.getFloat("wroom", c.sp.winter.room);
+  c.sp.summer.room = prefs.getFloat("sroom", c.sp.summer.room);
+  c.sp.roomCtl = prefs.getBool("tctl", c.sp.roomCtl);
   rig::Season s = prefs.getUChar("season", 0) ? rig::Season::Summer : rig::Season::Winter;
   c.season = s; c.setSeason(s);
   c.recovery = prefs.getBool("rec", true);
@@ -130,6 +136,7 @@ void saveSettings(const rig::Controller& c) {
   prefs.putFloat("ef", c.sp.ef); prefs.putFloat("cop", c.sp.copBase);
   prefs.putFloat("wcoil", c.sp.winter.coil); prefs.putFloat("wsup", c.sp.winter.sup);
   prefs.putFloat("scoil", c.sp.summer.coil); prefs.putFloat("ssup", c.sp.summer.sup);
+  prefs.putFloat("wroom", c.sp.winter.room); prefs.putFloat("sroom", c.sp.summer.room); prefs.putBool("tctl", c.sp.roomCtl);
   prefs.putUChar("season", c.season == rig::Season::Summer ? 1 : 0);
   prefs.putBool("rec", c.recovery);
   prefs.end();
@@ -161,7 +168,7 @@ void telemetry(Print& o, const rig::Controller& c, const rig::Measured& m) {
   num(o, "Ewh", (float)c.Ewh, 2); num(o, "Ewhb", (float)c.EwhBase, 2); num(o, "co2g", (float)c.co2g, 2); num(o, "co2gb", (float)c.co2gBase, 2, false);
   o.print(",\"room\":\""); o.print(c.k.roomGrade); o.print("\",\"fill\":\""); o.print(c.k.fillGrade); o.print("\"}");
   o.print(",\"man\":[");
-  for (int i = 0; i < 7; i++) { o.print(c.L[i].man ? 1 : 0); if (i < 6) o.print(','); }
+  for (int i = 0; i < 8; i++) { o.print(c.L[i].man ? 1 : 0); if (i < 7) o.print(','); }
   o.print("],\"al\":[");
   bool first = true;
   for (int i = 0; i < rig::ALARM_COUNT; i++) if (c.alarm[i]) { if (!first) o.print(','); o.print('"'); o.print(rig::ALARMS[i].id); o.print('"'); first = false; }

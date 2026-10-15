@@ -300,7 +300,7 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 </style>
 </head>
 <body>
-<div id="app" data-build="2026-10-15f">
+<div id="app" data-build="2026-10-15g">
   <div id="stage">
     <canvas id="scene" aria-label="3D model of the clean-room test rig"></canvas>
 
@@ -990,7 +990,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-15f';
+var BUILD='2026-10-15g';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -2635,6 +2635,9 @@ var airVisible=true, contamVisible=true;
 var ribbons=new THREE.Group(); scene.add(ribbons);
 var RIBS=['comp','hr','direct','supply','riserA','riserB','riserC','riserD','exA','exB','exC','exMain','exCore','exByp'];
 var ribbonMeshes=[];
+/* the airflow each column carries: a column hides when its air stops (e.g. no exhaust into the Cu core while DV-101 diverts) */
+var RIBQ={comp:'Qfa',hr:'Qhr',direct:'Qdir',supply:'Qfa',riserA:'Qsup',riserB:'Qsup',riserC:'Qsup',riserD:'Qsup',exA:'Qret',exB:'Qret',exC:'Qret',exMain:'Qex',exCore:'Qcore',exByp:'Qbyp'};
+function showRibbons(fl){ for(var i=0;i<ribbonMeshes.length;i++){ var r=ribbonMeshes[i]; r.visible=(fl[r.userData.q]||0)>0.02; } }
 function buildRibbons(){
   while(ribbons.children.length){ var c=ribbons.children.pop(); c.geometry.dispose(); c.material.dispose();
     var ix=ALLPATHS.indexOf(c.userData.path); if(ix>=0) ALLPATHS.splice(ix,1); }
@@ -2648,7 +2651,7 @@ function buildRibbons(){
     var colors=new Float32Array(geo.attributes.position.count*3);
     geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
     var m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:0.16,depthWrite:false}));
-    m.renderOrder=3; m.userData.path=p; m.userData.segs=segs; m.userData.rs=rs; ribbons.add(m); ribbonMeshes.push(m);
+    m.renderOrder=3; m.userData.path=p; m.userData.segs=segs; m.userData.rs=rs; m.userData.q=RIBQ[k]; ribbons.add(m); ribbonMeshes.push(m);
   });
 }
 function colorRibbons(){
@@ -3924,7 +3927,7 @@ function frame(){
     var sdt=dt*state.simSpeed, n=Math.min(400,Math.max(1,Math.ceil(sdt/0.05)));
     m.extGen=CR.pb.innerOpen?15000:0;                    // pass-box inner door open: a short burst of particles
     for(var i=0;i<n;i++) RigModel.step(m,sdt/n);
-    var fl=flows();
+    var fl=flows(); showRibbons(fl);
     for(var j=0;j<STREAMS.length;j++) updateStream(STREAMS[j],dt,state.speed,fl);
     if(ductFlow.visible) updateDuctFlow(dt,state.speed,fl);
     var cmpOn=m.act.cmp>0.01 && (m.recovery || m.season==='summer');

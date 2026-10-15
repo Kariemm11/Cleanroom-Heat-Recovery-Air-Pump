@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-15j';
+var BUILD='2026-10-15k';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -3251,7 +3251,7 @@ new MutationObserver(retheme).observe(document.documentElement,{attributes:true,
 
 
 /* ------------------------------------------------------------- data log: CSV for the thesis */
-var LOG={on:false,every:10,last:-1e9,rows:[],max:200000};
+var LOG={on:false,every:10,last:-1e9,rows:[],max:200000,dur:0,t0:0};
 function r2(v){ return v==null||isNaN(v)?'':Math.round(v*100)/100; }
 var LOGCOLS=[
   ['time_s',function(){return r2(m.t);}],['season',function(){return m.season;}],['heat_recovery',function(){return m.recovery?'on':'baseline';}],
@@ -3273,7 +3273,9 @@ var LOGCOLS=[
   ['alarms',function(){return m.alarms.map(function(a){return a.id||a[0];}).join(' ');}]
 ];
 function logTick(){
-  if(!LOG.on || m.t-LOG.last<LOG.every) return;
+  if(!LOG.on) return;
+  if(LOG.dur>0 && m.t-LOG.t0>=LOG.dur-1e-6){ setLog(false); return; }        // the chosen logging duration has passed
+  if(m.t-LOG.last<LOG.every-1e-6) return;
   LOG.last=m.t; LOG.rows.push(LOGCOLS.map(function(c){ return c[1](); }));
   if(LOG.rows.length>=LOG.max) setLog(false);
 }
@@ -3283,8 +3285,10 @@ function download(name,text){
   document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
 }
 function stamp(){ var d=new Date(); function p(x){return (x<10?'0':'')+x;} return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes()); }
+function logEvery(){ var v=parseFloat($('dlEvery').value); return isFinite(v)?Math.max(0.1,Math.min(3600,v)):10; }
+function logDur(){ var v=parseFloat($('dlDur').value); return isFinite(v)&&v>0?Math.min(1e6,v)*60:0; }
 function setLog(on){
-  LOG.on=on; if(on){ LOG.every=Math.max(1,Math.min(3600,+$('dlEvery').value||10)); LOG.last=-1e9; }
+  LOG.on=on; if(on){ LOG.every=logEvery(); LOG.dur=logDur(); LOG.t0=m.t; LOG.last=-1e9; }
   $('dlStart').textContent=on?'Stop logging':'Start logging'; $('dlStart').setAttribute('aria-pressed',String(on));
 }
 function inputsCsv(){
@@ -3399,6 +3403,8 @@ function addCharts(doc,y,sl,note){
     return y;
   });
 }
+function spacing(rows){ var lo=Infinity, hi=0; for(var i=1;i<rows.length;i++){ var g=num(rows[i][0])-num(rows[i-1][0]); if(g<lo) lo=g; if(g>hi) hi=g; }
+  return hi-lo<0.02?'one every '+grp(lo,lo<1?2:(lo<10?1:0))+' s of simulated time':'intervals of '+grp(lo,2)+' to '+grp(hi,2)+' s of simulated time'; }
 function buildLogPdf(){
   var rows=LOG.rows; if(rows.length<2){ hmiToast('Start logging first: the log needs at least 2 rows'); return; }
   setText('dlPdfSt','building the PDF…');
@@ -3407,7 +3413,7 @@ function buildLogPdf(){
     var t0=num(rows[0][0]), t1=num(rows[rows.length-1][0]), kind='Data log report';
     var doc=newDoc(kind);
     var y=cover(doc,kind,[['Prepared by',REP.by],['Supervisor',REP.sup],['Institution',REP.inst],['Exported',new Date().toLocaleString()],
-      ['Logged period','simulated '+hms(t0)+' to '+hms(t1)+' ('+grp(t1-t0,0)+' s)'],['Records',rows.length+' rows, one every '+LOG.every+' s of simulated time, '+LOGCOLS.length+' columns'],
+      ['Logged period','simulated '+hms(t0)+' to '+hms(t1)+' ('+grp(t1-t0,0)+' s)'],['Records',rows.length+' rows, '+spacing(rows)+', '+LOGCOLS.length+' columns'],
       ['Operating mode at the end',modeLine()],['Simulator build',BUILD]],logo);
     y=heading(doc,y,'Key performance indicators at the end of the log');
     doc.autoTable(tableOpts({startY:y,head:[['Indicator','Value','Detail']],body:kpiRows(),columnStyles:{0:{cellWidth:46},1:{cellWidth:36,fontStyle:'bold'}}}));
@@ -3470,7 +3476,11 @@ function buildSnapPdf(){
 }
 $('pane-dl').innerHTML='<div class="dlog">'+
   '<p class="note">Records every sensor, actuator, set point and KPI of the running simulation in simulated time. Set the season, mode and design values, let the readings settle (Trends tab), then start logging. Raise the simulation speed to log long periods quickly.</p>'+
-  '<div class="row"><label>Interval, simulated s <input id="dlEvery" type="number" min="1" max="3600" step="1" value="10"></label>'+
+  '<div class="row"><label>Log every <input id="dlEvery" type="number" min="0.1" max="3600" step="any" value="10"> s of simulated time</label>'+
+  '<div class="seg" id="segEvery">'+[[1,'1 s'],[5,'5 s'],[10,'10 s'],[30,'30 s'],[60,'1 min'],[300,'5 min']].map(function(x){
+    return '<button type="button" data-v="'+x[0]+'" aria-pressed="'+(x[0]===10)+'">'+x[1]+'</button>'; }).join('')+'</div>'+
+  '<label>Stop after <input id="dlDur" type="number" min="0" step="any" value="0"> min (0 = no limit)</label></div>'+
+  '<div class="row">'+
   '<button class="hbtn" id="dlStart" type="button" aria-pressed="false">Start logging</button>'+
   '<button class="hbtn" id="dlClear" type="button">Clear log</button><span class="st" id="dlStat">not logging · 0 rows</span></div>'+
   '<fieldset class="rep"><legend>PDF report details</legend>'+
@@ -3489,6 +3499,10 @@ $('pane-dl').innerHTML='<div class="dlog">'+
   el.addEventListener('input',function(){ REP[f[1]]=el.value; try{ localStorage.setItem('rig-report',JSON.stringify(REP)); }catch(e){} });
 });
 $('dlStart').addEventListener('click',function(){ setLog(!LOG.on); });
+seg('segEvery',function(v){ $('dlEvery').value=v; LOG.every=logEvery(); });
+$('dlEvery').addEventListener('input',function(){ LOG.every=logEvery();                       // applies at once, also while logging
+  Array.prototype.forEach.call(document.querySelectorAll('#segEvery button'),function(b){ b.setAttribute('aria-pressed',String(+b.dataset.v===LOG.every)); }); });
+$('dlDur').addEventListener('input',function(){ LOG.dur=logDur(); });
 $('dlClear').addEventListener('click',function(){ LOG.rows=[]; LOG.last=-1e9; });
 $('dlCsv').addEventListener('click',function(){
   var lines=[LOGCOLS.map(function(c){return c[0];}).join(',')].concat(LOG.rows.map(function(r){ return r.map(csvCell).join(','); }));
@@ -3503,7 +3517,7 @@ $('dlPdf').addEventListener('click',buildLogPdf);
 $('dlSnapPdf').addEventListener('click',buildSnapPdf);
 setInterval(function(){
   var n=LOG.rows.length, span=n>1?LOG.rows[n-1][0]-LOG.rows[0][0]:0;
-  $('dlStat').textContent=(LOG.on?'logging every '+LOG.every+' s':'not logging')+' · '+n+' rows'+(n>1?' · '+hms(span)+' of simulated time':'');
+  $('dlStat').textContent=(LOG.on?'logging every '+LOG.every+' s'+(LOG.dur>0?' · stops in '+hms(Math.max(0,LOG.dur-(m.t-LOG.t0))):''):'not logging')+' · '+n+' rows'+(n>1?' · '+hms(span)+' of simulated time':'');
 },500);
 
 /* ------------------------------------------------------- CAD export hook */

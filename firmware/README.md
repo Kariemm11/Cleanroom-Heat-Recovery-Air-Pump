@@ -1,6 +1,6 @@
 # Rig controller firmware (ESP32-S3)
 
-Firmware for the clean-room heat-recovery air-pump rig. It runs the same seven PI loops, interlocks, alarms and energy/CO₂ accounting as the simulator (`assets/js/rig-model.js`). It reads the real sensors and drives the real actuators. The equations are in [`../build-pack/07-engineering-calculations.md`](../build-pack/07-engineering-calculations.md) §8–9, and the pin map is in [`../build-pack/02-io-list.csv`](../build-pack/02-io-list.csv).
+Firmware for the clean-room heat-recovery air-pump rig. It runs the same eight loops (seven PI loops and the two-position L3 exhaust diverter), interlocks, alarms and energy/CO₂ accounting as the simulator (`assets/js/rig-model.js`). It reads the real sensors and drives the real actuators. The equations are in [`../build-pack/07-engineering-calculations.md`](../build-pack/07-engineering-calculations.md) §8–9, and the pin map is in [`../build-pack/02-io-list.csv`](../build-pack/02-io-list.csv).
 
 | File | What it does |
 |---|---|
@@ -42,11 +42,12 @@ Send commands on USB, or from the HMI. One command per line, not case-sensitive:
 |---|---|
 | `SET flow 6.0` | supply airflow set point, m³/h, 100 % fresh air (also `rh` %, `dp` Pa, `ef` kg CO₂/kWh, `cop` baseline COP) |
 | `SET trip 1000` / `SET reset 300` | PT-102 exhaust particle levels (/m³) that throw DV-101 to the outer HEPA / let it return |
-| `SET coil 21` / `SET sup 22` | temperature set points of the active season, °C |
+| `SET coil 21` / `SET sup 22` / `SET room 21` | temperature set points of the active season, °C: coil, fixed supply, clean room |
+| `TCTL room` / `TCTL supply` | temperature control: **room set point** (L8 cascade moves the supply set point to hold TT-106, the default) or a **fixed supply** set point |
 | `MODE winter` / `MODE summer` | sequenced season change: compressor stops, 30 s pressure equalisation, then the 4-way valve switches |
 | `REC on` / `REC off` | recovery on / **baseline test** (also bypass the cores by hand, see the commissioning guide) |
 | `RUN on` / `RUN off` | system on / everything off |
-| `MAN L5 40` / `AUTO L5` | a loop in manual at 40 % output / back to auto (bumpless) |
+| `MAN L5 40` / `AUTO L5` | a loop (L1…L8) in manual at 40 % output / back to auto (bumpless) |
 | `MAN L3 0` / `MAN L3 100` | force DV-101: exhaust to the air pump / to the outer HEPA (`AUTO L3` returns to PT-102 control) |
 | `RESET energy` | clear the Wh and CO₂ counters (start of an A/B test) |
 | `ZERO` | current-sensor zero (only with RUN off) |
@@ -62,7 +63,7 @@ There is one JSON object per line. `build-pack/09-live-monitor.html` reads it wi
 {"t":812.0,"mode":"winter","on":1,"rec":1,
  "s":{"TT101":-1.95,"MT101":79.8,"FT101":6.01,"TT109":12.2, … ,"PT101":121000,"PT101A":1580,"PT102":6,"RPM102":3120},
  "u":{"fa":0.247,"sf":0.333,"ef":0.209,"dv":0.00,"cmp":0.300,"rh":0.051,"hum":0.640,"eev":200,"rv":0},
- "k":{"ach":62.9,"f":1.00,"P":22.8,"Pb":41.1,"sav":0.445,"co2h":11.4,"co2hb":20.6,"coilSP":21.0,"Ewh":5.1,"Ewhb":9.2,"co2g":2.6,"co2gb":4.6,"room":"B","fill":"A"},
+ "k":{"ach":62.9,"f":1.00,"P":22.8,"Pb":41.1,"sav":0.445,"co2h":11.4,"co2hb":20.6,"coilSP":21.0,"supSP":22.0,"Ewh":5.1,"Ewhb":9.2,"co2g":2.6,"co2gb":4.6,"room":"B","fill":"A"},
  "man":[0,0,0,0,0,0,0],"al":[]}
 ```
 
@@ -88,4 +89,4 @@ g++ -std=c++17 -O1 -Wall -Iinclude test/test_control.cpp src/control.cpp -o /tmp
 ./test/check_syntax.sh      # every source file against minimal Arduino-ESP32 stand-ins
 ```
 
-The unit tests close every loop around a small plant model. They check that the loops settle, the interlocks hold, the compressor minimum off and run times are kept while it cycles, season changes are sequenced, the alarms fire, manual mode is bumpless, and energy and CO₂ add up. Expected output: `27 checks, 0 failed`.
+The unit tests close every loop around a small plant model. They check that the loops settle, the interlocks hold, the compressor minimum off and run times are kept while it cycles, season changes are sequenced, the alarms fire, manual mode is bumpless, and energy and CO₂ add up. They also check that the L8 room cascade brings TT-106 to its set point, that summer pre-cooling through the Cu core works, and that a lost interlock (exhaust diverted, no airflow) stops the compressor at once, even inside its 120 s minimum run time. Expected output: `38 checks, 0 failed`.

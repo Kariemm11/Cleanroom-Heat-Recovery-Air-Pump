@@ -90,8 +90,9 @@ The rig is designed for **hazardous material**:
 | L5 | TT-105 → HTR-101 | Final supply temperature: desuperheater reheat first (free in summer), then the PTC trim |
 | L6 | MT-106 → HUM-101 / coil reset | Clean-room humidity: steam in winter, a lower coil set point in summer |
 | L7 | PDT-101 → FAN-103 / 103B | Keeps the clean room at +15 Pa |
+| L8 | TT-106 → supply set point of L5 (and the coil set point) | **Clean-room temperature** (cascade, the default): set the room temperature you want and L8 moves the supply set point (winter 12–35 °C, summer 10–26 °C) to hold it. *Fixed supply* switches it off and L5 holds the supply set point you enter |
 
-Each loop can be switched to **Manual** on the HMI's *Control loops* screen.
+Each loop can be switched to **Manual** on the HMI's *Control loops* screen. A lost interlock (exhaust diverted to the outer HEPA, or no airflow proven) stops the compressor at once, even inside its 120 s minimum run time.
 
 ![HMI control loops and the 3D screen](docs/img/rig-hmi-loops.jpg)
 
@@ -170,10 +171,12 @@ At the defaults, the room reads about 121 000 /m³ (Grade B in operation) and th
 
 - **Drag** to orbit, **scroll/pinch** to zoom, **shift-drag** to pan. Views: Iso / Front / Top / Plant room / Clean room / HMI. **Click the 3D screen** to open the HMI.
 - **Air colour**: *By stream* (fresh blue, exhaust orange, supply teal) or *By temperature*, a cold → 21 °C → hot scale driven by the live air states.
-- **Every design value is editable**: airflow, the Cu core effectiveness, the PT-102 trip and reset levels, room RH and pressure, heat gain, particles shed in the room, outdoor °C/RH, coil and supply set points, lab temperature, envelope UA, bus voltage, grid factor, baseline COP and hours per year.
+- **Every design value is editable**: airflow, the Cu core effectiveness, the PT-102 trip and reset levels, room RH and pressure, heat gain, particles shed in the room, outdoor °C/RH, the **room temperature set point**, coil and supply set points, lab temperature, envelope UA, bus voltage, grid factor, baseline COP and hours per year. *Temperature control* chooses **Room set point** (L8) or **Fixed supply**.
+- **Inputs & set points** (HMI tab next to Overview): every input and set point in one table, winter and summer side by side, with the unit, the allowed range and the live reading next to each, plus the mode switches, hazard tests and simulation speed. It follows the side panel both ways. *Copy all inputs* pastes into Excel or Word; *Inputs → CSV* saves a file.
 - **Hazard tests**: *Powder release at the filler* (60 s) and *Exhaust HEPA leak* show PT-102 tripping DV-101 and the exhaust going through the outer HEPA.
-- **HMI screens**: Overview mimic, Sensors (live, with device and PCB channel), Control loops (auto/manual), Energy & CO₂, **Containment**, Trends and Alarms.
-- **Trends**: 11 charts over the last 15 minutes of simulated time: air temperatures, humidity, electrical power vs. baseline, ACH, room pressure (with set point), room particles (with the Grade B limit), fill-point particles (with the Grade A limit), airflows, actuator outputs and CO₂ emissions.
+- **HMI screens**: Overview mimic, **Inputs & set points**, Sensors (live, with device and PCB channel), Control loops (auto/manual), Energy & CO₂, **Containment**, Trends, Alarms and **Data log**. The HMI head has *Copy values* (paste any screen into Excel or Word), *Save PNG* (any screen as an image) and *Full screen* (Esc to leave; the hidden 3D view is not drawn meanwhile).
+- **Trends**: 17 graphs against simulated time (one sample every 2 s, the last 12 h kept; window 5 min, 15 min, 1 h, 4 h or 12 h): supply and room temperature with their set points, the fresh-air path, the exhaust side, humidity, electrical power vs. the baseline twin, saving %, heat moved by the Cu core, air-pump COP/EER, energy, CO₂, airflows, ACH, room pressure, room and fill-point particles (with the Annex 1 Grade B and A limits), PT-102 with its trip and reset levels, and every actuator output. Dashed lines are set points and limits and follow the values you enter; the legends show the live values. *Freeze* holds the graphs still while the rig keeps running, each graph has *PNG* and *enlarge*, and *All graphs → PNG* / *Graph data → CSV* export the window. The plotted values were checked against the model data: every line reads back within 1 pixel.
+- **Data log**: records 50 columns (every sensor, actuator, set point and KPI) in simulated time, every 0.1 s to 1 h (quick buttons 1 s … 5 min), with an optional *stop after* duration. *Download log (PDF)* makes a report with the project logo, your title, name, supervisor, institution and notes, the key results, the set points, min / mean / max of every quantity, the graphs drawn from the logged rows and the logged values in tables; *Download snapshot (PDF)* gives every reading at that moment, the alarms and the graphs. The same data is available as CSV for Excel, MATLAB or Python. The reports say on every page that the data is simulated, not measured.
 - **Readings in 3D**: the *Readings* control at the bottom left of the 3D view switches the live sensor values between **Hide**, **Show** and **Large**. Large is meant for showing the rig to an audience or on a projector. Press **R** to cycle through them. Large also enlarges the zone badges.
 - **Air flow in ducts**: a glowing core inside every duct shows the air moving, with chevrons that travel downstream. Their speed follows that duct's live airflow, and their colour follows the air colour mode, by stream or by temperature. Switch it with *Duct air* Off/On at the bottom left of the 3D view, the **D** key or *Show → Air flow in ducts*. It is hidden automatically when a duct carries no air, for example the air-pump lane in the baseline test.
 
@@ -184,7 +187,7 @@ At the defaults, the room reads about 121 000 /m³ (Grade B in operation) and th
 
 ![Presenting: both panels hidden, large readings](docs/img/rig-presentation.jpg)
 
-![Trends: 11 charts](docs/img/rig-trends.jpg)
+![Trends](docs/img/rig-trends.jpg)
 
 ## The CAD model (SolidWorks, AutoCAD)
 
@@ -206,7 +209,7 @@ How to open it in SolidWorks, and how to rebuild it, is in [`cad/README.md`](cad
 The [`build-pack/`](build-pack/README.md) holds everything needed to build it:
 - **Wiring:** diagrams, the I/O list, and the PCB and harness pin-outs.
 - **Parts:** the electronics BOM.
-- **Firmware:** the [`firmware/`](firmware/README.md) for the ESP32-S3, with 6 PI loops and the L3 exhaust diverter, interlocks, alarms, energy and CO₂, the HMI and JSON telemetry. It comes with unit tests.
+- **Firmware:** the [`firmware/`](firmware/README.md) for the ESP32-S3, with 7 PI loops (including the L8 room-temperature cascade) and the L3 exhaust diverter, interlocks, alarms, energy and CO₂, the HMI and JSON telemetry. It comes with unit tests.
 - **Calculations:** the [engineering calculations](build-pack/07-engineering-calculations.md), covering every equation of the model, duct sizing, fan selection, actuator sizing, the refrigerant circuit and electrical sizing. They are generated by `node tools/calc-report.js` from the simulator's own model.
 - **Commissioning:** the commissioning guide and a Web Serial live monitor.
 

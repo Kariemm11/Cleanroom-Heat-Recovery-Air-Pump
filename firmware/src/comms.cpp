@@ -164,7 +164,7 @@ void telemetry(Print& o, const rig::Controller& c, const rig::Measured& m) {
   num(o, "rh", c.u.rh, 3); num(o, "hum", c.u.hum, 3); num(o, "eev", (float)c.u.eevSteps, 0); num(o, "rv", c.u.rvCooling ? 1.0f : 0.0f, 0, false);
   o.print("},\"k\":{");
   num(o, "ach", c.k.ach, 1); num(o, "f", c.k.f, 2); num(o, "P", c.k.P, 2); num(o, "Pb", c.k.Pbase, 2); num(o, "sav", c.k.saving, 3);
-  num(o, "co2h", c.k.co2h, 2); num(o, "co2hb", c.k.co2hBase, 2); num(o, "coilSP", c.k.coilSP, 1);
+  num(o, "co2h", c.k.co2h, 2); num(o, "co2hb", c.k.co2hBase, 2); num(o, "coilSP", c.k.coilSP, 1); num(o, "supSP", c.k.supSP, 1);
   num(o, "Ewh", (float)c.Ewh, 2); num(o, "Ewhb", (float)c.EwhBase, 2); num(o, "co2g", (float)c.co2g, 2); num(o, "co2gb", (float)c.co2gBase, 2, false);
   o.print(",\"room\":\""); o.print(c.k.roomGrade); o.print("\",\"fill\":\""); o.print(c.k.fillGrade); o.print("\"}");
   o.print(",\"man\":[");

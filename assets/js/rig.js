@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-15h';
+var BUILD='2026-10-15i';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -2178,7 +2178,7 @@ $('pane-ov').innerHTML='<svg class="mimic" viewBox="0 0 1110 252" role="img" ari
  /* AHU: 100 % fresh air, no mixing box, no core */
  '<rect class="unit" x="400" y="66" width="480" height="96" rx="6"/><text x="408" y="60" class="lb">AHU · 100 % fresh air</text>'+
  '<path d="M420 96v28M428 96v28M436 96v28" stroke="var(--ink-dim)" stroke-width="2"/><text x="428" y="152" text-anchor="middle" class="lb">Filters</text>'+
- '<text x="500" y="106" text-anchor="middle" class="lb">no mixing</text><text x="500" y="120" text-anchor="middle" class="lb">no recirc.</text>'+
+ '<text x="500" y="93" text-anchor="middle" class="lb">no mixing</text><text x="500" y="106" text-anchor="middle" class="lb">no recirc.</text>'+
  '<rect x="550" y="96" width="16" height="28" fill="var(--return)" opacity=".7" id="m-phc"/><text x="558" y="152" text-anchor="middle" class="lb">Pre-heat</text>'+
  '<rect x="602" y="96" width="16" height="28" fill="var(--fresh)" opacity=".7" id="m-ccc"/><text x="610" y="152" text-anchor="middle" class="lb">Cool</text>'+
  '<rect x="652" y="96" width="16" height="28" fill="var(--return)" opacity=".7" id="m-rhc"/><text x="660" y="152" text-anchor="middle" class="lb">Reheat</text>'+
@@ -2198,8 +2198,8 @@ $('pane-ov').innerHTML='<svg class="mimic" viewBox="0 0 1110 252" role="img" ari
  /* exhaust safety: PT-102, DV-101, outer BIBO HEPA */
  '<rect class="tag" x="790" y="214" width="108" height="32" rx="4" id="m-pt102b"/><text x="798" y="227" class="lb">PT-102 exhaust</text><text x="798" y="241" class="val" id="m-pt102">–</text>'+
  '<rect class="tag" x="680" y="214" width="96" height="32" rx="4"/><text x="688" y="227" class="lb">TT-107 exhaust</text><text x="688" y="241" class="val" id="m-tt107">–</text>'+
- '<path d="M630 197l20 16M630 213l20-16" stroke="var(--ink)" stroke-width="2.5"/><text x="640" y="190" text-anchor="middle" class="lb">DV-101</text>'+
- '<text x="622" y="192" text-anchor="end" class="val" id="m-dv">–</text>'+
+ '<path d="M630 197l20 16M630 213l20-16" stroke="var(--ink)" stroke-width="2.5"/><text x="636" y="190" text-anchor="end" class="lb">DV-101</text>'+
+ '<text x="644" y="190" text-anchor="start" class="val" id="m-dv">–</text>'+
  '<rect x="562" y="224" width="50" height="20" class="box"/><path d="M566 228l8 4-8 4 8 4M578 228l8 4-8 4 8 4M590 228l8 4-8 4 8 4" stroke="var(--ink-dim)" fill="none"/>'+
  '<text x="516" y="232" text-anchor="end" class="lb">outer HEPA</text><text x="516" y="246" text-anchor="end" class="lb">→ outdoors</text>'+
  /* clean room */
@@ -2297,72 +2297,227 @@ $('pane-en').innerHTML='<div class="energy">'+
   '</div>';
 $('btnEreset').addEventListener('click',function(){ RigModel.resetEnergy(m); });
 
-/* Trends: one chart per unit, never two scales on one chart */
+/* Trends: one chart per unit (never two scales on one chart) against SIMULATED time.
+   The model samples every 2 s of simulated time and keeps the last 12 h; the window is picked here.
+   Each chart is drawn at its real pixel size (no stretched text) and, when a window holds more samples
+   than the chart has pixels, reduced to the min and max of every pixel column, so no peak is lost.
+   Dashed lines are set points and limits; they follow the values you enter. */
+var TRW={w:900,frozen:false,at:0};
+var PRINT={'--s1':'#2a78d6','--s2':'#eb6834','--s3':'#1baf7a','--s4':'#d99400','--s5':'#d6457f','--s6':'#7c5cf0','--s7':'#0891b2','--bad':'#c6302f','--good':'#1a8a4a'};
 var CHARTS=[
-  {id:'tc',title:'Air temperatures (°C)',ser:[['TT101','TT-101 fresh','--s1'],['TT109','TT-109 off Cu core','--s2'],['TT103','TT-103 pre-heat','--s3'],['TT105','TT-105 final','--s4'],['TT106','TT-106 room','--s5']],unit:'°C',dec:1},
-  {id:'rh',title:'Relative humidity (%)',ser:[['MT105','MT-105 supply','--s1'],['MT106','MT-106 room','--s2']],unit:'%',dec:0},
-  {id:'pw',title:'Electrical power (W)',ser:[['P','This rig','--s3'],['Pb','Baseline (no recovery)','--s2']],unit:'W',dec:1},
-  {id:'ach',title:'Clean-room ACH (1/h)',ser:[['ACH','ACH','--s1']],unit:'/h',dec:1},
-  {id:'dp',title:'Clean-room pressure (Pa)',ser:[['DP','PDT-101','--s1']],unit:'Pa',dec:1,lim:[15,'set point']},
-  {id:'pr',title:'Room particles ≥0.5 µm (per m³)',ser:[['PR','PT-101 room','--s1']],unit:'/m³',dec:0,lim:[352000,'Grade B in operation'],zero:true},
-  {id:'pa',title:'Fill-point particles ≥0.5 µm (per m³)',ser:[['PA','PT-101 fill point','--s3']],unit:'/m³',dec:0,lim:[3520,'Grade A'],zero:true},
-  {id:'px',title:'Exhaust particles before DV-101 (per m³)',ser:[['PX','PT-102 exhaust','--s4']],unit:'/m³',dec:0,lim:[1000,'DV-101 trip'],zero:true},
-  {id:'q',title:'Airflows (m³/h)',ser:[['QS','FT-102 supply','--s1'],['QF','FT-101 fresh air','--s2'],['QE','Exhaust fans','--s3']],unit:'m³/h',dec:2,zero:true},
-  {id:'act',title:'Actuator outputs (%)',ser:[['USF','FAN-102 supply','--s1'],['UFA','FAN-101 compressor','--s2'],['UDV','DV-101 to HEPA','--s3'],['UCM','CMP-101 air pump','--s4'],['URH','HTR-101 reheat','--s5']],unit:'%',dec:0,zero:true},
-  {id:'co',title:'CO₂ emissions (g/h)',ser:[['CO','This rig','--s3'],['COB','Baseline (no recovery)','--s2']],unit:'g/h',dec:1,zero:true}
+  {id:'ts',title:'Supply and room temperature (L5 · L8)',unit:'°C',dec:2,ser:[['TT105','TT-105 supply','--s1'],['SUPSP','supply set point','--s1',1],['TT106','TT-106 room','--s2'],['ROOMSP','room set point','--s2',1]]},
+  {id:'tf',title:'Fresh-air path temperatures',unit:'°C',dec:2,ser:[['TT101','TT-101 fresh air','--s4'],['TT109','TT-109 off the Cu core','--s1'],['TT103','TT-103 after pre-heat','--s2'],['TT104','TT-104 off the cooling coil','--s3'],['COILSP','coil set point','--s6',1]]},
+  {id:'te',title:'Exhaust temperatures',unit:'°C',dec:2,ser:[['TT107','TT-107 exhaust in','--s2'],['TT108','TT-108 after the air-pump coil','--s1']]},
+  {id:'rh',title:'Relative humidity',unit:'%',dec:1,ser:[['MT101','MT-101 fresh air','--s4'],['MT105','MT-105 supply','--s1'],['MT106','MT-106 room','--s2'],['RHSP','room RH set point','--s2',1]]},
+  {id:'pw',title:'Electrical power',unit:'W',dec:1,zero:1,ser:[['P','this rig','--s3'],['Pb','baseline twin (no recovery)','--s2']]},
+  {id:'sv',title:'Power saving against the baseline twin',unit:'%',dec:1,zero:1,ser:[['RED','saving','--s3']]},
+  {id:'hr',title:'Heat moved by the Cu plate core',unit:'W',dec:2,zero:1,ser:[['QREC','Cu core','--s1']]},
+  {id:'cop',title:'Air-pump COP (winter) / EER (summer)',unit:'',dec:2,zero:1,ser:[['COP','COP / EER','--s4']]},
+  {id:'en',title:'Electrical energy since the last reset',unit:'Wh',dec:2,zero:1,ser:[['EA','this rig','--s3'],['EB','baseline twin','--s2']]},
+  {id:'co',title:'CO₂ emissions',unit:'g/h',dec:2,zero:1,ser:[['CO','this rig','--s3'],['COB','baseline twin','--s2']]},
+  {id:'q',title:'Airflows',unit:'m³/h',dec:2,zero:1,ser:[['QS','FT-102 supply','--s1'],['QSP','supply set point','--s1',1],['QF','FT-101 fresh air','--s2'],['QE','exhaust fans','--s3']]},
+  {id:'ach',title:'Clean-room air changes',unit:'1/h',dec:1,zero:1,ser:[['ACH','ACH = FT-102 ÷ V','--s1']]},
+  {id:'dp',title:'Clean-room pressure (PDT-101)',unit:'Pa',dec:2,ser:[['DP','PDT-101','--s1'],['DPSP','set point','--s1',1]]},
+  {id:'pr',title:'Room particles ≥0.5 µm (PT-101)',unit:'/m³',dec:0,zero:1,ser:[['PR','PT-101 room','--s1']],lim:[[352000,'Grade B in operation (Annex 1)']]},
+  {id:'pa',title:'Fill-point particles ≥0.5 µm (PT-101)',unit:'/m³',dec:0,zero:1,ser:[['PA','PT-101 fill point','--s3']],lim:[[3520,'Grade A (Annex 1)']]},
+  {id:'px',title:'Exhaust particles before DV-101 (PT-102)',unit:'/m³',dec:0,zero:1,ser:[['PX','PT-102 exhaust','--s4'],['TRIP','trip level','--bad',1],['RST','reset level','--good',1]]},
+  {id:'act',title:'Actuator outputs',unit:'%',dec:0,zero:1,ser:[['USF','FAN-102 supply','--s1'],['UFA','FAN-101 fresh air','--s2'],['UEF','FAN-103 exhaust','--s6'],['UDV','DV-101 to HEPA','--s3'],['UCM','CMP-101 air pump','--s4'],['URH','HTR-101 reheat','--s5'],['UHM','HUM-101 humidifier','--s7']]}
 ];
-$('pane-tr').innerHTML='<div class="trends">'+CHARTS.map(function(c){
-  return '<div class="chart" id="ch-'+c.id+'"><h4>'+c.title+'</h4>'+
-    (c.ser.length>1?'<div class="lg">'+c.ser.map(function(s){return '<span><i style="background:var('+s[2]+')"></i>'+s[1]+'</span>';}).join('')+'</div>':'')+
-    '<svg viewBox="0 0 320 120" preserveAspectRatio="none"></svg><div class="tip" hidden></div></div>';
-}).join('')+'</div><p class="note">Last 15 minutes of simulated time, one sample every 2 s. Hover a chart to read values.</p>';
-function drawCharts(){
-  var d=m.trend; if(d.length<2) return;
-  CHARTS.forEach(function(c){
-    var el=$('ch-'+c.id), svg=el.querySelector('svg');
-    var lo=Infinity, hi=-Infinity;
-    d.forEach(function(p){ c.ser.forEach(function(s){ var v=p[s[0]]; if(v<lo) lo=v; if(v>hi) hi=v; }); });
-    if(c.lim){ lo=Math.min(lo,c.lim[0]); hi=Math.max(hi,c.lim[0]); }
-    if(c.id==='ach'||c.id==='pw'||c.zero){ lo=Math.min(lo,0); }
-    var pad=(hi-lo)*0.12||1; lo-=pad; hi+=pad;
-    if(c.id==='ach'||c.id==='pw'||c.zero) lo=Math.max(0,lo);
-    var X0=30,X1=316,Y0=8,Y1=106, t0=d[0].t, t1=d[d.length-1].t;
-    function X(t){ return X0+(X1-X0)*(t-t0)/Math.max(t1-t0,1); }
-    function Y(v){ return Y1-(Y1-Y0)*(v-lo)/(hi-lo); }
-    var h='';
-    for(var g=0;g<=3;g++){ var v=lo+(hi-lo)*g/3, y=Y(v);
-      h+='<line x1="'+X0+'" x2="'+X1+'" y1="'+y+'" y2="'+y+'" stroke="var(--line-soft)" stroke-width="1"/>'+
-         '<text x="'+(X0-4)+'" y="'+(y+3)+'" text-anchor="end">'+(Math.abs(hi-lo)<10?v.toFixed(1):(Math.abs(v)>=1e4?kfmt(v):Math.round(v)))+'</text>'; }
-    if(c.lim){ var yl=Y(c.lim[0]);
-      h+='<line x1="'+X0+'" x2="'+X1+'" y1="'+yl+'" y2="'+yl+'" stroke="var(--bad)" stroke-width="1" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/>'+
-         '<text x="'+(X1-2)+'" y="'+(yl-3)+'" text-anchor="end" style="fill:var(--bad)">'+c.lim[1]+' '+(c.lim[0]>=1e4?kfmt(c.lim[0]):c.lim[0])+'</text>'; }
-    h+='<text x="'+X1+'" y="118" text-anchor="end">now</text><text x="'+X0+'" y="118">−'+Math.round((t1-t0)/60)+' min</text>';
-    c.ser.forEach(function(s){
-      var pts=d.map(function(p){ return X(p.t).toFixed(1)+','+Y(p[s[0]]).toFixed(1); }).join(' ');
-      h+='<polyline points="'+pts+'" fill="none" stroke="var('+s[2]+')" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>';
+function fin(v){ return typeof v==='number' && isFinite(v); }
+function grp(v,dec){ var s=Math.abs(v).toFixed(dec), p=s.split('.'); p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,' '); return (v<0?'−':'')+p.join('.'); }
+function vfmt(c,v){ return fin(v)?grp(v,c.dec)+(c.unit?' '+c.unit:''):'—'; }
+function tLbl(t,sec){ t=Math.round(t); var h=Math.floor(t/3600), mi=Math.floor(t%3600/60), s=t%60;
+  return h+':'+(mi<10?'0':'')+mi+(sec?':'+(s<10?'0':'')+s:''); }
+function niceStep(span,n){ var r=span/n, p=Math.pow(10,Math.floor(Math.log10(r))), f=r/p; return (f<1.5?1:(f<3?2:(f<7?5:10)))*p; }
+function tickTxt(v,step){ if(Math.abs(v)<step*1e-6) v=0; var a=Math.abs(v);
+  if(a>=1e6) return grp(v/1e6,step>=1e6?0:1)+'M'; if(a>=1e4) return grp(v/1e3,step>=1e3?0:1)+'k';
+  return grp(v,Math.max(0,Math.min(3,-Math.floor(Math.log10(step)+1e-9)))); }
+/* the samples inside the window (binary search on time) */
+function trendSlice(){
+  var d=m.trend, n=d.length; if(n<2) return null;
+  var tEnd=TRW.frozen?Math.min(TRW.at,d[n-1].t):d[n-1].t, lo=0, hi=n-1, j1=n-1;
+  if(TRW.frozen){ while(lo<hi){ var mid=(lo+hi+1)>>1; if(d[mid].t<=tEnd) lo=mid; else hi=mid-1; } j1=lo; lo=0; hi=j1; }
+  var tStart=tEnd-TRW.w;
+  while(lo<hi){ var md=(lo+hi)>>1; if(d[md].t<tStart) lo=md+1; else hi=md; }
+  if(j1-lo<1) return null;
+  return {d:d,i0:lo,i1:j1,x0:d[lo].t,x1:d[j1].t};
+}
+/* polyline points of one series; NaN breaks the line; min/max per pixel column when there are too many samples */
+function serSegs(sl,key,X,Y,cols){
+  var d=sl.d, segs=[], cur=[], i, v;
+  if(sl.i1-sl.i0+1<=cols*2){
+    for(i=sl.i0;i<=sl.i1;i++){ v=d[i][key];
+      if(!fin(v)){ if(cur.length) segs.push(cur); cur=[]; continue; }
+      cur.push(X(d[i].t).toFixed(1)+','+Y(v).toFixed(1)); }
+  } else {
+    var b=-1, mn, mx, tmn, tmx;
+    var flush=function(){ if(b<0) return; if(tmn<=tmx){ cur.push(X(tmn).toFixed(1)+','+Y(mn).toFixed(1)); if(tmx!==tmn) cur.push(X(tmx).toFixed(1)+','+Y(mx).toFixed(1)); }
+      else { cur.push(X(tmx).toFixed(1)+','+Y(mx).toFixed(1)); cur.push(X(tmn).toFixed(1)+','+Y(mn).toFixed(1)); } b=-1; };
+    var span=Math.max(sl.x1-sl.x0,1e-9);
+    for(i=sl.i0;i<=sl.i1;i++){ v=d[i][key]; var t=d[i].t;
+      if(!fin(v)){ flush(); if(cur.length) segs.push(cur); cur=[]; continue; }
+      var px=Math.floor((t-sl.x0)/span*cols);
+      if(px!==b){ flush(); b=px; mn=mx=v; tmn=tmx=t; }
+      else { if(v<mn){ mn=v; tmn=t; } if(v>mx){ mx=v; tmx=t; } } }
+    flush();
+  }
+  if(cur.length) segs.push(cur);
+  return segs;
+}
+/* one chart as SVG markup. o: {W,H,col(name)->colour, ink, dim, grid, font, fs, print} */
+function chartSvg(c,sl,o){
+  var d=sl.d, lo=Infinity, hi=-Infinity, i;
+  for(i=sl.i0;i<=sl.i1;i++) c.ser.forEach(function(s){ var v=d[i][s[0]]; if(fin(v)){ if(v<lo) lo=v; if(v>hi) hi=v; } });
+  if(lo===Infinity){ lo=0; hi=1; }
+  (c.lim||[]).forEach(function(l){ lo=Math.min(lo,l[0]); hi=Math.max(hi,l[0]); });
+  if(c.zero) lo=Math.min(lo,0);
+  var minSpan=4*Math.pow(10,-c.dec); if(hi-lo<minSpan){ var mid=(hi+lo)/2; lo=mid-minSpan/2; hi=mid+minSpan/2; if(c.zero&&lo<0&&mid>=0){ hi-=lo; lo=0; } }
+  var pad=(hi-lo)*0.06; hi+=pad; if(!(c.zero&&lo>=0)) lo-=pad;
+  var step=niceStep(hi-lo,4); lo=Math.floor(lo/step+1e-9)*step; hi=Math.ceil(hi/step-1e-9)*step;
+  var L=o.fs*4.6, R=o.print?18:10, T=o.top||8, B=o.fs*2.9, W=o.W, H=o.H, X0=L, X1=W-R, Y0=T, Y1=H-B;
+  var xs=sl.x0, xe=Math.max(sl.x1,sl.x0+1);
+  function X(t){ return X0+(X1-X0)*(t-xs)/(xe-xs); }
+  function Y(v){ return Y1-(Y1-Y0)*(v-lo)/(hi-lo); }
+  var h='<g font-family="'+o.font+'" font-size="'+o.fs+'">';
+  for(var v=lo; v<=hi+step*1e-6; v+=step){ var y=Y(v).toFixed(1);
+    h+='<line x1="'+X0+'" x2="'+X1+'" y1="'+y+'" y2="'+y+'" stroke="'+o.grid+'" stroke-width="1"/>'+
+       '<text class="yt" data-y="'+y+'" x="'+(X0-5)+'" y="'+(+y+o.fs*0.35).toFixed(1)+'" text-anchor="end" fill="'+o.dim+'">'+tickTxt(v,step)+'</text>'; }
+  var tsteps=[2,5,10,15,30,60,120,300,600,900,1800,3600,7200,10800,21600,43200], maxT=Math.max(2,Math.floor((X1-X0)/(o.fs*7))), ts=tsteps[tsteps.length-1];
+  for(i=0;i<tsteps.length;i++){ if((xe-xs)/tsteps[i]<=maxT){ ts=tsteps[i]; break; } }
+  for(var tt=Math.ceil(xs/ts)*ts; tt<=xe+1e-6; tt+=ts){ var x=X(tt).toFixed(1);
+    h+='<line x1="'+x+'" x2="'+x+'" y1="'+Y0+'" y2="'+Y1+'" stroke="'+o.grid+'" stroke-width="1"/>'+
+       '<text x="'+x+'" y="'+(Y1+o.fs*1.3).toFixed(1)+'" text-anchor="middle" fill="'+o.dim+'">'+tLbl(tt,ts<60||(xe-xs)<300)+'</text>'; }
+  h+='<rect x="'+X0+'" y="'+Y0+'" width="'+(X1-X0)+'" height="'+(Y1-Y0)+'" fill="none" stroke="'+o.dim+'" stroke-width="1"/>';
+  h+='<text x="'+((X0+X1)/2)+'" y="'+(H-o.fs*0.35).toFixed(1)+'" text-anchor="middle" fill="'+o.dim+'">simulated time (h:mm'+((xe-xs)<300?':ss':'')+')</text>';
+  if(c.unit) h+='<text transform="translate('+(o.fs*1.0).toFixed(1)+','+((Y0+Y1)/2).toFixed(1)+') rotate(-90)" text-anchor="middle" fill="'+o.dim+'">'+c.unit+'</text>';
+  (c.lim||[]).forEach(function(l){ var yl=Y(l[0]).toFixed(1);
+    h+='<line x1="'+X0+'" x2="'+X1+'" y1="'+yl+'" y2="'+yl+'" stroke="'+o.col('--bad')+'" stroke-width="1.3" stroke-dasharray="6 4"/>'+
+       '<text x="'+(X1-4)+'" y="'+(yl-4)+'" text-anchor="end" fill="'+o.col('--bad')+'">'+l[1]+' '+grp(l[0],0)+(c.unit?' '+c.unit:'')+'</text>'; });
+  var cid='cp-'+(o.print?'p':'s')+'-'+c.id;
+  h+='<clipPath id="'+cid+'"><rect x="'+X0+'" y="'+(Y0-2)+'" width="'+(X1-X0)+'" height="'+(Y1-Y0+4)+'"/></clipPath><g clip-path="url(#'+cid+')">';
+  var cols=Math.max(10,Math.round(X1-X0));
+  c.ser.forEach(function(s){
+    serSegs(sl,s[0],X,Y,cols).forEach(function(seg){
+      if(seg.length===1){ var p=seg[0].split(','); h+='<circle data-k="'+s[0]+'" cx="'+p[0]+'" cy="'+p[1]+'" r="1.6" fill="'+o.col(s[2])+'"/>'; return; }
+      h+='<polyline data-k="'+s[0]+'" points="'+seg.join(' ')+'" fill="none" stroke="'+o.col(s[2])+'" stroke-width="'+(s[3]?1.4:2)+'"'+(s[3]?' stroke-dasharray="6 4"':'')+' stroke-linejoin="round" stroke-linecap="round"/>';
     });
-    h+='<line class="xh" x1="0" x2="0" y1="'+Y0+'" y2="'+Y1+'" stroke="var(--ink-dim)" stroke-width="1" visibility="hidden" vector-effect="non-scaling-stroke"/>';
-    svg.innerHTML=h; c._map={X0:X0,X1:X1,t0:t0,t1:t1};
+  });
+  h+='</g></g>';
+  return {svg:h,map:{X0:X0,X1:X1,Y0:Y0,Y1:Y1,xs:xs,xe:xe}};
+}
+function legendHtml(c){ return c.ser.map(function(s,j){
+  return '<span><i style="background:var('+s[2]+')'+(s[3]?';background:repeating-linear-gradient(90deg,var('+s[2]+') 0 4px,transparent 4px 7px)':'')+'"></i>'+s[1]+' <b id="lgv-'+c.id+'-'+j+'">—</b></span>'; }).join(''); }
+var SCREEN={col:function(n){ return 'var('+n+')'; },ink:'var(--ink)',dim:'var(--ink-dim)',grid:'var(--line-soft)',font:'var(--f-mono)',fs:10};
+$('pane-tr').innerHTML='<div class="trbar">'+
+  '<span class="lbl">Window</span><div class="seg" id="segTrw">'+[[300,'5 min'],[900,'15 min'],[3600,'1 h'],[14400,'4 h'],[43200,'12 h']].map(function(w){
+    return '<button type="button" data-v="'+w[0]+'" aria-pressed="'+(w[0]===TRW.w)+'">'+w[1]+'</button>'; }).join('')+'</div>'+
+  '<button class="hbtn" id="trFreeze" type="button" aria-pressed="false">Freeze graphs</button>'+
+  '<button class="hbtn" id="trPng" type="button">All graphs → PNG</button>'+
+  '<button class="hbtn" id="trCsv" type="button">Graph data → CSV</button>'+
+  '<button class="hbtn" id="trClear" type="button">Clear graphs</button>'+
+  '<span class="st" id="trInfo"></span></div>'+
+  '<div class="trends">'+CHARTS.map(function(c){
+  return '<div class="chart" id="ch-'+c.id+'"><div class="chd"><h4>'+c.title+(c.unit?' <small>('+c.unit+')</small>':'')+'</h4>'+
+    '<span class="cbt"><button type="button" data-png="'+c.id+'" title="Save this graph as a PNG image">PNG</button>'+
+    '<button type="button" data-big="'+c.id+'" title="Enlarge this graph" aria-pressed="false">⤢</button></span></div>'+
+    '<div class="lg">'+legendHtml(c)+'</div><svg></svg><div class="tip" hidden></div></div>';
+}).join('')+'</div><p class="note">Simulated time on the x axis; one sample every 2 s of simulated time, the last 12 h kept. Dashed lines are set points and limits. '+
+  'Hover a graph to read the values at that moment; Freeze holds the graphs still (the rig keeps running) for screenshots. Live values are in the legends.</p>';
+function drawCharts(force){
+  var sl=trendSlice();
+  setText('trInfo',m.trend.length+' samples · '+tLbl(m.trend.length?m.trend[0].t:0,1)+' → '+tLbl(m.trend.length?m.trend[m.trend.length-1].t:0,1)+(TRW.frozen?' · FROZEN at '+tLbl(TRW.at,1):''));
+  if(!sl) return;
+  if(TRW.frozen && !force && TRW._drawn) return;
+  TRW._drawn=true;
+  CHARTS.forEach(function(c){
+    var el=$('ch-'+c.id), svg=el.querySelector('svg'), W=Math.max(200,Math.round(svg.clientWidth||300)), H=Math.max(100,Math.round(svg.clientHeight||150));
+    var r=chartSvg(c,sl,{W:W,H:H,col:SCREEN.col,ink:SCREEN.ink,dim:SCREEN.dim,grid:SCREEN.grid,font:SCREEN.font,fs:SCREEN.fs});
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);
+    svg.innerHTML=r.svg+'<line class="xh" x1="0" x2="0" y1="'+r.map.Y0+'" y2="'+r.map.Y1+'" stroke="var(--ink-dim)" stroke-width="1" visibility="hidden"/>';
+    c._map=r.map; c._W=W; c._sl=sl;
+    var last=sl.d[sl.i1];
+    c.ser.forEach(function(s,j){ setText('lgv-'+c.id+'-'+j,vfmt(c,last[s[0]])); });
   });
 }
+function nearest(sl,t){ var d=sl.d, lo=sl.i0, hi=sl.i1; while(lo<hi){ var md=(lo+hi)>>1; if(d[md].t<t) lo=md+1; else hi=md; }
+  if(lo>sl.i0 && Math.abs(d[lo-1].t-t)<Math.abs(d[lo].t-t)) lo--; return d[lo]; }
 CHARTS.forEach(function(c){
   var el=$('ch-'+c.id), svg=el.querySelector('svg'), tip=el.querySelector('.tip');
   svg.addEventListener('pointermove',function(e){
-    var d=m.trend; if(!c._map||d.length<2) return;
-    var r=svg.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*320;
-    var t=c._map.t0+(x-c._map.X0)/(c._map.X1-c._map.X0)*(c._map.t1-c._map.t0), best=d[0];
-    d.forEach(function(p){ if(Math.abs(p.t-t)<Math.abs(best.t-t)) best=p; });
-    var xh=svg.querySelector('.xh'), bx=c._map.X0+(c._map.X1-c._map.X0)*(best.t-c._map.t0)/Math.max(c._map.t1-c._map.t0,1);
+    var mp=c._map, sl=c._sl; if(!mp||!sl) return;
+    var r=svg.getBoundingClientRect(), x=(e.clientX-r.left)/r.width*c._W;
+    if(x<mp.X0||x>mp.X1){ tip.hidden=true; return; }
+    var best=nearest(sl,mp.xs+(x-mp.X0)/(mp.X1-mp.X0)*(mp.xe-mp.xs));
+    var bx=mp.X0+(mp.X1-mp.X0)*(best.t-mp.xs)/(mp.xe-mp.xs), xh=svg.querySelector('.xh');
     if(xh){ xh.setAttribute('x1',bx); xh.setAttribute('x2',bx); xh.setAttribute('visibility','visible'); }
     tip.hidden=false;
-    tip.innerHTML='<div>t = '+hms(best.t)+'</div>'+c.ser.map(function(s){
-      var bv=best[s[0]], txt=(c.unit==='/m³'&&bv>=1e4)?kfmt(bv):bv.toFixed(c.dec);
-      return '<div><i style="display:inline-block;width:10px;height:2px;background:var('+s[2]+');vertical-align:middle;margin-right:5px"></i>'+s[1]+' <b>'+txt+' '+c.unit+'</b></div>'; }).join('');
-    var tx=e.clientX-el.getBoundingClientRect().left+12; if(tx>el.clientWidth-170) tx-=190;
-    tip.style.left=tx+'px'; tip.style.top='24px';
+    tip.innerHTML='<div>t = '+hms(best.t)+' ('+grp(best.t,0)+' s)</div>'+c.ser.map(function(s){
+      return '<div><i style="display:inline-block;width:10px;height:2px;background:var('+s[2]+');vertical-align:middle;margin-right:5px"></i>'+s[1]+' <b>'+vfmt(c,best[s[0]])+'</b></div>'; }).join('');
+    var tx=e.clientX-el.getBoundingClientRect().left+12; if(tx>el.clientWidth-200) tx-=220;
+    tip.style.left=Math.max(4,tx)+'px'; tip.style.top='38px';
   });
   svg.addEventListener('pointerleave',function(){ tip.hidden=true; var xh=svg.querySelector('.xh'); if(xh) xh.setAttribute('visibility','hidden'); });
 });
+seg('segTrw',function(v){ TRW.w=+v; TRW._drawn=false; drawCharts(true); });
+$('trFreeze').addEventListener('click',function(){
+  TRW.frozen=!TRW.frozen; TRW.at=m.t; TRW._drawn=false;
+  this.setAttribute('aria-pressed',String(TRW.frozen)); this.textContent=TRW.frozen?'Unfreeze graphs':'Freeze graphs'; drawCharts(true);
+});
+$('trClear').addEventListener('click',function(){ m.trend.length=0; TRW._drawn=false; drawCharts(true); });
+$('pane-tr').addEventListener('click',function(e){
+  var b=e.target.closest('button'); if(!b) return;
+  if(b.dataset.big){ var el=$('ch-'+b.dataset.big), on=!el.classList.contains('big'); el.classList.toggle('big',on); b.setAttribute('aria-pressed',String(on)); TRW._drawn=false; drawCharts(true); }
+  if(b.dataset.png){ var c=CHARTS.filter(function(x){ return x.id===b.dataset.png; })[0]; var sl=trendSlice(); if(c&&sl) chartPng([c],sl,'cleanroom-rig-graph-'+c.id); }
+});
+$('trPng').addEventListener('click',function(){ var sl=trendSlice(); if(sl) chartPng(CHARTS,sl,'cleanroom-rig-graphs'); });
+$('trCsv').addEventListener('click',function(){
+  var sl=trendSlice(); if(!sl) return;
+  var keys=[], head=['time_s','time_h:mm:ss'];
+  CHARTS.forEach(function(c){ c.ser.forEach(function(s){ if(keys.indexOf(s[0])<0){ keys.push(s[0]); head.push(s[1]+(c.unit?' ('+c.unit+')':'')); } }); });
+  var lines=[head.map(csvCell).join(',')];
+  for(var i=sl.i0;i<=sl.i1;i++){ var p=sl.d[i]; lines.push([r2(p.t),tLbl(p.t,1)].concat(keys.map(function(k){ return fin(p[k])?Math.round(p[k]*1000)/1000:''; })).join(',')); }
+  saveBlob('cleanroom-rig-graph-data-'+stamp()+'.csv',new Blob(['﻿'+lines.join('\n')+'\n'],{type:'text/csv;charset=utf-8'}));
+});
+/* graphs → PNG: white background, fixed print colours, title, run details, legend with the value at the end of the window */
+function runLine(sl){ return 'Clean-room heat-recovery rig · '+(m.season==='winter'?'winter':'summer')+' · '+(m.recovery?'heat recovery on':'baseline test')+' · '+
+  (P.tctl==='room'?'room set point '+P[m.season].room+' °C':'fixed supply '+P[m.season].sup+' °C')+' · exhaust '+(m.act.dv>0.5?'→ outer HEPA':'→ Cu core')+
+  ' · simulated '+tLbl(sl.x0,1)+' → '+tLbl(sl.x1,1); }
+function chartBlock(c,sl,W,H){
+  var fs=13, legend=c.ser.map(function(s){ return {s:s,txt:s[1]+': '+vfmt(c,sl.d[sl.i1][s[0]])}; });
+  var rows=[], row=[], wRow=0, maxW=W-40;
+  legend.forEach(function(l){ var w=l.txt.length*fs*0.56+34; if(wRow+w>maxW&&row.length){ rows.push(row); row=[]; wRow=0; } row.push(l); wRow+=w; }); if(row.length) rows.push(row);
+  var top=44+rows.length*20;
+  var r=chartSvg(c,sl,{W:W,H:H,top:top,col:function(n){ return PRINT[n]||'#333'; },ink:'#121c26',dim:'#4a5866',grid:'#e3e8ee',font:'Arial, Helvetica, sans-serif',fs:fs,print:1});
+  var h='<rect width="'+W+'" height="'+H+'" fill="#fff"/><text x="20" y="26" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#121c26">'+esc(c.title)+(c.unit?' ('+esc(c.unit)+')':'')+'</text>';
+  rows.forEach(function(rw,k){ var x=20, y=48+k*20;
+    rw.forEach(function(l){ var col=PRINT[l.s[2]]||'#333';
+      h+='<line x1="'+x+'" x2="'+(x+22)+'" y1="'+(y-4)+'" y2="'+(y-4)+'" stroke="'+col+'" stroke-width="'+(l.s[3]?1.6:2.6)+'"'+(l.s[3]?' stroke-dasharray="5 3"':'')+'/>'+
+         '<text x="'+(x+28)+'" y="'+y+'" font-family="Arial, Helvetica, sans-serif" font-size="'+fs+'" fill="#121c26">'+esc(l.txt)+'</text>';
+      x+=l.txt.length*fs*0.56+34; }); });
+  return h+r.svg;
+}
+function chartPng(list,sl,name){
+  var W=list.length>1?820:1000, H=list.length>1?380:470, cols=list.length>1?2:1, rows=Math.ceil(list.length/cols), head=list.length>1?70:46;
+  var TW=W*cols, TH=head+rows*H+24;
+  var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+TW+'" height="'+TH+'" viewBox="0 0 '+TW+' '+TH+'"><rect width="'+TW+'" height="'+TH+'" fill="#fff"/>';
+  if(list.length>1) s+='<text x="20" y="32" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" fill="#121c26">HMI-101 trends</text>';
+  s+='<text x="20" y="'+(list.length>1?56:30)+'" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#4a5866">'+esc(runLine(sl))+' · exported '+esc(new Date().toLocaleString())+'</text>';
+  list.forEach(function(c,i){ s+='<g transform="translate('+((i%cols)*W)+','+(head+Math.floor(i/cols)*H)+')">'+chartBlock(c,sl,W,H)+'</g>'; });
+  s+='<text x="20" y="'+(TH-8)+'" font-family="Arial, Helvetica, sans-serif" font-size="11" fill="#7a8794">Dashed lines: set points and limits. Grade limits: EU GMP Annex 1 (2022) Table 5, particles ≥0.5 µm in operation.</text></svg>';
+  svgToPng(s,TW,TH,list.length>1?1.5:2,name+'-'+stamp()+'.png');
+}
+function svgToPng(svg,W,H,k,name){
+  var img=new Image();
+  img.onload=function(){ var cv=document.createElement('canvas'); cv.width=Math.round(W*k); cv.height=Math.round(H*k);
+    var g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,cv.width,cv.height); g.drawImage(img,0,0,cv.width,cv.height);
+    cv.toBlob(function(b){ saveBlob(name,b); },'image/png'); };
+  img.onerror=function(){ alert('Could not build the image in this browser.'); };
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+function saveBlob(name,blob){
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1500);
+}
 
 /* Alarms */
 function drawAlarms(){
@@ -2513,7 +2668,7 @@ function updateHMI(force){
     setText('m-hum',f0(m.act.hum*100)+'%'); setText('m-sf',f0(m.act.sf*100)+'%'); setText('m-hepa',f0(s.PDT102)+' Pa');
     setText('m-tt109',tC(s.TT109)); setText('m-tt103',tC(s.TT103)); setText('m-tt104',tC(s.TT104));
     setText('m-tt105',tC(s.TT105)+' · '+f0(s.MT105)+' %'); setText('m-ft102',f2(s.FT102)+' m³/h'); setText('m-tt107',tC(s.TT107));
-    setText('m-pt102',kfmt(s.PT102)+' /m³'); setText('m-dv',m.act.dv>0.5?'HEPA':'air pump');
+    setText('m-pt102',kfmt(s.PT102)+' /m³'); setText('m-dv',m.act.dv>0.5?'→ outer HEPA':'→ air pump');
     $('m-bypl').style.opacity=m.act.dv>0.5?'1':'.35';
     setText('m-ach',f1(k.ach)+' ACH'); setText('m-room',tC(s.TT106)+' · '+f0(s.MT106)+' % RH');
     setText('m-dp',sgn(s.PDT101)+' Pa'); var gr=gradeOf(s.PT101,s.PT101R5); setText('m-vol','PT-101 '+kfmt(s.PT101)+'/m³ · '+(gr.g==='—'?'> Grade C':'Grade '+gr.g));
@@ -2560,6 +2715,7 @@ function updateHMI(force){
   } else if(activePane==='ct'){ updateContainment();
   } else if(activePane==='tr'){ drawCharts(); }
   else if(activePane==='al'){ drawAlarms(); }
+  else if(activePane==='in'){ hiSync(); }
 }
 
 /* the 3D screen on the front of the box mirrors the HMI */
@@ -2789,6 +2945,222 @@ $('btnReset').addEventListener('click',function(){
   Object.keys(d).forEach(function(k){ if(typeof d[k]==='object') Object.assign(P[k],d[k]); else P[k]=d[k]; });
   loadFields();
 });
+
+/* ------------------------------------------ HMI tab "Inputs & set points": every input in one place.
+   It edits the same model parameters as the side panel, and each follows the other. */
+var HIN={
+  oat:['Outdoor air temperature','°C','TT-101',function(){ return tC(m.s.TT101); }],
+  orh:['Outdoor air relative humidity','%','MT-101',function(){ return f0(m.s.MT101)+' %'; }],
+  room:['Clean-room temperature set point (L8)','°C','TT-106',function(){ return tC(m.s.TT106)+(P.tctl==='room'?'':' · L8 off'); }],
+  coil:['Coil set point — winter: after pre-heat · summer: off the cooling coil (L4)','°C','TT-103 / TT-104',function(){ return tC(m.season==='winter'?m.s.TT103:m.s.TT104)+' · active SP '+tC(m.coilSP); }],
+  sup:['Final supply-air set point (L5)','°C','TT-105',function(){ return tC(m.s.TT105)+' · active SP '+tC(m.supSP)+(P.tctl==='room'?' (set by L8)':''); }],
+  flow:['Supply airflow set point (L1)','m³/h','FT-102',function(){ return f2(m.s.FT102)+' m³/h · '+f1(m.kpi.ach)+' ACH'; }],
+  rh:['Clean-room RH set point (L6)','%','MT-106',function(){ return f1(m.s.MT106)+' %'; }],
+  dp:['Clean-room pressure set point (L7)','Pa','PDT-101',function(){ return sgn(m.s.PDT101)+' Pa'; }],
+  e1:['Cu plate core effectiveness','%','HX-101',function(){ return m.recovery&&m.act.dv<0.5?f1(m.pw.Qrec)+' W moved':'no exhaust on the core'; }],
+  pxTrip:['PT-102 trip level, particles ≥0.5 µm (L3)','/m³','PT-102',function(){ return kfmt(m.s.PT102)+' /m³'; }],
+  pxReset:['PT-102 reset level (60 s below it)','/m³','DV-101',function(){ return m.act.dv>0.5?'exhaust → outer HEPA':'exhaust → Cu core'; }],
+  gain:['Room heat gain (operator, lights, equipment)','W','',null],
+  gen:['Particles shed in the room, ≥0.5 µm','/min','PT-101',function(){ return kfmt(m.s.PT101)+' /m³ in the room'; }],
+  amb:['Lab air around the box','°C','',null],
+  ua:['Box envelope UA','W/K','',null],
+  volt:['DC bus voltage','V','VT-101',function(){ return f1(m.s.VT101)+' V'; }],
+  ef:['Grid emission factor','kg CO₂/kWh','',function(){ return f1(m.kpi.co2h)+' g CO₂/h now'; }],
+  cop:['Baseline chiller COP (twin without recovery)','–','',null],
+  hours:['Operating hours per year','h/yr','',function(){ return f0(m.kpi.annualKWh)+' kWh/yr'; }]
+};
+var FMAP={}; FIELDS.forEach(function(f){ FMAP[f[1]]=f; });
+function rv(v){ return Math.abs(v)>=1e4?grp(v,0):String(v); }
+function hiInput(k,s){ var f=FMAP[k];
+  return '<input type="number" id="hi-'+k+(s?'-'+s:'')+'" data-k="'+k+'"'+(s?' data-s="'+s+'"':'')+' min="'+f[3]+'" max="'+f[4]+'" step="'+($(f[0]).getAttribute('step')||'any')+'" aria-label="'+esc(HIN[k][0]+(s?' ('+s+')':''))+'">'; }
+function hiMirror(id){ return '<div class="seg" data-mirror="'+id+'">'+Array.prototype.map.call($(id).querySelectorAll('button'),function(b){
+  return '<button type="button" data-v="'+b.dataset.v+'" aria-pressed="false">'+esc(b.textContent)+'</button>'; }).join('')+'</div>'; }
+function hiRow(l,h){ return '<div class="hrow"><span class="hl">'+l+'</span><div class="hc">'+h+'</div></div>'; }
+function hiTable(keys){ return '<table class="sens hin-t"><thead><tr><th>Input / set point</th><th>Tag</th><th>Value</th><th>Unit</th><th>Range</th><th>Live now</th></tr></thead><tbody>'+
+  keys.map(function(k){ var f=FMAP[k]; return '<tr><td>'+esc(HIN[k][0])+'</td><td class="tg">'+HIN[k][2]+'</td><td>'+hiInput(k)+'</td><td>'+HIN[k][1]+'</td><td class="rg">'+rv(f[3])+' … '+rv(f[4])+'</td><td class="v" id="hiNow-'+k+'"></td></tr>'; }).join('')+'</tbody></table>'; }
+var SEAS=['oat','orh','room','coil','sup'], AIRK=['flow','rh','dp','e1','pxTrip','pxReset','gain','gen'], BOXK=['amb','ua','volt','ef','cop','hours'];
+$('pane-in').innerHTML='<div class="hin">'+
+  '<div class="hin-bar"><button class="hbtn" id="hiCopy" type="button">Copy all inputs (paste into Excel / Word)</button>'+
+  '<button class="hbtn" id="hiCsv" type="button">Inputs → CSV</button><button class="hbtn" id="hiReset" type="button">Reset to design values</button>'+
+  '<span class="note">Changes apply at once and also show in the side panel. A value outside its range is limited to the range.</span></div>'+
+  '<div class="hin-grid">'+
+  '<section class="card"><h4>Operating mode</h4>'+
+    hiRow('System','<button class="hbtn" id="hiRun" type="button"></button>')+
+    hiRow('Simulation','<button class="hbtn" id="hiPlay" type="button"></button><input type="range" id="hiSim" min="1" max="120" step="1" aria-label="Simulation speed"><b id="hiSimV"></b>')+
+    hiRow('Season',hiMirror('segSeason'))+hiRow('Heat recovery',hiMirror('segRec'))+
+    hiRow('Temperature control',hiMirror('segTctl'))+hiRow('Exhaust (PT-102 → DV-101)',hiMirror('segExh'))+
+    hiRow('Hazard tests','<button class="hbtn" id="hiRelease" type="button">Powder release at the filler (60 s)</button><button class="hbtn" id="hiLeak" type="button" aria-pressed="false">Exhaust HEPA leak</button>')+
+    '<div class="st" id="hiHaz"></div></section>'+
+  '<section class="card"><h4>Temperatures and outdoor air · per season</h4><table class="sens hin-t hin-s"><thead><tr><th>Input / set point</th><th>Tag</th><th class="cw">Winter</th><th class="cs">Summer</th><th>Unit</th><th>Range</th><th>Live now (running season)</th></tr></thead><tbody>'+
+    SEAS.map(function(k){ var f=FMAP[k]; return '<tr><td>'+esc(HIN[k][0])+'</td><td class="tg">'+HIN[k][2]+'</td><td class="cw">'+hiInput(k,'winter')+'</td><td class="cs">'+hiInput(k,'summer')+'</td><td>'+HIN[k][1]+'</td><td class="rg">'+rv(f[3])+' … '+rv(f[4])+'</td><td class="v" id="hiNow-'+k+'"></td></tr>'; }).join('')+
+    '</tbody></table><p class="note" id="hiTnote"></p></section>'+
+  '<section class="card"><h4>Air, clean room and containment</h4>'+hiTable(AIRK)+'</section>'+
+  '<section class="card"><h4>Box, energy and CO₂</h4>'+hiTable(BOXK)+'</section>'+
+  '</div></div>';
+function setIfIdle(el,v){ if(el && document.activeElement!==el && String(el.value)!==String(v)) el.value=v; }
+function hiSync(){
+  if(!$('hi-flow')) return;
+  FIELDS.forEach(function(f){
+    setIfIdle($(f[0]),f[2]?P[state.season][f[1]]:P[f[1]]);
+    if(f[2]){ setIfIdle($('hi-'+f[1]+'-winter'),P.winter[f[1]]); setIfIdle($('hi-'+f[1]+'-summer'),P.summer[f[1]]); }
+    else setIfIdle($('hi-'+f[1]),P[f[1]]);
+  });
+  var room=P.tctl==='room';
+  ['winter','summer'].forEach(function(s){ $('hi-room-'+s).disabled=!room; $('hi-sup-'+s).disabled=room; });
+  setText('hiTnote',room?'Room set point mode: L8 moves the supply set point to hold the room temperature; the fixed supply set point is not used.':
+    'Fixed supply mode: L5 holds the supply air at the supply set point; the room temperature follows from the room heat gain.');
+  Array.prototype.forEach.call(document.querySelectorAll('#pane-in [data-mirror]'),function(mr){
+    var src=$(mr.dataset.mirror);
+    Array.prototype.forEach.call(mr.querySelectorAll('button'),function(b){
+      var sb=src.querySelector('button[data-v="'+b.dataset.v+'"]'), on=sb?sb.getAttribute('aria-pressed'):'false';
+      if(b.getAttribute('aria-pressed')!==on) b.setAttribute('aria-pressed',on); });
+  });
+  $('pane-in').setAttribute('data-season',state.season);
+  setText('hiRun',m.on?'Running · stop system':'Stopped · start system'); setText('hiPlay',state.playing?'Pause':'Play');
+  setIfIdle($('hiSim'),state.simSpeed); setText('hiSimV',state.simSpeed+'× real time');
+  $('hiLeak').setAttribute('aria-pressed',String(!!m.hepaLeak)); setText('hiHaz',hazText());
+  Object.keys(HIN).forEach(function(k){ var fn=HIN[k][3]; setText('hiNow-'+k,fn?fn():'—'); });
+}
+var _loadFields=loadFields;
+loadFields=function(){ _loadFields(); hiSync(); };
+$('pane-in').addEventListener('click',function(e){
+  var b=e.target.closest('button'); if(!b) return;
+  var mr=b.closest('[data-mirror]');
+  if(mr){ var t=$(mr.dataset.mirror).querySelector('button[data-v="'+b.dataset.v+'"]'); if(t) t.click(); }
+  else if(b.id==='hiRun') $('btnRun').click();
+  else if(b.id==='hiPlay') $('btnPlay').click();
+  else if(b.id==='hiRelease') $('btnRelease').click();
+  else if(b.id==='hiLeak') $('btnLeak').click();
+  else if(b.id==='hiReset') $('btnReset').click();
+  else if(b.id==='hiCopy') copyRows(inputRows());
+  else if(b.id==='hiCsv') saveBlob('cleanroom-rig-inputs-'+stamp()+'.csv',new Blob(['﻿'+inputRows().map(function(r){ return r.map(csvCell).join(','); }).join('\n')+'\n'],{type:'text/csv;charset=utf-8'}));
+  hiSync();
+});
+$('pane-in').addEventListener('input',function(e){
+  var el=e.target;
+  if(el.id==='hiSim'){ var rs=$('rngSim'); rs.value=el.value; rs.dispatchEvent(new Event('input')); setText('hiSimV',state.simSpeed+'× real time'); return; }
+  var k=el.dataset&&el.dataset.k; if(!k) return;
+  var f=FMAP[k], v=parseFloat(el.value); if(isNaN(v)) return;
+  v=Math.max(f[3],Math.min(f[4],v));
+  if(f[2]) P[el.dataset.s][k]=v; else P[k]=v;
+  hiSync();
+});
+$('pane-in').addEventListener('focusout',function(){ setTimeout(hiSync,0); });
+FIELDS.forEach(function(f){ $(f[0]).addEventListener('input',function(){ hiSync(); }); });
+function inputRows(){
+  var r=[['Input / set point','Tag','Winter','Summer','Value','Unit','Live now']];
+  r.push(['Simulated time','','','',hms(m.t)+' ('+r2(m.t)+' s)','',''],['System','','','',m.on?'running':'stopped','',''],
+    ['Season running','','','',state.season,'',''],['Heat recovery','','','',m.recovery?'on':'baseline test','',''],
+    ['Temperature control','','','',P.tctl==='room'?'room set point (L8 cascade)':'fixed supply set point','',''],
+    ['Exhaust scenario','PT-102 / DV-101','','',m.exContam?'contaminated':'clean','',m.act.dv>0.5?'exhaust → outer HEPA':'exhaust → Cu core']);
+  SEAS.forEach(function(k){ r.push([HIN[k][0],HIN[k][2],P.winter[k],P.summer[k],'',HIN[k][1],HIN[k][3]?HIN[k][3]():'']); });
+  AIRK.concat(BOXK).forEach(function(k){ r.push([HIN[k][0],HIN[k][2],'','',P[k],HIN[k][1],HIN[k][3]?HIN[k][3]():'']); });
+  return r;
+}
+
+/* ------------------------------------------- capture: copy the values of a screen, save it as PNG, full screen */
+var TABNAME={ov:'Overview',in:'Inputs & set points',sn:'Sensors',lp:'Control loops',en:'Energy & CO₂',ct:'Containment',tr:'Trends',al:'Alarms',dl:'Data log'};
+function txt(el){ return el?el.textContent.replace(/\s+/g,' ').trim():''; }
+function paneRows(p){
+  var el=$('pane-'+p), r=[];
+  if(p==='in') return inputRows();
+  if(p==='ov'||p==='dl'){
+    r.push(['KPI','Value','Detail']);
+    Array.prototype.forEach.call(document.querySelectorAll('#kbar .kp'),function(k){ r.push([txt(k.querySelector('.n')),txt(k.querySelector('.v')),txt(k.querySelector('.d'))]); });
+    r.push([]); r.push(['Reading (data-log column)','Value','']);
+    LOGCOLS.forEach(function(c){ r.push([c[0],String(c[1]()),'']); });
+    if(p==='dl') r.unshift(['Data log',txt($('dlStat')),'']);
+    return r;
+  }
+  if(p==='tr'){ var sl=trendSlice(); r.push(['Graph','Series','Value at '+(sl?tLbl(sl.x1,1):'—'),'Unit']);
+    if(sl) CHARTS.forEach(function(c){ c.ser.forEach(function(s){ var v=sl.d[sl.i1][s[0]]; r.push([c.title,s[1],fin(v)?grp(v,c.dec):'—',c.unit]); }); });
+    return r; }
+  if(p==='lp'){ r.push(['Loop','PV','SP','OUT','Mode','Tuning / logic']);
+    LOOPS.forEach(function(l){ var L=m.loops[l.k]; r.push([l.k+' · '+L.name,txt($('lp-pv-'+l.k)),txt($('lp-sp-'+l.k)),txt($('lp-out-'+l.k)),L.man?'manual':'auto',l.meta||('PI Kp '+L.kp+' Ti '+L.ti+' s')]); });
+    return r; }
+  if(p==='en'){ r.push(['Section','Item','Value']);
+    Array.prototype.forEach.call(el.querySelectorAll('.card'),function(c){ var h=txt(c.querySelector('h4'));
+      Array.prototype.forEach.call(c.querySelectorAll('.kv'),function(k){ r.push([h,txt(k.querySelector('span')),txt(k.querySelector('b'))]); });
+      Array.prototype.forEach.call(c.querySelectorAll('.cmp .r'),function(k){ r.push([h,txt(k.firstElementChild),txt(k.querySelector('b'))]); });
+      var big=c.querySelector('.big'); if(big) r.push([h,'',txt(big)]); });
+    return r; }
+  if(p==='ct'){ r.push(['Item','Value','Detail']);
+    Array.prototype.forEach.call(el.querySelectorAll('.ck'),function(k){ r.push([txt(k.querySelector('.n')),txt(k.querySelector('.v')),txt(k.querySelector('.d'))]); });
+    Array.prototype.forEach.call(el.querySelectorAll('.cbar'),function(k){ r.push([txt(k.querySelector('h5')),txt(k.querySelector('b')),txt(k.querySelector('.stt'))]); });
+    Array.prototype.forEach.call(el.querySelectorAll('table tr'),function(tr){ r.push(Array.prototype.map.call(tr.children,txt)); });
+    return r; }
+  if(p==='al'){ r.push(['','State','Alarm','Text','Severity']);
+    Array.prototype.forEach.call(el.querySelectorAll('.arow'),function(a){ r.push(Array.prototype.map.call(a.children,txt)); }); return r; }
+  Array.prototype.forEach.call(el.querySelectorAll('table tr'),function(tr){ var c=Array.prototype.map.call(tr.children,txt); if(c[c.length-1]==='in'||c[c.length-1]==='out'||c[c.length-1]==='calc'||c[c.length-1]==='') c.pop(); r.push(c); });
+  return r;
+}
+function runInfo(){ return [['Clean-room heat-recovery rig · HMI-101 · '+TABNAME[activePane]],['Simulated time '+hms(m.t)+' ('+r2(m.t)+' s) · '+txt($('pMode'))+' · '+(P.tctl==='room'?'room set point '+P[m.season].room+' °C':'fixed supply set point '+P[m.season].sup+' °C')],['Exported '+new Date().toLocaleString()],[]]; }
+function hmiToast(t){ var el=$('hmiToast'); el.textContent=t; el.hidden=false; clearTimeout(el._t); el._t=setTimeout(function(){ el.hidden=true; },2200); }
+function copyRows(rows){
+  var t=rows.map(function(r){ return r.map(function(c){ return String(c==null?'':c).replace(/[\t\n]/g,' '); }).join('\t'); }).join('\n');
+  function done(ok){ hmiToast(ok?'Copied '+rows.length+' rows · paste into Excel or Word':'Copy blocked by the browser — use the CSV or PNG buttons'); }
+  function fallback(){ var ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+    var ok=false; try{ ok=document.execCommand('copy'); }catch(e){} ta.remove(); done(ok); }
+  if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(function(){ done(true); },fallback); else fallback();
+}
+/* a table of values as a PNG (white, printable) */
+function tablePng(rows,name){
+  var cv=document.createElement('canvas'), g=cv.getContext('2d'), fs=14, lh=19, padX=10, maxCol=440, k=2;
+  g.font=fs+'px Arial, Helvetica, sans-serif';
+  var nc=0; rows.forEach(function(r){ nc=Math.max(nc,r.length); });
+  function wrap(s,w){ s=String(s==null?'':s); if(g.measureText(s).width<=w) return [s]; var words=s.split(' '), out=[], line='';
+    words.forEach(function(wd){ var tr=line?line+' '+wd:wd; if(g.measureText(tr).width>w&&line){ out.push(line); line=wd; } else line=tr; }); if(line) out.push(line); return out; }
+  var cw=[]; for(var c=0;c<nc;c++){ var w=40; rows.forEach(function(r){ if(r.length>1&&r[c]!=null) w=Math.max(w,Math.min(maxCol,g.measureText(String(r[c])).width)); }); cw.push(w+2*padX); }
+  var W=Math.max(700,cw.reduce(function(a,b){ return a+b; },0)+40), lay=[], y=20;
+  rows.forEach(function(r,i){
+    if(r.length<=1){ lay.push({y:y,title:r[0]||'',h:r[0]?(i===0?34:24):10}); y+=r[0]?(i===0?34:24):10; return; }
+    var cells=r.map(function(v,j){ return wrap(v,cw[j]-2*padX); }), n=1; cells.forEach(function(x){ n=Math.max(n,x.length); });
+    lay.push({y:y,cells:cells,h:n*lh+8}); y+=n*lh+8; });
+  var H=y+20; cv.width=W*k; cv.height=H*k; g.scale(k,k);
+  g.fillStyle='#fff'; g.fillRect(0,0,W,H); g.textBaseline='top';
+  var firstTable=true;
+  lay.forEach(function(L,i){
+    if(L.title!==undefined){ g.fillStyle=i===0?'#121c26':'#4a5866'; g.font=(i===0?'bold 20px':'14px')+' Arial, Helvetica, sans-serif'; g.fillText(L.title,20,L.y+4); return; }
+    var head=i>0 && lay[i-1].title!==undefined;
+    if(head){ g.fillStyle='#e9eef3'; g.fillRect(20,L.y,W-40,L.h); } else if(i%2){ g.fillStyle='#f6f8fa'; g.fillRect(20,L.y,W-40,L.h); }
+    g.strokeStyle='#d5dde5'; g.beginPath(); g.moveTo(20,L.y+L.h+0.5); g.lineTo(W-20,L.y+L.h+0.5); g.stroke();
+    var x=20; L.cells.forEach(function(lines,j){ g.fillStyle='#121c26'; g.font=(head?'bold ':'')+fs+'px Arial, Helvetica, sans-serif';
+      lines.forEach(function(s,q){ g.fillText(s,x+padX,L.y+4+q*lh); }); x+=cw[j]; });
+  });
+  cv.toBlob(function(b){ saveBlob(name,b); },'image/png');
+}
+/* the Overview mimic (an SVG) with its colours inlined, on the panel colour */
+function mimicPng(name){
+  var src=document.querySelector('#pane-ov svg.mimic'); if(!src) return;
+  var cl=src.cloneNode(true), a=src.querySelectorAll('*'), b=cl.querySelectorAll('*');
+  var props=['fill','stroke','stroke-width','stroke-dasharray','stroke-linecap','stroke-linejoin','opacity','fill-opacity','stroke-opacity','font-family','font-size','font-weight','letter-spacing','text-anchor','dominant-baseline','text-transform','visibility','display'];
+  for(var i=0;i<a.length;i++){ var cs=getComputedStyle(a[i]), st=''; props.forEach(function(p){ st+=p+':'+cs.getPropertyValue(p)+';'; }); b[i].setAttribute('style',st); b[i].removeAttribute('class');
+    // the web fonts are not available inside an exported image: keep every label exactly as wide as on screen
+    if(a[i].tagName==='text' && a[i].getComputedTextLength && a[i].textContent.trim()){ var tl=a[i].getComputedTextLength(); if(tl>0){ b[i].setAttribute('textLength',tl.toFixed(1)); b[i].setAttribute('lengthAdjust','spacingAndGlyphs'); } } }
+  var vb=src.viewBox.baseVal, W=vb.width, H=vb.height+56, bg=getComputedStyle(document.body).getPropertyValue('--panel-solid')||'#fff', ink=getComputedStyle(document.body).getPropertyValue('--ink')||'#000';
+  cl.setAttribute('x','0'); cl.setAttribute('y','50'); cl.setAttribute('width',W); cl.setAttribute('height',vb.height);
+  var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'"><rect width="'+W+'" height="'+H+'" fill="'+bg+'"/>'+
+    '<text x="12" y="22" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="bold" fill="'+ink+'">HMI-101 overview · '+esc(txt($('pMode')))+' · t = '+hms(m.t)+'</text>'+
+    '<text x="12" y="42" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="'+ink+'" opacity=".7">exported '+esc(new Date().toLocaleString())+'</text>'+
+    new XMLSerializer().serializeToString(cl)+'</svg>';
+  svgToPng(s,W,H,2,name);
+}
+$('btnCopy').addEventListener('click',function(){ copyRows(runInfo().concat(paneRows(activePane))); });
+$('btnPng').addEventListener('click',function(){
+  var nm='cleanroom-rig-'+activePane+'-'+stamp()+'.png';
+  if(activePane==='tr'){ var sl=trendSlice(); if(sl) chartPng(CHARTS,sl,'cleanroom-rig-graphs'); else hmiToast('No graph data yet'); }
+  else if(activePane==='ov') mimicPng(nm);
+  else tablePng(runInfo().concat(paneRows(activePane)),nm);
+  hmiToast('Saving a PNG of '+TABNAME[activePane]);
+});
+function setHmiMax(on){
+  if(on){ setHmiOpen(true); }
+  hmiEl.classList.toggle('max',on); $('btnMax').setAttribute('aria-pressed',String(on)); $('btnMax').textContent=on?'Exit full screen':'Full screen';
+  TRW._drawn=false; setTimeout(function(){ resize(); updateHMI(true); },40);
+}
+$('btnMax').addEventListener('click',function(){ setHmiMax(!hmiEl.classList.contains('max')); });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape' && hmiEl.classList.contains('max')) setHmiMax(false); });
+window.addEventListener('resize',function(){ TRW._drawn=false; });
 
 /* --------------------------------------------------------- orbit input */
 var drag=null,pinch=null,down=null;
@@ -3051,7 +3423,7 @@ function frame(){
     setText('valHaz',hazText()); }
   if(scrT>0.5){ scrT=0; drawScreen(); }
   if(colorMode==='temp' && colT>0.4){ colT=0; refreshPathColors(m.a); colorRibbons(); colorDuctFlow(); }
-  renderer.render(scene,camera);
+  if(!hmiEl.classList.contains('max')) renderer.render(scene,camera);   // full-screen HMI covers the 3D view: the rig keeps running, the 3D is not drawn
 }
 
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ refreshLabels(); buildZones(); TAGS.forEach(function(t){ t.last=''; }); });

@@ -19,7 +19,7 @@
   --acrylic:#a9d6ea; --pcb:#11643c; --copper:#c8903e; --sig-in:#0891b2; --sig-out:#c27c00;
   --t-cold:#2a78d6; --t-mid:#9aa6b2; --t-hot:#e34948;
   --good:#1a8a4a; --warn:#b26b00; --bad:#c6302f; --contam:#c2185b;
-  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#7c5cf0; --s7:#0891b2;
   --shadow:0 1px 2px rgba(16,32,48,.08),0 8px 24px rgba(16,32,48,.10);
   --f-disp:"Barlow Condensed",ui-sans-serif,system-ui,sans-serif;
   --f-body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
@@ -34,7 +34,7 @@
   --acrylic:#5aa9c9; --pcb:#0f5a35; --copper:#d9a050; --sig-in:#22d3ee; --sig-out:#fbbf24;
   --t-cold:#3987e5; --t-mid:#6b7783; --t-hot:#e66767;
   --good:#3ccf7a; --warn:#f0a630; --bad:#ff6b6b; --contam:#ff5fa2;
-  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#a68bff; --s7:#22d3ee;
   --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px rgba(0,0,0,.45);
   color-scheme:dark;
 }}
@@ -46,7 +46,7 @@
   --acrylic:#5aa9c9; --pcb:#0f5a35; --copper:#d9a050; --sig-in:#22d3ee; --sig-out:#fbbf24;
   --t-cold:#3987e5; --t-mid:#6b7783; --t-hot:#e66767;
   --good:#3ccf7a; --warn:#f0a630; --bad:#ff6b6b; --contam:#ff5fa2;
-  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#a68bff; --s7:#22d3ee;
   --shadow:0 1px 2px rgba(0,0,0,.5),0 10px 30px rgba(0,0,0,.45);
   color-scheme:dark;
 }
@@ -252,8 +252,44 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 .chart h4{margin:0 0 2px;font-size:11.5px;font-weight:600}
 .chart .lg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:10.5px;color:var(--ink-dim);margin-bottom:2px}
 .chart .lg i{display:inline-block;width:12px;height:2px;border-radius:1px;vertical-align:middle;margin-right:4px}
-.chart svg{width:100%;height:120px;display:block;overflow:visible}
-.chart svg text{font-family:var(--f-mono);font-size:9.5px;fill:var(--ink-dim)}
+.chart>svg{width:100%;height:150px;display:block;overflow:visible}
+.chart .chd{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.chart h4 small{font-weight:400;color:var(--ink-dim)}
+.chart .cbt{display:flex;gap:3px;flex:0 0 auto}
+.chart .cbt button{background:transparent;border:1px solid var(--line);border-radius:3px;padding:0 6px;font-size:10.5px;line-height:18px;cursor:pointer;color:var(--ink-dim)}
+.chart .cbt button:hover,.chart .cbt button[aria-pressed="true"]{color:var(--ink);background:var(--line-soft)}
+.chart .lg b{font-family:var(--f-mono);color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.chart.big{grid-column:1/-1} .chart.big>svg{height:300px}
+.trbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 8px}
+.trbar .lbl{font-size:11px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em;font-family:var(--f-disp);font-weight:600}
+.trbar .seg{flex:0 0 auto} .trbar .seg button{padding:4px 9px;font-size:12px}
+.trbar .st{font-family:var(--f-mono);font-size:11px;color:var(--ink-dim)}
+.hbtn[aria-pressed="true"]{background:var(--ink);color:var(--panel-solid);border-color:var(--ink)}
+.toast{font-size:11.5px;font-family:var(--f-mono);color:var(--good)}
+.hmi.max{position:fixed;inset:0;z-index:60;grid-template-rows:auto auto auto minmax(0,1fr)}
+.hmi.max .hbody{height:auto}
+.hmi.max .trends{grid-template-columns:repeat(auto-fill,minmax(440px,1fr))}
+.hmi.max .chart>svg{height:220px} .hmi.max .chart.big>svg{height:440px}
+.hmi.max #pane-ov.on{height:auto} .hmi.max .mimic{width:100%;height:auto;min-height:0;max-height:calc(100vh - 220px)}
+/* inputs & set points */
+.hin{display:grid;gap:8px}
+.hin-bar{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.hin-bar .note{margin:0}
+.hin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(600px,100%),1fr));gap:8px}
+.hin .card{overflow-x:auto}
+.hrow{display:grid;grid-template-columns:150px 1fr;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line-soft);font-size:12px}
+.hrow .hl{color:var(--ink-dim)}
+.hrow .hc{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.hrow .seg{flex:0 1 auto} .hrow .seg button{padding:4px 9px;font-size:12px}
+.hrow input[type=range]{flex:1;min-width:120px}
+.hrow b{font-family:var(--f-mono);font-size:12px}
+.hin .st{font-family:var(--f-mono);font-size:11.5px;margin-top:6px}
+table.hin-t{min-width:640px}
+.hin-t input{width:100px;background:var(--panel-solid);border:1px solid var(--line);border-radius:3px;padding:3px 6px;font-family:var(--f-mono);font-size:12px}
+.hin-t input:disabled{opacity:.4}
+.hin-t td.rg{font-family:var(--f-mono);color:var(--ink-dim);white-space:nowrap;font-size:11px}
+.hin-t td.v{white-space:normal}
+#pane-in[data-season="winter"] .hin-s .cw,#pane-in[data-season="summer"] .hin-s .cs{background:color-mix(in srgb,var(--s1) 12%,transparent)}
 .chart .tip{position:absolute;pointer-events:none;background:var(--panel-solid);border:1px solid var(--line);border-radius:4px;
   padding:5px 7px;font-size:11px;box-shadow:var(--shadow);white-space:nowrap;z-index:2}
 .chart .tip b{font-family:var(--f-mono)}
@@ -306,7 +342,7 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 </style>
 </head>
 <body>
-<div id="app" data-build="2026-10-15h">
+<div id="app" data-build="2026-10-15i">
   <div id="stage">
     <canvas id="scene" aria-label="3D model of the clean-room test rig"></canvas>
 
@@ -514,12 +550,17 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
       <span class="pill" id="pAl" hidden><span class="dot"></span><span id="pAlT">0 alarms</span></span>
       <span class="hspacer"></span>
       <span class="clock" id="clock">t = 00:00:00</span>
+      <span class="toast" id="hmiToast" hidden></span>
+      <button class="hbtn" id="btnCopy" type="button" title="Copy the values on this screen (paste into Excel or Word)">Copy values</button>
+      <button class="hbtn" id="btnPng" type="button" title="Save this screen as a PNG image">Save PNG</button>
+      <button class="hbtn" id="btnMax" type="button" aria-pressed="false" title="Full-screen HMI (Esc to leave)">Full screen</button>
       <button class="hbtn" id="btnRun" type="button">Stop system</button>
       <button class="hbtn" id="btnHmi" type="button" aria-expanded="true" aria-controls="hmiTabs">Collapse</button>
     </div>
     <div class="kbar" id="kbar"></div>
     <div class="htabs" id="hmiTabs" role="tablist" aria-label="HMI screens">
       <button role="tab" aria-selected="true" data-p="ov">Overview</button>
+      <button role="tab" aria-selected="false" data-p="in">Inputs &amp; set points</button>
       <button role="tab" aria-selected="false" data-p="sn">Sensors</button>
       <button role="tab" aria-selected="false" data-p="lp">Control loops</button>
       <button role="tab" aria-selected="false" data-p="en">Energy &amp; CO₂</button>
@@ -530,6 +571,7 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
     </div>
     <div class="hbody">
       <div class="pane on" id="pane-ov"></div>
+      <div class="pane" id="pane-in"></div>
       <div class="pane" id="pane-sn"></div>
       <div class="pane" id="pane-lp"></div>
       <div class="pane" id="pane-en"></div>
@@ -542,9 +584,9 @@ table.sens{border-collapse:collapse;width:100%;min-width:720px;font-size:12px}
 </div>
 
 <script src="assets/vendor/three.min.js"></script>
-<script src="assets/js/rig-model.js?b=2026-10-15h"></script>
-<script src="assets/js/rig.js?b=2026-10-15h"></script>
+<script src="assets/js/rig-model.js?b=2026-10-15i"></script>
+<script src="assets/js/rig.js?b=2026-10-15i"></script>
 <script src="assets/vendor/qrcode.js"></script>
-<script src="assets/js/share.js?b=2026-10-15h"></script>
+<script src="assets/js/share.js?b=2026-10-15i"></script>
 </body>
 </html>

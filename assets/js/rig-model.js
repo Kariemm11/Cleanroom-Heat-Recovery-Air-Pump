@@ -399,7 +399,7 @@
       scale: 5000 / Math.max(P.flow, 0.5)
     };
     alarms(m, dt);
-    if (m.t - m._trendT >= 2) { m._trendT = m.t; pushTrend(m); }
+    if (m.t - m._trendT >= 2 - 1e-6) { m._trendT += 2; pushTrend(m); }   // exactly every 2 s of simulated time
   }
 
   function alarms(m, dt) {
@@ -432,14 +432,20 @@
     m.alarms = active;
   }
 
+  /* trend buffer for the HMI graphs: one sample every 2 s of simulated time, the last 12 h kept */
+  var TREND_MAX = 21600;
   function pushTrend(m) {
-    var s = m.s;
-    m.trend.push({ t: m.t, TT101: s.TT101, TT109: s.TT109, TT103: s.TT103, TT105: s.TT105, TT106: s.TT106,
-      MT105: s.MT105, MT106: s.MT106, P: m.pw.total, Pb: m.pw.base, ACH: m.kpi.ach, DP: s.PDT101,
-      PR: s.PT101, PA: s.PT101A, PX: s.PT102, QS: s.FT102, QF: s.FT101, QE: m.a.Qex,
-      USF: m.act.sf * 100, UFA: m.act.fa * 100, UDV: m.act.dv * 100, UCM: m.act.cmp * 100, URH: m.act.rh * 100,
-      CO: m.kpi.co2h, COB: m.kpi.co2hBase });
-    if (m.trend.length > 450) m.trend.shift();
+    var s = m.s, P = m.P, S = P[m.season];
+    m.trend.push({ t: m.t, TT101: s.TT101, TT109: s.TT109, TT103: s.TT103, TT104: s.TT104, TT105: s.TT105, TT106: s.TT106,
+      TT107: s.TT107, TT108: s.TT108, SUPSP: m.supSP, COILSP: m.coilSP, ROOMSP: P.tctl === "room" ? S.room : NaN,
+      MT101: s.MT101, MT105: s.MT105, MT106: s.MT106, RHSP: P.rh, P: m.pw.total, Pb: m.pw.base,
+      RED: m.recovery ? m.kpi.red * 100 : NaN, QREC: m.pw.Qrec, COP: m.act.cmp > 0.01 ? m.pw.cop : NaN,
+      ACH: m.kpi.ach, DP: s.PDT101, DPSP: P.dp, PR: s.PT101, PA: s.PT101A, PX: s.PT102, TRIP: P.pxTrip, RST: P.pxReset,
+      QS: s.FT102, QF: s.FT101, QE: m.a.Qex, QSP: P.flow,
+      USF: m.act.sf * 100, UFA: m.act.fa * 100, UEF: m.act.ef * 100, UDV: m.act.dv * 100, UCM: m.act.cmp * 100,
+      URH: m.act.rh * 100, UHM: m.act.hum * 100,
+      CO: m.kpi.co2h, COB: m.kpi.co2hBase, EA: m.E.act, EB: m.E.base });
+    if (m.trend.length > TREND_MAX + 600) m.trend.splice(0, m.trend.length - TREND_MAX);
   }
 
   function resetEnergy(m) {

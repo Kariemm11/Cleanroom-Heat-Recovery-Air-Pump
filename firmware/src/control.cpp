@@ -69,7 +69,7 @@ void Controller::step(const Measured& m, float dt) {
     if (dpOk) L[6].run((m.PDT101 - sp.dp) / 100.0f, dt);
     if (!proving) { L[3].i = fminf(L[3].i, 0); L[4].i = fminf(L[4].i, 0); }
     // winter: the evaporator lives in the exhaust lane, so no exhaust air (bypass) = no air pump
-    const bool hpOk = !winter || (recovery && !diverted);
+    const bool hpOk = !diverted && (!winter || recovery);   // no exhaust air on the air pump's coil while diverted
     if (!hpOk) L[3].i = fminf(L[3].i, 0);
 
     // frost protection (winter): pull the compressor back while the exhaust leaves the coil below −3 °C

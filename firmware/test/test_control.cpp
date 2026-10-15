@@ -131,6 +131,10 @@ int main() {
     CHECK(fabsf(m.TT105 - 16) < 1.0f, "summer supply temp %.2f, expected 16", m.TT105);
     printf("summer: Q %.2f, Tcc %.2f, Tsup %.2f, cmp %.2f, rh %.2f, P %.1f W, Pb %.1f W, saving %.0f %%\n",
            m.FT102, m.TT104, m.TT105, c.u.cmp, c.u.rh, c.k.P, c.k.Pbase, c.k.saving * 100);
+    CHECK(m.TT109 < m.TT101 - 5, "summer: the exhaust pre-cools the fresh air through the Cu core (%.1f -> %.1f C)", m.TT101, m.TT109);
+    p.px = 5000;                                   // contaminated exhaust in summer: diverted, and the compressor
+    runFor(c, p, m, 40, false);                    // must stop too (no exhaust air on its condenser coil)
+    CHECK(c.diverted && c.u.cmp == 0, "summer: compressor off while diverted (dv %.2f, cmp %.2f)", c.u.dv, c.u.cmp);
   }
 
   // --- compressor protection while it cycles at minimum speed (a mild winter day: the duty is below the minimum)

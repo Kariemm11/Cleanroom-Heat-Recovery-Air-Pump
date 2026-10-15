@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-15e';
+var BUILD='2026-10-15f';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -2020,7 +2020,7 @@ function drawTag(t,line1,line2,state){
 }
 
 /* ============================================================ the model */
-var m=RigModel.create(), P=m.P, P0=RigModel.defaults();
+var m=RigModel.create({season:'summer'}), P=m.P, P0=RigModel.defaults();
 var MODE={
   winter:{dir:1, coils:{preheat:'hot',cooling:'idle',reheat:'hot',extract:'cold'},
     lbl:{preheat:['Pre-heat coil','air pump condenser'],cooling:['Cooling coil','idle in heating mode'],
@@ -2029,7 +2029,7 @@ var MODE={
     lbl:{preheat:['Pre-heat coil','idle in cooling mode'],cooling:['Cooling coil','air pump evaporator'],
          reheat:['Reheat coil','desuperheater + PTC trim'],extract:['Exhaust-air coil','air pump condenser']}}
 };
-var state={season:'winter',casing:'ghost',explode:0,speed:1,simSpeed:10,doors:true,refrig:true,ducts:true,spin:true,playing:true};
+var state={season:'summer',casing:'ghost',explode:0,speed:1,simSpeed:10,doors:true,refrig:true,ducts:true,spin:true,playing:true};
 var COILS={preheat:coilPreheat,cooling:coilCooling,reheat:coilReheat,extract:coilExtract};
 var COILLBL={preheat:lblPre,cooling:lblCool,reheat:lblRe,extract:lblExt};
 var coilMat={};
@@ -2654,6 +2654,21 @@ seg('segColor',function(v){ colorMode=v; $('keysStream').hidden=v==='temp'; $('k
 /* hazard tests: a powder release at the filler (60 s), or a leaking exhaust-terminal HEPA */
 $('btnRelease').addEventListener('click',function(){ m.release=60; });
 $('btnLeak').addEventListener('click',function(){ m.hepaLeak=!m.hepaLeak; this.setAttribute('aria-pressed',String(m.hepaLeak)); });
+/* like Model A: clean exhaust goes through the Cu core; contaminated exhaust makes PT-102 trip and DV-101 send it to the
+   outer HEPA (5 s), and once it is clean again DV-101 waits 60 s below the reset level before going back */
+seg('segExh',function(v){
+  m.exContam=v==='dirty';
+  if(v==='clean'){ m.release=0; m.hepaLeak=false; $('btnLeak').setAttribute('aria-pressed','false'); }
+});
+function hazText(){
+  var px=m.s.PT102, tr=m.P.pxTrip, rs=m.P.pxReset, out=m.loops.L3.out, dv=m.act.dv;
+  var t='PT-102 '+kfmt(px)+' /m³ · ';
+  if(out<0.5 && dv<0.02) t+=px>tr?'over the trip level · DV-101 to the HEPA in '+Math.max(0,5-m._tripT).toFixed(0)+' s':'clean · exhaust → Cu core';
+  else if(out>=0.5 && dv<0.98) t+='DV-101 moving → outer HEPA';
+  else if(out<0.5) t+='DV-101 moving → Cu core';
+  else t+=px<rs?'clean again · back to the Cu core in '+Math.ceil(Math.max(0,60-m._holdT))+' s':'contaminated · exhaust → outer HEPA · recovery off';
+  return (m.release>0?'release '+Math.ceil(m.release)+' s · ':'')+t;
+}
 seg('segCase',function(v){ state.casing=v; applyCasing(); applyExplode(); });
 seg('segBox',function(v){ applyBox(v); });
 seg('segLabels',function(v){ labelMode=v; refreshLabels(); });
@@ -2951,7 +2966,7 @@ function frame(){
   }
   uiT+=dt; scrT+=dt; colT+=dt;
   if(uiT>0.25){ uiT=0; updateHMI(); if(tagGroup.visible) updateTags();
-    setText('valHaz',(m.release>0?'release '+Math.ceil(m.release)+' s · ':'')+(m.act.dv>0.5?'exhaust → outer HEPA':'exhaust → air pump')); }
+    setText('valHaz',hazText()); }
   if(scrT>0.5){ scrT=0; drawScreen(); }
   if(colorMode==='temp' && colT>0.4){ colT=0; refreshPathColors(m.a); colorRibbons(); colorDuctFlow(); }
   renderer.render(scene,camera);

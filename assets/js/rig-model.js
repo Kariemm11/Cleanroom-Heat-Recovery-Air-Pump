@@ -110,6 +110,7 @@
       extGen: 0,                 // extra particles/min from outside the model (e.g. the pass box inner door is open)
       release: 0,                // s left of a test powder release at the filler (1e7 particles/min)
       hepaLeak: false,           // test: an exhaust-terminal HEPA leaks (2 % penetration)
+      exContam: false,           // scenario: the exhaust itself is contaminated (hazardous product in the exhaust)
       _tripT: 0, _holdT: 0,
       // air states (true values)
       a: {},
@@ -159,7 +160,7 @@
       runPI(L.L5, (S.sup - s.TT105) / 50, dt);
       runPI(L.L7, (s.PDT101 - P.dp) / 100, dt);
       if (!proving) { L.L4.i = Math.min(L.L4.i, 0); L.L5.i = Math.min(L.L5.i, 0); }
-      if (winter && rec && A.dv > 0.5) L.L4.i = Math.min(L.L4.i, 0);   // compressor locked out: no wind-up
+      if (A.dv > 0.5) L.L4.i = Math.min(L.L4.i, 0);                // compressor locked out: no wind-up
     }
     // L3: two-position exhaust diverter. PT-102 above the trip level for 5 s → DV-101 to the outer HEPA;
     // back to the air pump only after 60 s below the reset level. Manual: MAN L3 0 (air pump) / 1 (HEPA).
@@ -171,7 +172,8 @@
     else if (L3.out < 0.5 && m._tripT >= 5) L3.out = 1;
     else if (L3.out >= 0.5 && m._holdT >= 60) L3.out = 0;
     var div = A.dv > 0.5;                                         // exhaust is on the HEPA bypass
-    var hpOk = !(winter && rec && div);                           // winter: the evaporator needs the exhaust air
+    var hpOk = !div;                                              // the air pump's exhaust-side coil needs exhaust air: locked out
+                                                                  // whenever DV-101 sends the exhaust to the HEPA (both seasons)
     var tgt = on ? {
       sf: L.L1.out, fa: L.L2.out, dv: L3.out, ef: L.L7.out,
       cmp: proving && hpOk ? L.L4.out : 0, rh: proving ? L.L5.out : 0,
@@ -306,7 +308,9 @@
     var r5 = 0.02;                                                             // ≥5 µm share of particles shed by people
     // exhaust: through the H14 BIBO exhaust terminals (a leaking one lets 2 % through), then PT-102.
     // On the bypass the outer BIBO HEPA cleans it again before it leaves the building.
-    var Cexh = x.Cp * (m.hepaLeak ? 0.02 : 5e-5), Cdis = div ? Cexh * 5e-5 : Cexh;
+    var Cexh = x.Cp * (m.hepaLeak ? 0.02 : 5e-5);
+    if (m.exContam) Cexh = Math.max(Cexh, 2e4);                   // contaminated-exhaust scenario: well over the trip level
+    var Cdis = div ? Cexh * 5e-5 : Cexh;
 
     /* ---- electrical power ---- */
     var fan = function (u, pmax, idle) { return u > 0.001 ? idle + pmax * Math.pow(u, 3) : 0; };
@@ -368,15 +372,15 @@
              ctl: Pctl, total: Pact, base: Pbase, W: W, cop: cop, Qhp: Qhp, Qdsh: Math.min(Qdsh, x.Qrh),
              Qrec: Math.abs(Q1), Qout: Qout, frost: frost };
     var hrs = dt / 3600;
-    m.E.act += Pact * hrs; m.E.base += Pbase * hrs; m.E.t += dt;
+    m.E.act += Pact * hrs; m.E.base += (div ? Pact : Pbase) * hrs;   // no saving is claimed while the exhaust is diverted m.E.t += dt;
     m.E.co2 += Pact * hrs * P.ef; m.E.co2base += Pbase * hrs * P.ef;      // grams (W·h × kg/kWh = g)
     var ab = rec ? m.E.ab.hr : m.E.ab.base; ab.wh += Pact * hrs; ab.t += dt;
 
     var ach = s.FT102 / ROOM.V;
     m.kpi = {
-      ach: ach, achTrue: Qsup / ROOM.V, f: f, red: Pbase > 0.1 ? 1 - Pact / Pbase : 0,
-      co2h: Pact * P.ef, co2hBase: Pbase * P.ef,                         // g/h
-      annualKWh: Pact * P.hours / 1000, annualBaseKWh: Pbase * P.hours / 1000,
+      ach: ach, achTrue: Qsup / ROOM.V, f: f, red: Pbase > 0.1 && !div ? Math.max(0, 1 - Pact / Pbase) : 0,
+      co2h: Pact * P.ef, co2hBase: (div ? Pact : Pbase) * P.ef,                         // g/h
+      annualKWh: Pact * P.hours / 1000, annualBaseKWh: (div ? Pact : Pbase) * P.hours / 1000,
       scale: 5000 / Math.max(P.flow, 0.5)
     };
     alarms(m, dt);

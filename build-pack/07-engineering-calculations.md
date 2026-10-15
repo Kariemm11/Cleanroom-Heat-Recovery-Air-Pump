@@ -198,7 +198,7 @@ manual: u_k = MV,  I_k = MV − K_p·e_k   (bumpless return to auto)
 **Sequencing and interlocks:**
 - Airflow proving: `FT102 > 0.25·Q_set and FT102 > 0.5 m³/h`. Without it the compressor, PTC and humidifier stay off, and the integrators of L4 and L5 are held at ≤ 0.
 - L3 is not a PI loop: it is a two-position switch with a time delay and a hold. A missing PT-102 reading counts as contaminated. DV-101 is **spring return**: with RUN off, a controller fault or a power cut it rests on the HEPA bypass (fail-safe), and the start-up begins there until the exhaust has been clean for 60 s.
-- Winter, exhaust diverted: the compressor is locked out (the evaporator has no air) and L4's integrator is held at ≤ 0.
+- Exhaust diverted, either season: the compressor is locked out, because its exhaust-side coil (evaporator in winter, condenser in summer) has no air, and L4's integrator is held at ≤ 0.
 - Summer dehumidification: `T_coil,set = T_coil,set,0 − 6 K · u_L6` (cooling-coil reset).
 - Slew limits per second: fans 0.5, DV-101 0.1 (10 s stroke), compressor 0.1 (10 %/s ramp), PTC and humidifier 0.5.
 - Firmware only (real hardware protection): compressor minimum off-time 180 s and minimum run 120 s. The reversing valve switches only after the compressor has been off 30 s. The humidifier is blocked when MT-105 > 85 %. The PTC is blocked if FAN-102's tach shows < 300 rpm.
@@ -242,21 +242,21 @@ annual = P × h_year / 1000 [kWh]        scale-up to a 5 000 m³/h AHU:  × 5000
 | Supply Q_sup (m³/h) | 6.00 | 6.00 | 6.00 | 6.00 |
 | Fresh air Q_fa (m³/h) = 100 % | 6.00 | 6.00 | 6.00 | 6.00 |
 | Exhaust Q_ex (m³/h) | 5.50 | 5.50 | 5.50 | 5.50 |
-| Off the Cu plate core T₁ = TT-109 (°C) | 12.2 | 27.6 | 8.6 | 30.7 |
-| After pre-heat / cooling coil (°C) | 21.0 / 21.0 | 27.6 / 9.3 | 15.9 / 15.9 | 30.7 / 10.9 |
+| Off the Cu plate core T₁ = TT-109 (°C) | 12.2 | 27.6 | 8.6 | 30.8 |
+| After pre-heat / cooling coil (°C) | 21.0 / 21.0 | 27.6 / 9.4 | 15.9 / 15.9 | 30.8 / 10.9 |
 | Supply T_sup (°C) | 22.0 | 15.9 | 22.0 | 16.0 |
-| Room T (°C) / RH (%) | 23.8 / 45 | 21.5 / 45 | 23.8 / 43 | 21.5 / 52 |
+| Room T (°C) / RH (%) | 23.8 / 45 | 21.6 / 46 | 23.8 / 43 | 21.6 / 52 |
 | Exhaust after the air-pump coil (°C) | 0.4 | 45.0 | -3.0 | 45.0 |
 | Heat recovered by the Cu core (W) | 28.5 | 14.9 | 37.4 | 22.6 |
-| Coil duty Q_coil (W) | 17.7 | 72.1 | 14.6 | 90.0 |
-| COP / EER | 5.63 | 3.02 | 5.59 | 2.85 |
-| Compressor input W (W) | 3.2 | 23.9 | 2.6 | 31.5 |
-| Reheat (W) / of which desuperheater (W) | 1.4 / 0.0 | 12.8 / 12.8 | 11.6 / 0.0 | 9.7 / 9.7 |
+| Coil duty Q_coil (W) | 17.7 | 71.9 | 14.6 | 90.0 |
+| COP / EER | 5.63 | 3.03 | 5.59 | 2.85 |
+| Compressor input W (W) | 3.2 | 23.7 | 2.6 | 31.5 |
+| Reheat (W) / of which desuperheater (W) | 1.4 / 0.0 | 12.6 / 12.6 | 11.6 / 0.0 | 9.7 / 9.7 |
 | Steam (g/h) | 39.6 | 0.0 | 45.0 | 0.0 |
-| Electrical power, rig (W) | 42.3 | 31.9 | 56.0 | 39.6 |
-| Electrical power, baseline twin (W) | 84.6 | 51.1 | 104.8 | 57.1 |
+| Electrical power, rig (W) | 42.3 | 31.8 | 56.0 | 39.6 |
+| Electrical power, baseline twin (W) | 84.6 | 50.8 | 104.8 | 57.1 |
 | Saving | 50 % | 38 % | 47 % | 31 % |
-| CO₂ (g/h) rig / baseline | 21.1 / 42.3 | 15.9 / 25.5 | 28.0 / 52.4 | 19.8 / 28.6 |
+| CO₂ (g/h) rig / baseline | 21.1 / 42.3 | 15.9 / 25.4 | 28.0 / 52.4 | 19.8 / 28.5 |
 | Compressor output u_cmp | 0.39 | 0.80 | 1.00 | 1.00 |
 | Active alarms | none | none | A05 | none |
 
@@ -265,11 +265,11 @@ annual = P × h_year / 1000 [kWh]        scale-up to a 5 000 m³/h AHU:  × 5000
 | Season | Recovery on (W) | Baseline test (W) | Measured saving | Twin's baseline (W) |
 |---|---|---|---|---|
 | Winter design | 42.3 | 84.6 | 50 % | 84.6 |
-| Summer design | 31.9 | 48.2 | 34 % | 51.1 |
+| Summer design | 31.8 | 47.9 | 34 % | 50.8 |
 
 The twin matches the baseline test within 2.9 W.
 
-**Exhaust held on the HEPA bypass** (DV-101 thrown, e.g. after a release): winter supply 13.2 °C with 58.9 W (compressor locked out, PTC only; alarms A07); summer supply 16.0 °C with 39.8 W (outdoor condenser). Recovery stops while diverted, which is the price of keeping contaminated air out of the air pump.
+**Exhaust held on the HEPA bypass** (DV-101 thrown, e.g. after a release): winter supply 13.2 °C with 58.9 W (compressor locked out, PTC only; alarms A07); summer supply 35.3 °C with 7.6 W (compressor locked out too: its condenser has no exhaust air, so the supply drifts up; a production plant needs backup cooling for this case). Recovery and the energy saving stop while diverted, which is the price of keeping contaminated air out of the air pump.
 
 At −10 °C the evaporator reaches the frost limit (alarm A05). The air pump is capped, the coil leaves at 15.9 °C instead of 21.0 °C, and the PTC reheat makes up the difference (11.6 W). For colder climates add a defrost cycle (reverse the 4-way valve for 2–3 min when TT-108 < −3 °C) or electric pre-heat of the exhaust.
 
@@ -418,7 +418,7 @@ Any 24 V **spring-return** on/off damper actuator has far more torque than this 
 
 > **Reality check.** The smallest commercial DC compressors (24 V miniature rotary compressors) give roughly 100–300 W of cooling at minimum speed. That is several times this rig's need, so the real compressor will cycle on and off at minimum speed. The firmware enforces a 180 s minimum off time and a 120 s minimum run time, and the receiver absorbs the charge swings. A capillary tube plus an EEV trim, or a hot-gas bypass, gives finer control. These miniature compressors are mostly made for R134a or R290. R32 versions exist but are rare, so confirm the refrigerant with the supplier and change the charge and the safety notes if you use another refrigerant.
 
-**HTR-101 PTC reheat.** Its sizing condition is summer, reheating from the coil leaving temperature to the supply set point. Model: 12.8 W at design, 9.7 W at 42 °C, less the desuperheater share. Rating 30 W, giving 3.1× margin. At 24 V that is 1.25 A, so use a self-regulating finned PTC (Curie point ≈ 120 °C) with a 130 °C thermal fuse in series.
+**HTR-101 PTC reheat.** Its sizing condition is summer, reheating from the coil leaving temperature to the supply set point. Model: 12.6 W at design, 9.7 W at 42 °C, less the desuperheater share. Rating 30 W, giving 3.1× margin. At 24 V that is 1.25 A, so use a self-regulating finned PTC (Curie point ≈ 120 °C) with a 130 °C thermal fuse in series.
 
 **HUM-101 steam humidifier.** The sizing condition is the coldest, driest winter: outdoor −10 °C / 80 % (w = 1.41 g/kg) and room 22 °C / 45 % (w = 7.38 g/kg), with 100 % fresh air (f = 1; the Cu core passes no moisture):
 ```

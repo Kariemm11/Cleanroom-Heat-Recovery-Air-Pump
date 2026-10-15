@@ -77,7 +77,7 @@ The firmware writes Nextion-style updates (`name.txt="value"` + `FF FF FF`) ever
 - The compressor, PTC and humidifier run only with **proven airflow** (FT-102 > 25 % of set point). The PTC and humidifier also need FAN-102's tach > 300 rpm.
 - Compressor: minimum off time 180 s, minimum run 120 s, 10 %/s ramp, frost pull-back (TT-108 < −3 °C). Season changes are sequenced.
 - The humidifier is blocked when the supply RH (MT-105) is above 85 %.
-- **Contaminated exhaust (L3):** PT-102 above the trip level for 5 s throws DV-101 to the outer BIBO HEPA (alarm A06); it returns to the air pump only after 60 s below the reset level. A missing PT-102 reading counts as contaminated. DV-101 is spring return, so RUN off, a reset or a power cut leaves the exhaust on the HEPA. In winter the compressor is locked out while the exhaust is diverted (its evaporator has no air).
+- **Contaminated exhaust (L3):** PT-102 above the trip level for 5 s throws DV-101 to the outer BIBO HEPA (alarm A06); it returns to the air pump only after 60 s below the reset level. A missing PT-102 reading counts as contaminated. DV-101 is spring return, so RUN off, a reset or a power cut leaves the exhaust on the HEPA. The compressor is locked out while the exhaust is diverted, in both seasons: its exhaust-side coil (evaporator in winter, condenser in summer) has no air.
 - Hardware protection still needed: a 130 °C thermal fuse on the PTC, a fuse per channel, and the compressor driver's own over-current protection (see the wiring diagram).
 
 ## Tests (on a PC, no hardware)

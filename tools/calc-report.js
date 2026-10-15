@@ -369,7 +369,7 @@ tbl(["Loop", "PV → MV", "Error (normalised)", "K_p", "T_i (s)", "Output limits
 P("**Sequencing and interlocks:**");
 P("- Airflow proving: `FT102 > 0.25·Q_set and FT102 > 0.5 m³/h`. Without it the compressor, PTC and humidifier stay off, and the integrators of L4 and L5 are held at ≤ 0.");
 P("- L3 is not a PI loop: it is a two-position switch with a time delay and a hold. A missing PT-102 reading counts as contaminated. DV-101 is **spring return**: with RUN off, a controller fault or a power cut it rests on the HEPA bypass (fail-safe), and the start-up begins there until the exhaust has been clean for 60 s.");
-P("- Winter, exhaust diverted: the compressor is locked out (the evaporator has no air) and L4's integrator is held at ≤ 0.");
+P("- Exhaust diverted, either season: the compressor is locked out, because its exhaust-side coil (evaporator in winter, condenser in summer) has no air, and L4's integrator is held at ≤ 0.");
 P("- Summer dehumidification: `T_coil,set = T_coil,set,0 − 6 K · u_L6` (cooling-coil reset).");
 P("- Slew limits per second: fans 0.5, DV-101 0.1 (10 s stroke), compressor 0.1 (10 %/s ramp), PTC and humidifier 0.5.");
 P("- Firmware only (real hardware protection): compressor minimum off-time 180 s and minimum run 120 s. The reversing valve switches only after the compressor has been off 30 s. The humidifier is blocked when MT-105 > 85 %. The PTC is blocked if FAN-102's tach shows < 300 rpm.");
@@ -428,7 +428,7 @@ tbl(["Season", "Recovery on (W)", "Baseline test (W)", "Measured saving", "Twin'
 P("The twin matches the baseline test within " + f1(Math.max(Math.abs(W.pw.base - WB.pw.total), Math.abs(S.pw.base - SB.pw.total))) + " W.");
 P();
 const WD = CASES.winDiv, SD = CASES.sumDiv;
-P("**Exhaust held on the HEPA bypass** (DV-101 thrown, e.g. after a release): winter supply " + f1(WD.a.sup) + " °C with " + f1(WD.pw.total) + " W (compressor locked out, PTC only" + (WD.alarms.length ? "; alarms " + WD.alarms.join(", ") : "") + "); summer supply " + f1(SD.a.sup) + " °C with " + f1(SD.pw.total) + " W (outdoor condenser). Recovery stops while diverted, which is the price of keeping contaminated air out of the air pump.");
+P("**Exhaust held on the HEPA bypass** (DV-101 thrown, e.g. after a release): winter supply " + f1(WD.a.sup) + " °C with " + f1(WD.pw.total) + " W (compressor locked out, PTC only" + (WD.alarms.length ? "; alarms " + WD.alarms.join(", ") : "") + "); summer supply " + f1(SD.a.sup) + " °C with " + f1(SD.pw.total) + " W (compressor locked out too: its condenser has no exhaust air, so the supply drifts up; a production plant needs backup cooling for this case). Recovery and the energy saving stop while diverted, which is the price of keeping contaminated air out of the air pump.");
 P();
 P("At −10 °C the evaporator reaches the frost limit (alarm A05). The air pump is capped, the coil leaves at " + f1(WX.a.ph) + " °C instead of " + f1(WX.m.P.winter.coil) + " °C, and the PTC reheat makes up the difference (" + f1(WX.Qrh) + " W). For colder climates add a defrost cycle (reverse the 4-way valve for 2–3 min when TT-108 < −3 °C) or electric pre-heat of the exhaust.");
 P();

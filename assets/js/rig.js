@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-15i';
+var BUILD='2026-10-15j';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -3259,12 +3259,12 @@ var LOGCOLS=[
   ['outdoor_T_C',function(){return r2(m.s.TT101);}],['outdoor_RH_pct',function(){return r2(m.s.MT101);}],['fresh_air_m3h',function(){return r2(m.s.FT101);}],
   ['fresh_off_Cu_core_T_C',function(){return r2(m.s.TT109);}],['after_preheat_T_C',function(){return r2(m.s.TT103);}],['after_cooling_coil_T_C',function(){return r2(m.s.TT104);}],
   ['coil_SP_C',function(){return r2(m.coilSP);}],['supply_T_C',function(){return r2(m.s.TT105);}],['supply_SP_C',function(){return r2(m.supSP);}],
-  ['supply_RH_pct',function(){return r2(m.s.MT105);}],['supply_airflow_m3h',function(){return r2(m.s.FT102);}],
+  ['supply_RH_pct',function(){return r2(m.s.MT105);}],['supply_airflow_m3h',function(){return r2(m.s.FT102);}],['supply_airflow_SP_m3h',function(){return r2(P.flow);}],
   ['room_T_C',function(){return r2(m.s.TT106);}],['room_SP_C',function(){return P.tctl==='room'?r2(P[m.season].room):'';}],['room_RH_pct',function(){return r2(m.s.MT106);}],
-  ['room_RH_SP_pct',function(){return r2(P.rh);}],['room_pressure_Pa',function(){return r2(m.s.PDT101);}],['HEPA_dP_Pa',function(){return r2(m.s.PDT102);}],
+  ['room_RH_SP_pct',function(){return r2(P.rh);}],['room_pressure_Pa',function(){return r2(m.s.PDT101);}],['room_pressure_SP_Pa',function(){return r2(P.dp);}],['HEPA_dP_Pa',function(){return r2(m.s.PDT102);}],
   ['exhaust_in_T_C',function(){return r2(m.s.TT107);}],['exhaust_out_T_C',function(){return r2(m.s.TT108);}],['exhaust_airflow_m3h',function(){return r2(m.a.Qex);}],
   ['Cu_core_heat_W',function(){return r2(m.pw.Qrec);}],['room_particles_per_m3',function(){return Math.round(m.s.PT101||0);}],['fill_point_particles_per_m3',function(){return Math.round(m.s.PT101A||0);}],
-  ['PT102_exhaust_particles_per_m3',function(){return Math.round(m.s.PT102||0);}],['ACH_per_h',function(){return r2(m.kpi.ach);}],
+  ['PT102_exhaust_particles_per_m3',function(){return Math.round(m.s.PT102||0);}],['PT102_trip_per_m3',function(){return r2(P.pxTrip);}],['PT102_reset_per_m3',function(){return r2(P.pxReset);}],['ACH_per_h',function(){return r2(m.kpi.ach);}],
   ['supply_fan_pct',function(){return r2(m.act.sf*100);}],['fresh_fan_pct',function(){return r2(m.act.fa*100);}],['exhaust_fan_pct',function(){return r2(m.act.ef*100);}],
   ['DV101_pct',function(){return r2(m.act.dv*100);}],['compressor_pct',function(){return r2(m.act.cmp*100);}],['reheat_pct',function(){return r2(m.act.rh*100);}],['humidifier_pct',function(){return r2(m.act.hum*100);}],
   ['air_pump_COP',function(){return m.act.cmp>0.01?r2(m.pw.cop):'';}],['power_W',function(){return r2(m.pw.total);}],['baseline_power_W',function(){return r2(m.pw.base);}],
@@ -3293,15 +3293,201 @@ function inputsCsv(){
   Object.keys(P).forEach(function(k){ var v=P[k]; if(v&&typeof v==='object') Object.keys(v).forEach(function(j){ rows.push([k+'.'+j,v[j]]); }); else rows.push([k,v]); });
   return rows;
 }
+/* ------------------------------------------------------- PDF reports: data log and snapshot */
+/* label, unit and group of every data-log column (used by the PDF reports) */
+var LOGMETA={
+  time_s:['Simulated time','s','mode'],season:['Season','','mode'],heat_recovery:['Heat recovery','','mode'],temp_control:['Temperature control','','mode'],
+  exhaust_route:['Exhaust route (DV-101)','','mode'],alarms:['Active alarms','','mode'],
+  outdoor_T_C:['TT-101 outdoor air','°C','t'],fresh_off_Cu_core_T_C:['TT-109 fresh air off the Cu core','°C','t'],after_preheat_T_C:['TT-103 after pre-heat','°C','t'],
+  after_cooling_coil_T_C:['TT-104 off the cooling coil','°C','t'],coil_SP_C:['Coil set point (active)','°C','t'],supply_T_C:['TT-105 supply air','°C','t'],
+  supply_SP_C:['Supply set point (active)','°C','t'],room_T_C:['TT-106 clean room','°C','t'],room_SP_C:['Room set point','°C','t'],
+  exhaust_in_T_C:['TT-107 exhaust in','°C','t'],exhaust_out_T_C:['TT-108 exhaust after the air-pump coil','°C','t'],
+  outdoor_RH_pct:['MT-101 outdoor RH','%','a'],supply_RH_pct:['MT-105 supply RH','%','a'],room_RH_pct:['MT-106 room RH','%','a'],room_RH_SP_pct:['Room RH set point','%','a'],
+  fresh_air_m3h:['FT-101 fresh air','m³/h','a'],supply_airflow_m3h:['FT-102 supply air','m³/h','a'],supply_airflow_SP_m3h:['Supply airflow set point','m³/h','a'],
+  exhaust_airflow_m3h:['Exhaust airflow','m³/h','a'],ACH_per_h:['Air changes per hour','1/h','a'],room_pressure_Pa:['PDT-101 room pressure','Pa','a'],
+  room_pressure_SP_Pa:['Room pressure set point','Pa','a'],HEPA_dP_Pa:['PDT-102 HEPA ΔP','Pa','a'],
+  room_particles_per_m3:['PT-101 room particles ≥0.5 µm','/m³','c'],fill_point_particles_per_m3:['PT-101 fill-point particles ≥0.5 µm','/m³','c'],
+  PT102_exhaust_particles_per_m3:['PT-102 exhaust particles ≥0.5 µm','/m³','c'],PT102_trip_per_m3:['PT-102 trip level','/m³','c'],PT102_reset_per_m3:['PT-102 reset level','/m³','c'],
+  DV101_pct:['DV-101 position (100 = outer HEPA)','%','c'],
+  supply_fan_pct:['FAN-102 supply fan','%','u'],fresh_fan_pct:['FAN-101 fresh-air fan','%','u'],exhaust_fan_pct:['FAN-103 exhaust fan','%','u'],
+  compressor_pct:['CMP-101 air-pump compressor','%','u'],reheat_pct:['HTR-101 reheat','%','u'],humidifier_pct:['HUM-101 humidifier','%','u'],
+  Cu_core_heat_W:['Heat moved by the Cu core','W','e'],air_pump_COP:['Air-pump COP / EER','–','e'],power_W:['Electrical power, this rig','W','e'],
+  baseline_power_W:['Electrical power, baseline twin','W','e'],saving_pct:['Power saving','%','e'],CO2_g_per_h:['CO₂, this rig','g/h','e'],
+  CO2_baseline_g_per_h:['CO₂, baseline twin','g/h','e'],energy_Wh:['Energy since reset, this rig','Wh','e'],baseline_energy_Wh:['Energy since reset, baseline twin','Wh','e']
+};
+var LOGGROUPS=[['t','Temperatures and set points'],['a','Humidity, airflow and pressure'],['c','Particles and containment'],['u','Actuator outputs'],['e','Energy, COP and CO₂']];
+/* graph series → data-log column */
+var LOGKEY={TT101:'outdoor_T_C',TT109:'fresh_off_Cu_core_T_C',TT103:'after_preheat_T_C',TT104:'after_cooling_coil_T_C',COILSP:'coil_SP_C',TT105:'supply_T_C',SUPSP:'supply_SP_C',
+  TT106:'room_T_C',ROOMSP:'room_SP_C',TT107:'exhaust_in_T_C',TT108:'exhaust_out_T_C',MT101:'outdoor_RH_pct',MT105:'supply_RH_pct',MT106:'room_RH_pct',RHSP:'room_RH_SP_pct',
+  P:'power_W',Pb:'baseline_power_W',RED:'saving_pct',QREC:'Cu_core_heat_W',COP:'air_pump_COP',EA:'energy_Wh',EB:'baseline_energy_Wh',CO:'CO2_g_per_h',COB:'CO2_baseline_g_per_h',
+  QS:'supply_airflow_m3h',QSP:'supply_airflow_SP_m3h',QF:'fresh_air_m3h',QE:'exhaust_airflow_m3h',ACH:'ACH_per_h',DP:'room_pressure_Pa',DPSP:'room_pressure_SP_Pa',
+  PR:'room_particles_per_m3',PA:'fill_point_particles_per_m3',PX:'PT102_exhaust_particles_per_m3',TRIP:'PT102_trip_per_m3',RST:'PT102_reset_per_m3',
+  USF:'supply_fan_pct',UFA:'fresh_fan_pct',UEF:'exhaust_fan_pct',UDV:'DV101_pct',UCM:'compressor_pct',URH:'reheat_pct',UHM:'humidifier_pct'};
+var REP={title:'Clean-room heat-recovery rig: data log report',by:'Eng. Kariem Moussa',sup:'Dr. Eng. Ahmed Maher',inst:'German International University · Department of Pharmaceutical Engineering',notes:''};
+try{ var _rp=JSON.parse(localStorage.getItem('rig-report')||'null'); if(_rp) Object.keys(REP).forEach(function(k){ if(typeof _rp[k]==='string') REP[k]=_rp[k]; }); }catch(e){}
+var LOGO_SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256"><rect width="64" height="64" rx="14" fill="#0a1119"/><rect x="19" y="19" width="26" height="26" rx="3" transform="rotate(45 32 32)" fill="none" stroke="#e9f0f7" stroke-width="3"/><path d="M8 27H56" stroke="#49aeff" stroke-width="4" stroke-linecap="round"/><path d="M8 37H56" stroke="#ff9143" stroke-width="4" stroke-linecap="round"/></svg>';
+var PDFLIB=null;
+function loadPdfLib(cb){
+  if(PDFLIB) return cb(PDFLIB);
+  function add(src,next){ var s=document.createElement('script'); s.src=src; s.onload=next; s.onerror=function(){ hmiToast('Could not load the PDF library'); setText('dlPdfSt',''); }; document.head.appendChild(s); }
+  add('assets/vendor/jspdf.umd.min.js?b='+BUILD,function(){ add('assets/vendor/jspdf.plugin.autotable.min.js?b='+BUILD,function(){ PDFLIB=window.jspdf; cb(PDFLIB); }); });
+}
+function svgDataUrl(svg,W,H,k){ return new Promise(function(res){ var img=new Image(); img.onload=function(){ var cv=document.createElement('canvas'); cv.width=Math.round(W*k); cv.height=Math.round(H*k);
+  var g=cv.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,cv.width,cv.height); g.drawImage(img,0,0,cv.width,cv.height); res(cv.toDataURL('image/png')); };
+  img.onerror=function(){ res(null); }; img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg); }); }
+/* the PDF's built-in fonts carry Latin-1 only */
+function pt(s){ return String(s==null?'':s).replace(/₂/g,'2').replace(/[→⇄]/g,'->').replace(/≥/g,'>=').replace(/≤/g,'<=').replace(/[−–—]/g,'-').replace(/Δ/g,'d').replace(/ε/g,'e')
+  .replace(/…/g,'...').replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[•]/g,'-').replace(/ /g,' ').replace(/[^\x00-\xff]/g,'?'); }
+function num(v){ var x=parseFloat(v); return isFinite(x)?x:NaN; }
+function fmtv(v,unit){ if(!isFinite(v)) return '-'; var a=Math.abs(v), d=unit==='/m³'?0:(a>=1000?0:(a>=100?1:2)); return grp(v,d).replace('−','-'); }
+var ACC=[18,115,204], INK=[18,28,38], DIM=[90,104,118];
+function newDoc(kind){
+  var J=PDFLIB.jsPDF, doc=new J({unit:'mm',format:'a4',orientation:'portrait',compress:true});
+  doc.setProperties({title:pt(REP.title),subject:kind,author:pt(REP.by),creator:'Clean-room heat-recovery rig simulator '+BUILD});
+  return doc;
+}
+function heading(doc,y,t,need){
+  var H=doc.internal.pageSize.getHeight();
+  if(y+(need||30)>H-18){ doc.addPage('a4',doc.internal.pageSize.getWidth()>doc.internal.pageSize.getHeight()?'landscape':'portrait'); y=26; }
+  doc.setFont('helvetica','bold'); doc.setFontSize(12.5); doc.setTextColor.apply(doc,ACC); doc.text(pt(t),14,y);
+  doc.setDrawColor.apply(doc,ACC); doc.setLineWidth(0.4); doc.line(14,y+1.8,40,y+1.8);
+  doc.setTextColor.apply(doc,INK); return y+7;
+}
+function cover(doc,kind,rows,logo){
+  var W=doc.internal.pageSize.getWidth(), y=27;
+  doc.setFillColor(10,17,25); doc.roundedRect(14,y,W-28,34,2,2,'F');
+  if(logo) doc.addImage(logo,'PNG',19,y+5,24,24);
+  doc.setTextColor(233,240,247); doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.text(doc.splitTextToSize(pt(REP.title),W-28-40),48,y+12);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(160,184,204); doc.text(pt(kind),48,y+27);
+  doc.setDrawColor(73,174,255); doc.setLineWidth(1.2); doc.line(48,y+30.5,90,y+30.5); doc.setDrawColor(255,145,67); doc.line(92,y+30.5,134,y+30.5);
+  doc.autoTable({startY:y+39,theme:'plain',body:rows.map(function(r){ return [pt(r[0]),pt(r[1])]; }),margin:{left:14,right:14,top:26,bottom:18},
+    styles:{fontSize:9,cellPadding:{top:1.1,bottom:1.1,left:1,right:1},textColor:INK},columnStyles:{0:{fontStyle:'bold',cellWidth:44,textColor:DIM}}});
+  var yy=doc.lastAutoTable.finalY+3;
+  if(REP.notes){ doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor.apply(doc,DIM); doc.text('Notes',15,yy+3);
+    doc.setFont('helvetica','normal'); doc.setTextColor.apply(doc,INK); var nl=doc.splitTextToSize(pt(REP.notes),W-28-44); doc.text(nl,59,yy+3); yy+=nl.length*4+3; }
+  return yy+4;
+}
+function decorate(doc,kind,logo){
+  var n=doc.getNumberOfPages();
+  for(var i=1;i<=n;i++){ doc.setPage(i); var W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+    if(logo) doc.addImage(logo,'PNG',14,7,9,9);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor.apply(doc,INK); doc.text('HR·HVAC · Clean-room heat-recovery air-pump rig',26,10.6);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor.apply(doc,DIM); doc.text(pt('Sustainable heat-recovery air pump in HVAC systems of pharmaceutical facilities · '+REP.inst),26,14.6,{maxWidth:W-26-60});
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor.apply(doc,ACC); doc.text(pt(kind),W-14,10.6,{align:'right'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor.apply(doc,DIM); doc.text(new Date().toLocaleString(),W-14,14.6,{align:'right'});
+    doc.setDrawColor(73,174,255); doc.setLineWidth(0.6); doc.line(14,18.5,W/2,18.5); doc.setDrawColor(255,145,67); doc.line(W/2,18.5,W-14,18.5);
+    doc.setDrawColor(200,210,220); doc.setLineWidth(0.2); doc.line(14,H-12,W-14,H-12);
+    doc.setFontSize(7); doc.setTextColor.apply(doc,DIM);
+    doc.text(pt('Simulated data from the rig model (build '+BUILD+'): model results, not measurements. Prepared by '+REP.by+'.'),14,H-8);
+    doc.text('Page '+i+' of '+n,W-14,H-8,{align:'right'}); }
+}
+function tableOpts(extra){ var o={theme:'striped',margin:{left:14,right:14,top:26,bottom:18},styles:{fontSize:8,cellPadding:1.3,textColor:INK,lineColor:[220,228,236]},
+  headStyles:{fillColor:INK,textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[244,247,250]}}; Object.keys(extra||{}).forEach(function(k){ o[k]=extra[k]; }); return o; }
+function kpiRows(){ return Array.prototype.map.call(document.querySelectorAll('#kbar .kp'),function(k){ return [pt(txt(k.querySelector('.n'))),pt(txt(k.querySelector('.v'))),pt(txt(k.querySelector('.d')))]; }); }
+function modeLine(){ return (m.season==='winter'?'Winter heating':'Summer cooling')+' · '+(m.recovery?'heat recovery on':'baseline test (no recovery)')+' · '+
+  (P.tctl==='room'?'room set point '+P[m.season].room+' °C (L8)':'fixed supply set point '+P[m.season].sup+' °C')+' · exhaust '+(m.exContam?'contaminated':'clean'); }
+/* graphs into the PDF, two per row */
+function addCharts(doc,y,sl,note){
+  var list=CHARTS.filter(function(c){ return c.ser.some(function(s){ for(var i=sl.i0;i<=sl.i1;i++) if(fin(sl.d[i][s[0]])) return true; return false; }); });
+  var W=820,H=380,w=(doc.internal.pageSize.getWidth()-28-6)/2,h=w*H/W, jobs=list.map(function(c){
+    return svgDataUrl('<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">'+chartBlock(c,sl,W,H)+'</svg>',W,H,2); });
+  return Promise.all(jobs).then(function(imgs){
+    y=heading(doc,y,'Graphs',h+20);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor.apply(doc,DIM); doc.text(pt(note),14,y); y+=3;
+    imgs.forEach(function(im,i){ var col=i%2; if(col===0 && y+h>doc.internal.pageSize.getHeight()-16){ doc.addPage('a4','portrait'); y=26; }
+      if(im) doc.addImage(im,'PNG',14+col*(w+6),y,w,h); if(col===1||i===imgs.length-1) y+=h+4; });
+    return y;
+  });
+}
+function buildLogPdf(){
+  var rows=LOG.rows; if(rows.length<2){ hmiToast('Start logging first: the log needs at least 2 rows'); return; }
+  setText('dlPdfSt','building the PDF…');
+  loadPdfLib(function(){ svgDataUrl(LOGO_SVG,256,256,1).then(function(logo){
+    var idx={}; LOGCOLS.forEach(function(c,i){ idx[c[0]]=i; });
+    var t0=num(rows[0][0]), t1=num(rows[rows.length-1][0]), kind='Data log report';
+    var doc=newDoc(kind);
+    var y=cover(doc,kind,[['Prepared by',REP.by],['Supervisor',REP.sup],['Institution',REP.inst],['Exported',new Date().toLocaleString()],
+      ['Logged period','simulated '+hms(t0)+' to '+hms(t1)+' ('+grp(t1-t0,0)+' s)'],['Records',rows.length+' rows, one every '+LOG.every+' s of simulated time, '+LOGCOLS.length+' columns'],
+      ['Operating mode at the end',modeLine()],['Simulator build',BUILD]],logo);
+    y=heading(doc,y,'Key performance indicators at the end of the log');
+    doc.autoTable(tableOpts({startY:y,head:[['Indicator','Value','Detail']],body:kpiRows(),columnStyles:{0:{cellWidth:46},1:{cellWidth:36,fontStyle:'bold'}}}));
+    y=heading(doc,doc.lastAutoTable.finalY+8,'Operating conditions and set points');
+    doc.autoTable(tableOpts({startY:y,head:[inputRows()[0].map(pt)],body:inputRows().slice(1).map(function(r){ return r.map(pt); }),styles:{fontSize:7.5,cellPadding:1.1,textColor:INK}}));
+    y=heading(doc,doc.lastAutoTable.finalY+8,'Summary statistics of the logged data',40);
+    var st=[];
+    LOGGROUPS.forEach(function(g){ st.push([{content:pt(g[1]),colSpan:6,styles:{fontStyle:'bold',fillColor:[228,236,244]}}]);
+      LOGCOLS.forEach(function(c){ var me=LOGMETA[c[0]]; if(!me||me[2]!==g[0]) return; var j=idx[c[0]], mn=Infinity, mx=-Infinity, sum=0, n=0, last=NaN;
+        rows.forEach(function(r){ var v=num(r[j]); if(isFinite(v)){ mn=Math.min(mn,v); mx=Math.max(mx,v); sum+=v; n++; last=v; } });
+        st.push([pt(me[0]),pt(me[1]),n?fmtv(mn,me[1]):'-',n?fmtv(sum/n,me[1]):'-',n?fmtv(mx,me[1]):'-',n?fmtv(last,me[1]):'-']); }); });
+    doc.autoTable(tableOpts({startY:y,head:[['Quantity','Unit','Min','Mean','Max','Last']],body:st,columnStyles:{0:{cellWidth:70},2:{halign:'right'},3:{halign:'right'},4:{halign:'right'},5:{halign:'right'}},
+      didParseCell:function(c){ if(c.section==='head'&&c.column.index>=2) c.cell.styles.halign='right'; }}));
+    var d=rows.map(function(r){ var o={t:num(r[0])}; Object.keys(LOGKEY).forEach(function(k){ o[k]=num(r[idx[LOGKEY[k]]]); }); return o; });
+    var sl={d:d,i0:0,i1:d.length-1,x0:d[0].t,x1:d[d.length-1].t};
+    addCharts(doc,doc.lastAutoTable.finalY+8,sl,'Drawn from the '+rows.length+' logged rows. Dashed lines: set points and limits. Grade limits: EU GMP Annex 1 (2022), particles >=0.5 µm in operation.').then(function(){
+      /* the logged data, one landscape table per group */
+      var MAXR=1000, sel=[];
+      if(rows.length<=MAXR) sel=rows.map(function(r,i){ return i; });
+      else for(var q=0;q<MAXR;q++) sel.push(Math.round(q*(rows.length-1)/(MAXR-1)));
+      LOGGROUPS.concat([['mode','Operating mode and alarms']]).forEach(function(g,gi){
+        doc.addPage('a4','landscape');
+        var cols=LOGCOLS.filter(function(c){ var me=LOGMETA[c[0]]; return me && me[2]===g[0] && c[0]!=='time_s'; });
+        var yy=heading(doc,26,'Logged data '+(gi+1)+'/6: '+g[1]);
+        if(gi===0 && rows.length>MAXR){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(178,107,0);
+          doc.text(pt('The log has '+rows.length+' rows; these tables show '+MAXR+' evenly spaced rows (first and last included). Every row is in the CSV download.'),14,yy); yy+=4; }
+        doc.autoTable(tableOpts({startY:yy,head:[['Time (h:mm:ss)','t (s)'].concat(cols.map(function(c){ var me=LOGMETA[c[0]]; return pt(me[0]+(me[1]&&me[1]!=='–'?' ('+me[1]+')':'')); }))],
+          body:sel.map(function(i){ var r=rows[i]; return [tLbl(num(r[0]),1),String(r[0])].concat(cols.map(function(c){ var v=r[idx[c[0]]], x=num(v), u=LOGMETA[c[0]][1]; return v===''?'-':(isFinite(x)&&typeof v==='number'?grp(x,u==='/m³'?0:2).replace('−','-'):pt(v)); })); }),
+          styles:{fontSize:cols.length>9?6.3:6.8,cellPadding:0.65,textColor:INK,halign:'right'},headStyles:{fillColor:INK,textColor:255,fontStyle:'bold',halign:'center',fontSize:6.6},
+          columnStyles:{0:{halign:'left'}}}));
+      });
+      decorate(doc,kind,logo);
+      doc.save('cleanroom-rig-log-report-'+stamp()+'.pdf'); setText('dlPdfSt','PDF saved ('+doc.getNumberOfPages()+' pages)'); hmiToast('Data log PDF saved');
+    });
+  }); });
+}
+function buildSnapPdf(){
+  setText('dlPdfSt','building the PDF…');
+  loadPdfLib(function(){ svgDataUrl(LOGO_SVG,256,256,1).then(function(logo){
+    var kind='Snapshot report', doc=newDoc(kind), sl=trendSlice();
+    var y=cover(doc,kind,[['Prepared by',REP.by],['Supervisor',REP.sup],['Institution',REP.inst],['Exported',new Date().toLocaleString()],
+      ['Snapshot at','simulated time '+hms(m.t)+' ('+grp(m.t,0)+' s)'],['Operating mode',modeLine()],['Simulator build',BUILD]],logo);
+    y=heading(doc,y,'Key performance indicators');
+    doc.autoTable(tableOpts({startY:y,head:[['Indicator','Value','Detail']],body:kpiRows(),columnStyles:{0:{cellWidth:46},1:{cellWidth:36,fontStyle:'bold'}}}));
+    y=heading(doc,doc.lastAutoTable.finalY+8,'Operating conditions and set points');
+    doc.autoTable(tableOpts({startY:y,head:[inputRows()[0].map(pt)],body:inputRows().slice(1).map(function(r){ return r.map(pt); }),styles:{fontSize:7.5,cellPadding:1.1,textColor:INK}}));
+    y=heading(doc,doc.lastAutoTable.finalY+8,'Readings at t = '+hms(m.t),40);
+    var rd=[];
+    LOGGROUPS.concat([['mode','Operating mode and alarms']]).forEach(function(g){ rd.push([{content:pt(g[1]),colSpan:3,styles:{fontStyle:'bold',fillColor:[228,236,244]}}]);
+      LOGCOLS.forEach(function(c){ var me=LOGMETA[c[0]]; if(!me||me[2]!==g[0]) return; var v=c[1](), x=num(v);
+        rd.push([pt(me[0]),typeof v==='number'&&isFinite(x)?fmtv(x,me[1]):pt(v===''?'-':v),pt(me[1])]); }); });
+    doc.autoTable(tableOpts({startY:y,head:[['Quantity','Value','Unit']],body:rd,columnStyles:{0:{cellWidth:95},1:{halign:'right',fontStyle:'bold'}},didParseCell:function(c){ if(c.section==='head'&&c.column.index===1) c.cell.styles.halign='right'; }}));
+    y=heading(doc,doc.lastAutoTable.finalY+8,'Alarms',30);
+    var al=m.alarms.map(function(a){ return ['ACTIVE',a.id,pt(a.text),a.sev]; }).concat(m.alarmLog.slice(0,20).map(function(a){ return [a.kind+' at '+hms(a.t),a.id,pt(a.text),a.sev]; }));
+    if(!al.length) al=[['-','-','No active alarms and no alarm events','-']];
+    doc.autoTable(tableOpts({startY:y,head:[['State','Alarm','Text','Severity']],body:al,columnStyles:{0:{cellWidth:34},1:{cellWidth:14},3:{cellWidth:18}}}));
+    var after=sl?addCharts(doc,doc.lastAutoTable.finalY+8,sl,'Graph window: simulated '+tLbl(sl.x0,1)+' to '+tLbl(sl.x1,1)+' (as on the Trends tab). Dashed lines: set points and limits.'):Promise.resolve();
+    after.then(function(){ decorate(doc,kind,logo); doc.save('cleanroom-rig-snapshot-'+stamp()+'.pdf'); setText('dlPdfSt','PDF saved ('+doc.getNumberOfPages()+' pages)'); hmiToast('Snapshot PDF saved'); });
+  }); });
+}
 $('pane-dl').innerHTML='<div class="dlog">'+
-  '<p class="note">Records every sensor, actuator, set point and KPI of the running simulation in simulated time, for Excel, MATLAB or Python. Set the season, mode and design values, let the readings settle (Trends tab), then start logging. Raise the simulation speed to log long periods quickly.</p>'+
+  '<p class="note">Records every sensor, actuator, set point and KPI of the running simulation in simulated time. Set the season, mode and design values, let the readings settle (Trends tab), then start logging. Raise the simulation speed to log long periods quickly.</p>'+
   '<div class="row"><label>Interval, simulated s <input id="dlEvery" type="number" min="1" max="3600" step="1" value="10"></label>'+
   '<button class="hbtn" id="dlStart" type="button" aria-pressed="false">Start logging</button>'+
-  '<button class="hbtn" id="dlCsv" type="button">Download log (CSV)</button>'+
-  '<button class="hbtn" id="dlClear" type="button">Clear log</button>'+
-  '<button class="hbtn" id="dlSnap" type="button">Download snapshot: inputs + readings now (CSV)</button></div>'+
-  '<div class="st" id="dlStat">not logging · 0 rows</div>'+
-  '<p class="note">Columns: '+LOGCOLS.map(function(c){return c[0];}).join(', ')+'.</p></div>';
+  '<button class="hbtn" id="dlClear" type="button">Clear log</button><span class="st" id="dlStat">not logging · 0 rows</span></div>'+
+  '<fieldset class="rep"><legend>PDF report details</legend>'+
+  '<label class="w">Report title <input id="repTitle" type="text"></label>'+
+  '<label>Prepared by <input id="repBy" type="text"></label><label>Supervisor <input id="repSup" type="text"></label>'+
+  '<label class="w">Institution <input id="repInst" type="text"></label>'+
+  '<label class="w">Notes (test purpose, conditions…) <textarea id="repNotes" rows="2"></textarea></label></fieldset>'+
+  '<div class="row"><b class="dlh">PDF report</b><button class="hbtn on" id="dlPdf" type="button">Download log (PDF)</button>'+
+  '<button class="hbtn on" id="dlSnapPdf" type="button">Download snapshot (PDF)</button><span class="st" id="dlPdfSt"></span></div>'+
+  '<div class="row"><b class="dlh">Raw data</b><button class="hbtn" id="dlCsv" type="button">Download log (CSV)</button>'+
+  '<button class="hbtn" id="dlSnap" type="button">Download snapshot (CSV)</button></div>'+
+  '<p class="note">The log PDF has the title block with the logo, the key results, the set points, min / mean / max of every quantity, the graphs drawn from the logged data and the logged values in tables. '+
+  'The snapshot PDF has every reading at this moment, the set points, the alarms and the graphs on the Trends tab. The CSV files hold the same data for Excel, MATLAB or Python ('+LOGCOLS.length+' columns: '+LOGCOLS.map(function(c){return c[0];}).join(', ')+').</p></div>';
+[['repTitle','title'],['repBy','by'],['repSup','sup'],['repInst','inst'],['repNotes','notes']].forEach(function(f){
+  var el=$(f[0]); el.value=REP[f[1]];
+  el.addEventListener('input',function(){ REP[f[1]]=el.value; try{ localStorage.setItem('rig-report',JSON.stringify(REP)); }catch(e){} });
+});
 $('dlStart').addEventListener('click',function(){ setLog(!LOG.on); });
 $('dlClear').addEventListener('click',function(){ LOG.rows=[]; LOG.last=-1e9; });
 $('dlCsv').addEventListener('click',function(){
@@ -3313,6 +3499,8 @@ $('dlSnap').addEventListener('click',function(){
   LOGCOLS.forEach(function(c){ rows.push([c[0],c[1]()]); });
   download('cleanroom-rig-snapshot-'+stamp()+'.csv',rows.map(function(r){ return r.map(csvCell).join(','); }).join('\n')+'\n');
 });
+$('dlPdf').addEventListener('click',buildLogPdf);
+$('dlSnapPdf').addEventListener('click',buildSnapPdf);
 setInterval(function(){
   var n=LOG.rows.length, span=n>1?LOG.rows[n-1][0]-LOG.rows[0][0]:0;
   $('dlStat').textContent=(LOG.on?'logging every '+LOG.every+' s':'not logging')+' · '+n+' rows'+(n>1?' · '+hms(span)+' of simulated time':'');

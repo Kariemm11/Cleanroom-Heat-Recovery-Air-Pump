@@ -174,11 +174,17 @@ input[type=range]{width:100%;accent-color:var(--fresh);margin:0}
 .hbtn{background:transparent;border:1px solid var(--line);border-radius:3px;padding:5px 10px;font-size:12px;cursor:pointer}
 .hbtn:hover{background:var(--line-soft)}
 .dlog{display:grid;gap:10px;font-size:13px;max-width:980px}
-.dlog .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dlog .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-start}
 .dlog input{width:80px;background:transparent;border:1px solid var(--line);border-radius:3px;padding:4px 6px;font:inherit}
 .dlog .hbtn[aria-pressed="true"]{background:var(--ink);color:var(--panel-solid)}
 .dlog .st{font-family:var(--f-mono,monospace);font-size:12px}
 .dlog .note{color:var(--ink-dim);font-size:12px;margin:0}
+.dlog fieldset.rep{border:1px solid var(--line);border-radius:4px;padding:6px 10px 8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px 10px;margin:0;max-width:980px}
+.dlog fieldset.rep legend{font-size:11px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.06em;padding:0 4px;font-family:var(--f-disp);font-weight:600}
+.dlog fieldset.rep label{display:grid;gap:2px;font-size:11.5px;color:var(--ink-dim)}
+.dlog fieldset.rep label.w{grid-column:1/-1}
+.dlog fieldset.rep input,.dlog fieldset.rep textarea{width:100%;background:var(--panel-solid);border:1px solid var(--line);border-radius:3px;padding:4px 6px;font:inherit;color:var(--ink);font-size:12px;resize:vertical}
+.dlog .dlh{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);min-width:84px;font-family:var(--f-disp);font-weight:600}
 .hbtn.on{background:var(--ink);color:var(--panel-solid);border-color:var(--ink);font-weight:600}
 .clock{font-family:var(--f-mono);font-size:11px;color:var(--ink-dim)}
 
@@ -342,7 +348,7 @@ table.hin-t{min-width:640px}
 </style>
 </head>
 <body>
-<div id="app" data-build="2026-10-15i">
+<div id="app" data-build="2026-10-15j">
   <div id="stage">
     <canvas id="scene" aria-label="3D model of the clean-room test rig"></canvas>
 
@@ -584,9 +590,9 @@ table.hin-t{min-width:640px}
 </div>
 
 <script src="assets/vendor/three.min.js"></script>
-<script src="assets/js/rig-model.js?b=2026-10-15i"></script>
-<script src="assets/js/rig.js?b=2026-10-15i"></script>
+<script src="assets/js/rig-model.js?b=2026-10-15j"></script>
+<script src="assets/js/rig.js?b=2026-10-15j"></script>
 <script src="assets/vendor/qrcode.js"></script>
-<script src="assets/js/share.js?b=2026-10-15i"></script>
+<script src="assets/js/share.js?b=2026-10-15j"></script>
 </body>
 </html>

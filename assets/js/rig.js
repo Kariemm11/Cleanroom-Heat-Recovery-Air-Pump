@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-15k';
+var BUILD='2026-10-15l';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -2159,9 +2159,9 @@ $('pane-ov').innerHTML='<svg class="mimic" viewBox="0 0 1110 252" role="img" ari
  /* supply */
  '<path class="ln lm" d="M400 110H880"/><path class="ln lm" d="M880 110H902V40H1060V60M972 40V60"/>'+
  /* exhaust: room → PT-102 → DV-101 → air-pump unit → outdoors; DV-101 → outer HEPA → outdoors */
- '<path class="ln lr" d="M930 196H905V205H355"/><path class="ln lr" d="M215 205H40"/>'+
+ '<path class="ln lr" d="M930 196H905V205H640"/><path class="ln lr" d="M640 205H355" id="m-exa"/><path class="ln lr" d="M215 205H40" id="m-exb"/>'+
  '<path class="ln lr" d="M640 205V234H612M562 234H520" id="m-bypl"/>'+
- '<path class="flow" id="fl-f" d="M50 110H190V165H215M355 165H375V110H400"/><path class="flow" id="fl-s" d="M400 110H880H902V40H1060"/><path class="flow" id="fl-r" d="M930 196H905V205H40"/>'+
+ '<path class="flow" id="fl-f" d="M50 110H190V165H215M355 165H375V110H400"/><path class="flow" id="fl-s" d="M400 110H880H902V40H1060"/><path class="flow" id="fl-r" d="M930 196H905V205H640"/><path class="flow" id="fl-ra" d="M640 205H355M215 205H40"/><path class="flow" id="fl-rb" d="M640 205V234H612M562 234H520"/>'+
  /* compressor */
  '<circle cx="92" cy="110" r="16" class="box"/><path d="M82 104l20 12M82 116l20-12" stroke="var(--ink-dim)" stroke-width="2"/>'+
  '<text x="92" y="146" text-anchor="middle" class="lb">FAN-101</text><text x="92" y="161" text-anchor="middle" class="val" id="m-fan101">–</text>'+
@@ -2669,13 +2669,15 @@ function updateHMI(force){
     setText('m-tt109',tC(s.TT109)); setText('m-tt103',tC(s.TT103)); setText('m-tt104',tC(s.TT104));
     setText('m-tt105',tC(s.TT105)+' · '+f0(s.MT105)+' %'); setText('m-ft102',f2(s.FT102)+' m³/h'); setText('m-tt107',tC(s.TT107));
     setText('m-pt102',kfmt(s.PT102)+' /m³'); setText('m-dv',m.act.dv>0.5?'→ outer HEPA':'→ air pump');
-    $('m-bypl').style.opacity=m.act.dv>0.5?'1':'.35';
+    var dvH=m.act.dv>0.5;                                   // DV-101 on the outer HEPA: nothing flows to the air pump
+    $('m-bypl').classList.toggle('off',!dvH); $('m-exa').classList.toggle('off',dvH); $('m-exb').classList.toggle('off',dvH);
     setText('m-ach',f1(k.ach)+' ACH'); setText('m-room',tC(s.TT106)+' · '+f0(s.MT106)+' % RH');
     setText('m-dp',sgn(s.PDT101)+' Pa'); var gr=gradeOf(s.PT101,s.PT101R5); setText('m-vol','PT-101 '+kfmt(s.PT101)+'/m³ · '+(gr.g==='—'?'> Grade C':'Grade '+gr.g));
     $('m-phc').setAttribute('opacity',String(0.2+0.8*(m.season==='winter'?m.act.cmp:0)));
     $('m-ccc').setAttribute('opacity',String(0.2+0.8*(m.season==='summer'?m.act.cmp:0)));
     $('m-rhc').setAttribute('opacity',String(0.2+0.8*m.act.rh));
     $('fl-f').style.opacity=a.Qfa>0.05?'.85':'0'; $('fl-s').style.opacity=a.Qsup>0.05?'.85':'0'; $('fl-r').style.opacity=a.Qsup>0.05?'.85':'0';
+    $('fl-ra').style.opacity=a.Qsup>0.05&&!dvH?'.85':'0'; $('fl-rb').style.opacity=a.Qsup>0.05&&dvH?'.85':'0';
   } else if(activePane==='sn'){
     IO.forEach(function(r,i){ setText('io-'+i,r[2]()); });
   } else if(activePane==='lp'){

@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-15l';
+var BUILD='2026-10-15-13';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -3332,7 +3332,7 @@ var LOGKEY={TT101:'outdoor_T_C',TT109:'fresh_off_Cu_core_T_C',TT103:'after_prehe
 var REP={title:'Clean-room heat-recovery rig: data log report',by:'Eng. Kariem Moussa',sup:'Dr. Eng. Ahmed Maher',inst:'German International University · Department of Pharmaceutical Engineering',notes:''};
 try{ var _rp=JSON.parse(localStorage.getItem('rig-report')||'null'); if(_rp) Object.keys(REP).forEach(function(k){ if(typeof _rp[k]==='string') REP[k]=_rp[k]; }); }catch(e){}
 var LOGO_SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256"><rect width="64" height="64" rx="14" fill="#0a1119"/><rect x="19" y="19" width="26" height="26" rx="3" transform="rotate(45 32 32)" fill="none" stroke="#e9f0f7" stroke-width="3"/><path d="M8 27H56" stroke="#49aeff" stroke-width="4" stroke-linecap="round"/><path d="M8 37H56" stroke="#ff9143" stroke-width="4" stroke-linecap="round"/></svg>';
-var PDFLIB=null, SIMVER=BUILD.replace(/[a-z]+$/,'');   // the PDFs show the date only
+var PDFLIB=null, SIMVER=(function(){ var v=/^(\d{4}-\d{2}-\d{2})-(\d+)$/.exec(BUILD); return v?v[1]+' update '+v[2]:BUILD; })();   // e.g. 2026-10-15 update 13
 function loadPdfLib(cb){
   if(PDFLIB) return cb(PDFLIB);
   function add(src,next){ var s=document.createElement('script'); s.src=src; s.onload=next; s.onerror=function(){ hmiToast('Could not load the PDF library'); setText('dlPdfSt',''); }; document.head.appendChild(s); }

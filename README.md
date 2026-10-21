@@ -226,6 +226,6 @@ tools/build_cad.py          rebuilds them as STEP solids (CadQuery / OpenCascade
 tools/make_drawings.py      enclosure fabrication drawing
 ```
 
-When `assets/js/rig.js` changes, bump the build stamp in three places: `BUILD` in `rig.js`, `data-build` on `#app` in `index.html`, and the `?b=` on the script tags. A browser holding an older page then reloads it instead of mixing old and new files.
+When `assets/js/rig.js` changes, bump the build stamp in three places: `BUILD` in `rig.js`, `data-build` on `#app` in `index.html`, and the `?b=` on the script tags. A browser holding an older page then reloads it instead of mixing old and new files. The stamp is the date and the update number of that day, for example `2026-10-21-1`; the PDF reports show it as "Simulator version 2026-10-21 update 1".
 
 The physics model runs headless for testing: `node -e "const R=require('./assets/js/rig-model.js'); const m=R.create(); for(let i=0;i<12000;i++) R.step(m,0.05); console.log(m.kpi)"`.

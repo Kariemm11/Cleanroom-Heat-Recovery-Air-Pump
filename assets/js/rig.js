@@ -10,7 +10,7 @@ if(!window.THREE){document.querySelector('.legend').insertAdjacentHTML('beforeen
 /* Stale-cache guard. GitHub Pages lets browsers keep files for up to 10 minutes, so right after an update
    an old cached page can meet this newer script (or the other way round) and the scene fails to start.
    The page names the build it belongs to; on a mismatch, load it once more under a fresh URL. */
-var BUILD='2026-10-15-13';
+var BUILD='2026-10-21-1';
 var appEl=document.getElementById('app'), pageBuild=appEl?appEl.getAttribute('data-build'):null;
 if(pageBuild!==BUILD){
   var q=new URLSearchParams(location.search);
@@ -56,15 +56,15 @@ scene.background = T.scene.clone();
 var camera = new THREE.PerspectiveCamera(40, 2, 0.5, 2000);
 var VIEWS = {
   iso:   {t:[-2,16,0],   theta:0.62, phi:1.10, r:158},
-  front: {t:[0,22,0],    theta:0.0,  phi:1.52, r:140},
+  front: {t:[0,24,0],    theta:0.0,  phi:1.45, r:118},   // the default: the whole box centred, seen from the front (r is fitted to the screen)
   top:   {t:[0,10,0],    theta:0.0,  phi:0.12, r:150},
   plant: {t:[-27,5,-1],  theta:0.34, phi:0.78, r:50},
   clean: {t:[24,20,0],   theta:0.42, phi:1.18, r:92},
   hmi:   {t:[-38,41.5,27], theta:0.0, phi:1.45, r:28}
 };
-var target = new THREE.Vector3().fromArray(VIEWS.iso.t);
+var target = new THREE.Vector3().fromArray(VIEWS.front.t);
 var targetGoal = target.clone();
-var cam = {theta:VIEWS.iso.theta, phi:VIEWS.iso.phi, r:VIEWS.iso.r};
+var cam = {theta:VIEWS.front.theta, phi:VIEWS.front.phi, r:VIEWS.front.r};
 var camGoal = {theta:cam.theta, phi:cam.phi, r:cam.r};
 function placeCamera(){
   var sp=Math.sin(cam.phi);
@@ -1955,7 +1955,7 @@ var RIGLABELS=[
 ];
 var labelGroup=new THREE.Group(); scene.add(labelGroup);
 var leaderMat=new THREE.LineBasicMaterial({color:T.metalDark.clone(),transparent:true,opacity:0.9});
-var labelMode='key', REACH=2.0;
+var labelMode='off', REACH=2.0;   // labels start on None
 function buildLabels(){
   while(labelGroup.children.length){
     var c=labelGroup.children.pop();
@@ -2834,7 +2834,35 @@ function hazText(){
 seg('segCase',function(v){ state.casing=v; applyCasing(); applyExplode(); });
 seg('segBox',function(v){ applyBox(v); });
 seg('segLabels',function(v){ labelMode=v; refreshLabels(); });
+/* front view (the default): the camera distance and aim at which the whole box (1.0 × 0.5 × 0.5 m, feet and roof
+   stack included) fits the part of the 3D view that no panel covers, and sits in its middle. Wide screens: between
+   the legend (left) and the control panel (right), below the top buttons, above the bottom bar. Phones: below the legend. */
+function fitFront(){
+  var v=VIEWS.front, base=v.t0||(v.t0=v.t.slice()), c2=camera.clone(), pts=[], sr=stage.getBoundingClientRect();
+  var W=sr.width||1, H=sr.height||1, wide=window.innerWidth>760, st=$('stage');
+  function rect(el,hiddenCls){ if(!el||el.hidden||(hiddenCls&&st.classList.contains(hiddenCls))) return null; var r=el.getBoundingClientRect(); return r.width&&r.height?r:null; }
+  var lg=rect(document.querySelector('.legend'),'legendHidden'), rl=wide?rect($('rail'),'railHidden'):null;
+  var L=0, Rr=0, T=wide?54:8, B=wide?64:56;
+  if(wide){ if(lg) L=Math.min(lg.right-sr.left, W*0.32); if(rl) Rr=Math.min(sr.right-rl.left, W*0.32); }
+  else { if(lg) T=Math.min(lg.bottom-sr.top+8, H*0.5);
+    var bt=[document.querySelector('.rdg'),document.querySelector('.hrbar')].map(function(e){ return rect(e); }).filter(Boolean).map(function(r){ return r.top; });
+    if(bt.length) B=Math.max(B, Math.min(sr.bottom-Math.min.apply(null,bt)+6, H*0.45)); }
+  var x0=-1+2*(L+8)/W, x1=1-2*(Rr+8)/W, y1=1-2*T/H, y0=-1+2*B/H;     // free band in NDC
+  [-BX-1,BX+1].forEach(function(x){ [-2,BY+7].forEach(function(y){ [-BZ-1,BZ+1].forEach(function(z){ pts.push(new THREE.Vector3(x,y,z)); }); }); });
+  function proj(r,tx,ty,tz){ var sp=Math.sin(v.phi), tg=new THREE.Vector3(tx,ty,tz);
+    c2.position.set(tx+r*sp*Math.sin(v.theta),ty+r*Math.cos(v.phi),tz+r*sp*Math.cos(v.theta)); c2.lookAt(tg); c2.updateMatrixWorld(); c2.updateProjectionMatrix();
+    var e={x0:Infinity,x1:-Infinity,y0:Infinity,y1:-Infinity,back:false};
+    pts.forEach(function(p){ var q=p.clone().project(c2); if(q.z>=1) e.back=true; e.x0=Math.min(e.x0,q.x); e.x1=Math.max(e.x1,q.x); e.y0=Math.min(e.y0,q.y); e.y1=Math.max(e.y1,q.y); });
+    return e; }
+  var lo=30, hi=1200;
+  for(var i=0;i<34;i++){ var mid=(lo+hi)/2, e=proj(mid,base[0],base[1],base[2]);
+    if(!e.back && e.x1-e.x0<=(x1-x0)*0.94 && e.y1-e.y0<=(y1-y0)*0.94) hi=mid; else lo=mid; }
+  var e2=proj(hi,base[0],base[1],base[2]), hH=Math.tan(20*Math.PI/180)*hi, hW=hH*c2.aspect;
+  var dx=((x0+x1)/2-(e2.x0+e2.x1)/2)*hW, dy=((y0+y1)/2-(e2.y0+e2.y1)/2)*hH;   // move the aim so the box centre lands in the band centre
+  v.r=hi; v.t=[base[0]-dx*Math.cos(v.theta), base[1]-dy, base[2]+dx*Math.sin(v.theta)];
+}
 function goView(v,instant){
+  if(v==='front') fitFront();
   var d=VIEWS[v]; if(!d) return;
   camGoal.theta=d.theta; camGoal.phi=d.phi; camGoal.r=d.r; targetGoal.fromArray(d.t);
   if(instant){ cam.theta=d.theta; cam.phi=d.phi; cam.r=d.r; target.copy(targetGoal); }
@@ -2852,7 +2880,7 @@ cb('cbArrows',function(v){ arrows.visible=v; });
 cb('cbTags',function(v){ setReadings(v?(readMode==='off'?'on':readMode):'off'); });
 /* live readings in the 3D view: Hide / Show / Large (large tags for presenting to an audience).
    The on-stage control, the R key and the "Live sensor tags" box all drive the same state. */
-var readMode='on';
+var readMode='off';   // live readings start hidden
 function setReadings(v){
   readMode=v; $('cbTags').checked=v!=='off';
   var k=v==='big'?1.9:1;
@@ -3167,7 +3195,9 @@ window.addEventListener('resize',function(){ TRW._drawn=false; });
 /* --------------------------------------------------------- orbit input */
 var drag=null,pinch=null,down=null;
 var ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+var camTouched=false;   // until the viewer moves the camera, the default view keeps fitting the screen
 canvas.addEventListener('pointerdown',function(e){
+  camTouched=true;
   canvas.setPointerCapture(e.pointerId);
   drag={x:e.clientX,y:e.clientY,pan:e.shiftKey||e.button===2}; down={x:e.clientX,y:e.clientY};
 });
@@ -3203,7 +3233,7 @@ canvas.addEventListener('pointerup',function(e){
 ['pointercancel','pointerleave'].forEach(function(ev){ canvas.addEventListener(ev,function(){ drag=null; }); });
 canvas.addEventListener('contextmenu',function(e){ e.preventDefault(); });
 canvas.addEventListener('wheel',function(e){
-  e.preventDefault();
+  e.preventDefault(); camTouched=true;
   camGoal.r=Math.max(14,Math.min(320,camGoal.r*(1+Math.sign(e.deltaY)*0.09)));
 },{passive:false});
 canvas.addEventListener('touchstart',function(e){
@@ -3224,6 +3254,7 @@ function resize(){
   if(!w||!h) return;
   renderer.setSize(w,h,false);
   camera.aspect=w/h; camera.updateProjectionMatrix();
+  if(!camTouched && $('segView').querySelector('[data-v="front"]').getAttribute('aria-pressed')==='true') goView('front',true);
   syncRail();
 }
 window.addEventListener('resize',resize);
@@ -3635,10 +3666,11 @@ for(var w0=0;w0<1800;w0++) RigModel.step(m,0.05);              // 90 s: let the 
 refreshPathColors(m.a); colorRibbons(); colorDuctFlow();
 applySeason(); applyCasing(); applyExplode(); applyBox('clear'); buildZones(); setZones($('cbZones').checked);
 if(window.innerHeight<480 || window.innerWidth<760) setHmiOpen(false);   // open by default, also inside the project website's viewer; only phones and very short windows start collapsed
-resize();
+resize(); goView('front',true);                                  // open centred on the whole box
+setTimeout(function(){ if(!camTouched) goView('front'); },700);   // again once the share bar is in place (eased)
 var fl0=flows(); for(var s0=0;s0<STREAMS.length;s0++) updateStream(STREAMS[s0],0,0,fl0);
 updateDuctFlow(0,0,fl0); setDuctAir($('cbDuctAir').checked);
 updateRefrig(0,0,1); updateSignals(0); actuatorVisuals(); updateHMI(true); updateTags(); drawScreen();
-window.__rig={model:m,goView:goView,state:state,zones:zoneGroup,ductFlow:ductFlow,build:BUILD,setView:function(d){ VIEWS.custom=d; goView('custom',true); }};
+window.__rig={model:m,goView:goView,view:function(){ return {front:VIEWS.front,aspect:camera.aspect,cam:cam,stage:[stage.clientWidth,stage.clientHeight],canvas:[canvas.width,canvas.height,canvas.clientWidth]}; },state:state,zones:zoneGroup,ductFlow:ductFlow,build:BUILD,setView:function(d){ VIEWS.custom=d; goView('custom',true); }};
 frame();
 })();

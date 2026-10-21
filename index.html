@@ -350,7 +350,7 @@ table.hin-t{min-width:640px}
 </style>
 </head>
 <body>
-<div id="app" data-build="2026-10-15-13">
+<div id="app" data-build="2026-10-21-1">
   <div id="stage">
     <canvas id="scene" aria-label="3D model of the clean-room test rig"></canvas>
 
@@ -431,10 +431,10 @@ table.hin-t{min-width:640px}
       <div class="grp">
         <span class="lbl">Labels</span>
         <div class="seg" id="segLabels">
-          <button data-v="key" aria-pressed="true">Rig</button>
+          <button data-v="key" aria-pressed="false">Rig</button>
           <button data-v="plant" aria-pressed="false">+ Plant</button>
           <button data-v="all" aria-pressed="false">All</button>
-          <button data-v="off" aria-pressed="false">None</button>
+          <button data-v="off" aria-pressed="true">None</button>
         </div>
       </div>
       <div class="grp">
@@ -493,7 +493,7 @@ table.hin-t{min-width:640px}
           <label class="chk"><input type="checkbox" id="cbContam" checked> Contamination particles</label>
           <label class="chk"><input type="checkbox" id="cbZones" checked> Containment zones</label>
           <label class="chk"><input type="checkbox" id="cbArrows" checked> Flow arrows</label>
-          <label class="chk"><input type="checkbox" id="cbTags" checked> Live sensor tags</label>
+          <label class="chk"><input type="checkbox" id="cbTags"> Live sensor tags</label>
           <label class="chk"><input type="checkbox" id="cbPcb" checked> PCB wiring</label>
           <label class="chk"><input type="checkbox" id="cbSignals" checked> PCB signal pulses</label>
           <label class="chk"><input type="checkbox" id="cbModule" checked> Parallel recovery unit</label>
@@ -508,8 +508,8 @@ table.hin-t{min-width:640px}
       <div class="grp">
         <span class="lbl">View</span>
         <div class="seg" id="segView">
-          <button data-v="iso" aria-pressed="true">Iso</button>
-          <button data-v="front" aria-pressed="false">Front</button>
+          <button data-v="iso" aria-pressed="false">Iso</button>
+          <button data-v="front" aria-pressed="true">Front</button>
           <button data-v="top" aria-pressed="false">Top</button>
         </div>
         <div class="seg" id="segZoom">
@@ -526,8 +526,8 @@ table.hin-t{min-width:640px}
     <div class="rdg" role="group" aria-label="Readings, zones and duct air in the 3D view">
       <span class="rl">Readings</span>
       <div class="seg" id="segRead">
-        <button data-v="off" aria-pressed="false">Hide</button>
-        <button data-v="on" aria-pressed="true">Show</button>
+        <button data-v="off" aria-pressed="true">Hide</button>
+        <button data-v="on" aria-pressed="false">Show</button>
         <button data-v="big" aria-pressed="false">Large</button>
       </div>
       <kbd title="Press R to cycle Show → Large → Hide">R</kbd>
@@ -592,9 +592,9 @@ table.hin-t{min-width:640px}
 </div>
 
 <script src="assets/vendor/three.min.js"></script>
-<script src="assets/js/rig-model.js?b=2026-10-15-13"></script>
-<script src="assets/js/rig.js?b=2026-10-15-13"></script>
+<script src="assets/js/rig-model.js?b=2026-10-21-1"></script>
+<script src="assets/js/rig.js?b=2026-10-21-1"></script>
 <script src="assets/vendor/qrcode.js"></script>
-<script src="assets/js/share.js?b=2026-10-15-13"></script>
+<script src="assets/js/share.js?b=2026-10-21-1"></script>
 </body>
 </html>
